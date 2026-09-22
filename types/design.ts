@@ -79,6 +79,7 @@ export interface TextLayer {
 export interface DesignState {
   mode: "manual" | "ai";
   prompt?: string;
+  aiModel?: string | null;   // AI로 만든 경우 사용한 모델 (관리자 통계)
   layoutId: string;
   frameId: string;
   stickers: StickerInstance[];

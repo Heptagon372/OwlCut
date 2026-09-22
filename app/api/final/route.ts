@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       session_id,
       mode: design?.mode ?? "manual",
       prompt: design?.prompt ?? null,
+      ai_model: design?.mode === "ai" ? (design?.aiModel ?? null) : null,
       frame: design?.frameId ?? null,
       stickers: design?.stickers ?? [],
       text_layers: design?.textLayers ?? [],

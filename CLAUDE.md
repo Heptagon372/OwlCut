@@ -21,7 +21,7 @@ npm run build      # 프로덕션 빌드
 
 ## 화면 흐름
 `/` (시작) → `/camera` (4컷 촬영) → `/edit` (프레임·필터·스티커·텍스트) → `/result` (합성·QR·다운로드)
-`/download/[id]` 는 QR로 접속하는 모바일 다운로드 페이지 (SSR).
+`/download/[id]` 는 QR로 접속하는 모바일 다운로드 페이지 (SSR). `/admin` 은 운영자용 대시보드.
 
 ## 아키텍처 원칙
 - **수동 편집과 AI 편집은 동일한 `compose()` 엔진을 공유**한다. AI(Phase 5)는 `DesignState` JSON만 만들어 넣는다.
@@ -34,7 +34,7 @@ npm run build      # 프로덕션 빌드
 - AI는 이미지를 만들지 않고 `frame/filter/stickers/text` JSON만 고른다. 출력 스키마의 enum은 `data/*` 레지스트리에서 자동 생성(`lib/ai/prompt.ts`).
 - Claude: 공식 SDK, 구조화 출력 + `effort: "low"` + Opus 5 서버측 refusal fallback. OpenAI: json_schema strict. Gemini: JSON 모드 + 보정.
 - 키가 없는 프로바이더는 `/api/ai/models`에서 숨김. 새 프로바이더 = `providers/xxx.ts` + `registry.ts` 한 줄.
-- `/api/ai`는 과금되는 공개 엔드포인트 → 프롬프트 200자 제한 + IP당 분당 8회 제한(`lib/ai/rateLimit.ts`, 인스턴스 메모리 기반).
+- `/api/ai`는 과금되는 공개 엔드포인트 → 프롬프트 200자 제한 + IP당 분당 8회 제한(`lib/rateLimit.ts`, 인스턴스 메모리 기반).
 
 ## 사람 추적 / 자동 프레이밍 (Phase 6)
 - MediaPipe Face Detector(`lib/tracking/useFaceTracking.ts`), ~11fps. 여러 명이면 얼굴 박스 합집합으로 판단.
@@ -49,12 +49,24 @@ npm run build      # 프로덕션 빌드
 - claim 호출이 heartbeat → `devices` 테이블 (관리자 장비 상태).
 - 시험: `PRINT_DRY_RUN=1 node print-server/index.mjs` → `print-server/printed/`에 저장.
 
+## 관리자 (Phase 8)
+- `/admin`: `ADMIN_PASSWORD` 게이트. 로그인 시 만료시각을 HMAC(키=비밀번호) 서명한 httpOnly 쿠키(12시간) → 비밀번호 변경 시 전 세션 무효. 로그인 IP당 분당 5회 제한.
+- `GET /api/admin/stats`(`lib/admin/stats.ts`): 오늘(KST) 세션·완성 네컷·AI 요청/성공률·출력, 출력 큐, 장비(heartbeat 30초 이내=온라인), 모델별 사용량, 설정 상태.
+- AI 사용량은 `/api/ai`가 호출마다 `ai_requests`에 기록 (저장 안 된 시도 포함). 디자인별 모델은 `designs.ai_model`.
+- 상태색(`--status-good/warning/critical`)은 상태 표시 전용, 항상 아이콘+문구와 함께.
+
 ## 환경변수
-`.env.local.example` 복사 → `.env.local`. Supabase 키가 없으면 Phase 4(QR/업로드) 기능만 비활성.
+`.env.local.example` 복사 → `.env.local`. 모든 외부 설정은 선택이며, 없으면 해당 기능만 비활성:
+Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT_SERVER_TOKEN` 없음 → 프린트 서버 / `ADMIN_PASSWORD` 없음 → `/admin`.
+촬영·편집·로컬 다운로드는 항상 동작.
 
 ## Supabase 셋업
-`supabase/schema.sql` 을 Supabase SQL Editor에서 실행 (테이블 + `photos` 버킷 + RLS).
+`supabase/schema.sql` 을 Supabase SQL Editor에서 실행 (테이블 + `photos` 버킷 + RLS). 멱등(`if not exists`)이라 스키마가 바뀌면 다시 실행하면 됨.
+
+## 검증 방법
+- 테스트 프레임워크는 아직 없음. CI는 lint + tsc + build.
+- 순수 로직(`lib/ai/normalize.ts`, `lib/tracking/framing.ts`, `compose.coverCrop`, `lib/admin/auth.ts`, `lib/admin/stats.ts`)은 DOM/네트워크 의존이 없어 `npx tsx`로 바로 검증 가능.
 
 ## 진행 상황
 - [x] Phase 0 스캐폴딩/CI  [x] Phase 1 카메라  [x] Phase 2 합성  [x] Phase 3 수동편집  [x] Phase 4 QR/Supabase
-- [x] Phase 5 AI 멀티모델  [x] Phase 6 사람추적  [x] Phase 7 프린터  [ ] Phase 8 관리자
+- [x] Phase 5 AI 멀티모델  [x] Phase 6 사람추적  [x] Phase 7 프린터  [x] Phase 8 관리자

@@ -8,6 +8,10 @@
   --muted: #8a8a9a;
   --card: #15151f;
   --border: #2a2a3d;
+  /* 상태 전용 색 (관리자 화면). 항상 아이콘 + 문구와 함께 쓰고 다른 용도로 재사용하지 않음 */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
 }
 
 @theme inline {
@@ -18,6 +22,9 @@
   --color-muted: var(--muted);
   --color-card: var(--card);
   --color-border: var(--border);
+  --color-status-good: var(--status-good);
+  --color-status-warning: var(--status-warning);
+  --color-status-critical: var(--status-critical);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

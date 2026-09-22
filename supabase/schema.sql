@@ -50,6 +50,19 @@ alter table prints add column if not exists copies int not null default 1;
 alter table prints add column if not exists error text;
 alter table prints add column if not exists updated_at timestamptz default now();
 
+-- AI 호출 로그 (관리자 대시보드의 모델별 사용량). 저장되지 않은 시도까지 모두 기록.
+create table if not exists ai_requests (
+  id uuid primary key default gen_random_uuid(),
+  model text,
+  ok boolean not null,
+  error text,
+  latency_ms int,
+  created_at timestamptz default now()
+);
+
+-- AI로 만든 디자인이 어떤 모델에서 왔는지
+alter table designs add column if not exists ai_model text;
+
 -- 장비 상태 (프린트 서버 heartbeat). 관리자 대시보드에서 온라인 여부 표시.
 create table if not exists devices (
   id text primary key,              -- 프린터/에이전트 이름
@@ -63,6 +76,9 @@ create index if not exists idx_designs_session on designs(session_id);
 create index if not exists idx_sessions_expires on sessions(expires_at);
 create index if not exists idx_prints_queue on prints(status, created_at);
 create index if not exists idx_prints_session on prints(session_id);
+create index if not exists idx_ai_requests_created on ai_requests(created_at);
+create index if not exists idx_designs_created on designs(created_at);
+create index if not exists idx_sessions_created on sessions(created_at);
 
 -- ---------- Storage 버킷 ----------
 -- 최종 합성 이미지 + 원본 사진 저장용. public 읽기 허용(오브젝트 경로가 UUID라 사실상 비공개).
@@ -77,6 +93,7 @@ alter table photos   enable row level security;
 alter table designs  enable row level security;
 alter table prints   enable row level security;
 alter table devices  enable row level security;
+alter table ai_requests enable row level security;
 -- (정책을 추가하지 않으면 anon 키로는 접근 불가. 모든 접근은 서버 라우트 경유.)
 
 -- ---------- TTL 정리 (선택: Supabase Cron / Edge Function에서 주기 실행) ----------

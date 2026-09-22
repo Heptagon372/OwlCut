@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateDesign } from "@/lib/ai/generateDesign";
-import { checkRateLimit, clientKey } from "@/lib/ai/rateLimit";
+import { logAIRequest } from "@/lib/ai/usageLog";
+import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 import type { AIErrorCode } from "@/lib/ai/providers/types";
 
 export const runtime = "nodejs";
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!checkRateLimit(clientKey(req))) {
+  if (!checkRateLimit(`ai:${clientKey(req)}`)) {
     return NextResponse.json(
       { error: "rate_limited", message: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요." },
       { status: 429 },
@@ -43,7 +44,16 @@ export async function POST(req: Request) {
   }
 
   const model = typeof body.model === "string" ? body.model : null;
+  const startedAt = Date.now();
   const result = await generateDesign(prompt, model);
+  if (result.error !== "no_models") {
+    await logAIRequest({
+      model: result.model,
+      ok: !result.error && !result.fallback,
+      error: result.error ?? (result.fallback ? "parse_failed" : null),
+      latencyMs: Date.now() - startedAt,
+    });
+  }
   const status = result.error ? STATUS_BY_ERROR[result.error as AIErrorCode] ?? 502 : 200;
   return NextResponse.json(result, { status });
 }

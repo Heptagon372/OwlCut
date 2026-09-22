@@ -75,7 +75,9 @@ export default function EditPage() {
 
         {tab === "ai" ? (
           <AIDesignPanel
-            onApply={(result, prompt) => setDesign({ ...result, mode: "ai", prompt })}
+            onApply={(result, prompt, model) =>
+              setDesign({ ...result, mode: "ai", prompt, aiModel: model })
+            }
           />
         ) : (
           <>

@@ -18,7 +18,7 @@ type Status =
 export function AIDesignPanel({
   onApply,
 }: {
-  onApply: (design: AIDesignResult, prompt: string) => void;
+  onApply: (design: AIDesignResult, prompt: string, model: string | null) => void;
 }) {
   const { aiModelId, setAiModelId, design } = useBoothStore();
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -47,7 +47,7 @@ export function AIDesignPanel({
     setStatus({ kind: "generating" });
     const result = await requestAIDesign(text, aiModelId);
     if (result.ok) {
-      onApply(result.design, text);
+      onApply(result.design, text, result.model);
       setStatus({ kind: "applied", fallback: result.fallback });
     } else {
       const hint = models.length > 1 ? " 다른 모델을 선택하거나 직접 꾸미기를 이용해 주세요." : " 직접 꾸미기를 이용해 주세요.";
