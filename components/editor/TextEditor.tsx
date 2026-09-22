@@ -28,7 +28,7 @@ export function TextEditor({
   return (
     <div className="space-y-3">
       {value.map((t, i) => (
-        <div key={i} className="space-y-2 rounded-xl border border-border bg-card p-3">
+        <div key={i} className="space-y-2 rounded-2xl bg-white/55 p-3">
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -36,18 +36,18 @@ export function TextEditor({
               placeholder="문구 입력 (예: S.OWL 2026)"
               maxLength={40}
               onChange={(e) => update(i, { content: e.target.value })}
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"
+              className="min-w-0 flex-1 rounded-full bg-white px-4 py-2 text-sm outline-none ring-ink/20 focus:ring-2"
             />
             <input
               type="color"
               value={t.color}
               onChange={(e) => update(i, { color: e.target.value })}
-              className="h-9 w-9 cursor-pointer rounded-lg border border-border bg-background"
+              className="h-9 w-9 cursor-pointer rounded-full border-0 bg-transparent"
               title="글자 색"
             />
             <button
               onClick={() => remove(i)}
-              className="rounded-lg px-2 py-1 text-sm text-muted hover:text-red-400"
+              className="rounded-full px-3 py-1 text-sm text-muted hover:bg-white hover:text-status-critical"
             >
               삭제
             </button>
@@ -58,7 +58,7 @@ export function TextEditor({
                 <button
                   key={p.value}
                   onClick={() => update(i, { anchor: p.value })}
-                  className={`rounded-lg px-3 py-1 text-sm ${t.anchor === p.value ? "bg-accent text-white" : "bg-background text-muted hover:text-foreground"}`}
+                  className={`rounded-full px-3 py-1 text-sm ${t.anchor === p.value ? "bg-ink text-white" : "bg-white/70 text-muted hover:text-foreground"}`}
                 >
                   {p.label}
                 </button>
@@ -80,7 +80,7 @@ export function TextEditor({
       ))}
       <button
         onClick={add}
-        className="w-full rounded-xl border border-dashed border-border py-2 text-sm text-muted hover:border-accent hover:text-foreground"
+        className="w-full rounded-2xl border-2 border-dashed border-muted/40 py-3.5 text-sm font-medium text-muted transition hover:border-ink hover:text-foreground"
       >
         + 텍스트 추가
       </button>

@@ -27,7 +27,7 @@ export function CameraView({
   overlay,
 }: Props) {
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border bg-black">
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[22px] bg-ink">
       <video
         ref={videoRef}
         playsInline
@@ -40,13 +40,19 @@ export function CameraView({
 
       {overlay}
 
-      <div className="absolute left-4 top-4 flex gap-2">
-        {Array.from({ length: total }).map((_, i) => (
-          <span
-            key={i}
-            className={`h-3 w-3 rounded-full transition ${i < shotIndex ? "bg-accent" : "bg-white/30"}`}
-          />
-        ))}
+      <div className="ink-glass absolute left-4 top-4 flex items-center gap-2.5 rounded-full py-1.5 pl-3 pr-3.5">
+        <span className="flex items-center gap-1.5 text-xs font-semibold tracking-wider">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#ff4d4d]" aria-hidden />
+          LIVE
+        </span>
+        <span className="flex gap-1.5" aria-label={`${shotIndex}/${total}컷 촬영됨`}>
+          {Array.from({ length: total }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-2 w-2 rounded-full transition ${i < shotIndex ? "bg-white" : "bg-white/25"}`}
+            />
+          ))}
+        </span>
       </div>
 
       <Countdown value={count} />

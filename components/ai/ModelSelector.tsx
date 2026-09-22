@@ -24,7 +24,7 @@ export function ModelSelector({
             aria-checked={active}
             disabled={disabled}
             onClick={() => onChange(m.id)}
-            className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left text-sm transition disabled:opacity-50 ${active ? "border-accent bg-accent/10 text-foreground" : "border-border text-muted hover:text-foreground"}`}
+            className={`flex w-full items-center gap-3 rounded-2xl border-2 px-3.5 py-2.5 text-left text-sm transition disabled:opacity-50 ${active ? "border-ink bg-white text-foreground" : "border-transparent bg-white/50 text-muted hover:text-foreground"}`}
           >
             <span
               className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${active ? "border-accent" : "border-muted"}`}

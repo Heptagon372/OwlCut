@@ -48,14 +48,14 @@ export function FilterPicker({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-1 overflow-x-auto pb-1" role="tablist" aria-label="필터 종류">
+      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="필터 종류">
         {[{ id: "all" as const, label: "전체" }, ...FILTER_CATEGORIES].map((c) => (
           <button
             key={c.id}
             role="tab"
             aria-selected={category === c.id}
             onClick={() => setCategory(c.id)}
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${category === c.id ? "bg-foreground text-background" : "bg-card text-muted hover:text-foreground"}`}
+            className={`h-8 shrink-0 rounded-full px-3.5 text-xs font-semibold transition ${category === c.id ? "bg-ink text-white" : "bg-white/60 text-muted hover:bg-white hover:text-foreground"}`}
           >
             {c.label}
           </button>
@@ -65,7 +65,7 @@ export function FilterPicker({
       <div
         className={
           variant === "row"
-            ? "flex snap-x gap-2 overflow-x-auto pb-2"
+            ? "no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1"
             : "grid grid-cols-4 gap-2"
         }
       >
@@ -81,7 +81,7 @@ export function FilterPicker({
               className={`flex shrink-0 snap-start flex-col items-center gap-1 disabled:opacity-40 ${variant === "row" ? "w-16" : ""}`}
             >
               <span
-                className={`block aspect-square w-full overflow-hidden rounded-xl border-2 bg-card transition ${active ? "border-accent ring-2 ring-accent/40" : "border-transparent"}`}
+                className={`block aspect-square w-full overflow-hidden rounded-2xl border-2 bg-white/50 transition ${active ? "border-ink ring-2 ring-ink/25" : "border-transparent"}`}
               >
                 {thumbs[f.id] && (
                   // eslint-disable-next-line @next/next/no-img-element

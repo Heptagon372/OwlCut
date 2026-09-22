@@ -34,6 +34,14 @@ http://localhost:3000 접속. **카메라는 localhost 또는 HTTPS에서만 동
 `/` 시작 → `/camera` 촬영 → `/edit` 꾸미기 → `/result` 합성·QR·출력 → `/download/[id]` 모바일 다운로드
 운영자: `/admin`
 
+## 디자인 · 폰트
+
+모노크롬 글래스모피즘 (흑·백·회색, 반투명 카드, 벤토 그리드).
+
+- 한글: [Pretendard](https://github.com/orioncactus/pretendard) — SIL OFL 1.1
+- 영문·숫자: [Manrope](https://fonts.google.com/specimen/Manrope) — SIL OFL 1.1
+- 아이콘: [Lucide](https://lucide.dev) — ISC
+
 ## 문서
 
 - 설계도: [`아울네컷_개발설계도_1.md`](아울네컷_개발설계도_1.md)

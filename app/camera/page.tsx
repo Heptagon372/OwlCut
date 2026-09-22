@@ -9,7 +9,10 @@ import { TrackingOverlay } from "@/components/camera/TrackingOverlay";
 import { FilteredPreview } from "@/components/filters/FilteredPreview";
 import { FilterPicker } from "@/components/filters/FilterPicker";
 import { FilteredImage } from "@/components/filters/FilteredImage";
-import { Button } from "@/components/ui/Button";
+import { Button, IconButton } from "@/components/ui/Button";
+import { ProgressRing } from "@/components/ui/ProgressRing";
+import { Logo } from "@/components/brand/Logo";
+import { ArrowRight, Camera as CameraIcon, CameraOff, RotateCcw, ScanFace, X } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { getFilter } from "@/lib/data/registry";
 import { paramsToCss } from "@/lib/filters/cssFallback";
@@ -105,30 +108,51 @@ export default function CameraPage() {
 
   if (error) {
     return (
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
-        <div className="rounded-2xl border border-border bg-card p-6">
-          <p className="text-4xl">📷</p>
-          <p className="mt-3 text-lg font-semibold">카메라를 시작할 수 없어요</p>
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
+        <div className="glass w-full rounded-card p-8">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-ink text-white">
+            <CameraOff className="h-6 w-6" aria-hidden />
+          </span>
+          <p className="mt-4 text-xl font-semibold">카메라를 시작할 수 없어요</p>
           <p className="mt-2 text-sm text-muted">{error}</p>
+          <div className="mt-6 flex justify-center gap-2">
+            <Button variant="secondary" onClick={() => router.push("/")}>처음으로</Button>
+            <Button onClick={() => void start()}>다시 시도</Button>
+          </div>
         </div>
-        <Button onClick={() => void start()}>다시 시도</Button>
-        <Button variant="ghost" onClick={() => router.push("/")}>처음으로</Button>
       </main>
     );
   }
 
+  const filterLabel = getFilter(design.filter).label;
+  const statusText =
+    phase === "review"
+      ? "마음에 드나요?"
+      : phase === "running"
+        ? "카메라를 봐 주세요"
+        : ready
+          ? "준비되면 촬영 시작을 눌러요"
+          : "카메라 준비 중…";
+
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
-      <header className="text-center">
-        <h1 className="text-2xl font-black">아울네컷 촬영</h1>
-        <p className="text-sm text-muted">
-          {phase === "review" ? "마음에 드나요?" : `4컷을 연속으로 찍어요 (${shots.length}/${TOTAL})`}
-        </p>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
+      <header className="flex items-center justify-between gap-3">
+        <Logo />
+        <div className="flex items-center gap-2">
+          <span className="glass-solid hidden rounded-full px-4 py-2 text-sm font-medium sm:inline">
+            필터 · {filterLabel}
+          </span>
+          <IconButton aria-label="처음으로" onClick={() => router.push("/")}>
+            <X className="h-5 w-5" />
+          </IconButton>
+        </div>
       </header>
 
-      {phase !== "review" ? (
-        <>
-          <CameraView
+      <section className="grid flex-1 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        {/* 왼쪽: 뷰파인더 또는 촬영 결과 */}
+        <div className="glass rounded-card p-3">
+          {phase !== "review" ? (
+            <CameraView
             videoRef={videoRef}
             mirror={mirror}
             count={count}
@@ -157,56 +181,97 @@ export default function CameraPage() {
                 />
               ) : null
             }
-          />
-          <FilterPicker
-            variant="row"
-            value={design.filter}
-            onChange={(id) => setDesign({ filter: id })}
-            source={snapshot}
-            mirror={mirror}
-            disabled={phase === "running"}
-          />
-          <Button onClick={runSequence} disabled={!ready || phase === "running"} className="w-full">
-            {phase === "running"
-              ? `촬영 중… (${shots.length}/${TOTAL})`
-              : ready
-                ? "촬영 시작"
-                : "카메라 준비 중…"}
-          </Button>
-          <button
-            onClick={() => setTrackingOn((v) => !v)}
-            disabled={phase === "running"}
-            className="self-center text-xs text-muted hover:text-foreground disabled:opacity-40"
-          >
-            자동 프레이밍 {trackingOn ? "켜짐" : "꺼짐"}
-            {trackingOn && tracking.status === "loading" && " (준비 중…)"}
-            {trackingOn && tracking.status === "unavailable" && " (이 기기에선 사용 불가)"}
-          </button>
-        </>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3">
-            {shots.map((s, i) => (
-              <FilteredImage
-                key={i}
-                src={s.dataUrl}
-                filterId={design.filter}
-                intensity={design.filterIntensity}
-                alt={`컷 ${i + 1}`}
-                className="aspect-[4/3] w-full rounded-xl border border-border object-cover"
-              />
-            ))}
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {shots.map((s, i) => (
+                <div key={i} className="relative">
+                  <FilteredImage
+                    src={s.dataUrl}
+                    filterId={design.filter}
+                    intensity={design.filterIntensity}
+                    alt={`컷 ${i + 1}`}
+                    className="aspect-[4/3] w-full rounded-[18px] object-cover"
+                  />
+                  <span className="num ink-glass absolute left-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 오른쪽: 진행 상태 · 필터 · 셔터 */}
+        <div className="flex flex-col gap-4">
+          <div className="ink flex items-center gap-5 rounded-card p-5">
+            <ProgressRing value={shots.length / TOTAL} size={76} stroke={6} tone="light" label={`${shots.length}/${TOTAL}컷`}>
+              <span className="num text-lg font-semibold">
+                {shots.length}
+                <span className="text-ink-muted">/{TOTAL}</span>
+              </span>
+            </ProgressRing>
+            <div className="min-w-0">
+              <p className="text-lg font-semibold">4컷 촬영</p>
+              <p className="text-sm text-ink-muted" aria-live="polite">{statusText}</p>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={retake} className="flex-1">
-              다시 찍기
-            </Button>
-            <Button onClick={goEdit} className="flex-1">
-              꾸미러 가기 →
-            </Button>
-          </div>
-        </>
-      )}
+
+          {phase !== "review" ? (
+            <>
+              <div className="glass rounded-card p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="font-semibold">필터</h2>
+                  <span className="text-xs text-muted">찍은 뒤에도 바꿀 수 있어요</span>
+                </div>
+                <FilterPicker
+                  variant="row"
+                  value={design.filter}
+                  onChange={(id) => setDesign({ filter: id })}
+                  source={snapshot}
+                  mirror={mirror}
+                  disabled={phase === "running"}
+                />
+              </div>
+
+              <Button size="lg" onClick={runSequence} disabled={!ready || phase === "running"} className="w-full">
+                <CameraIcon className="h-5 w-5" aria-hidden />
+                {phase === "running" ? `촬영 중 · ${shots.length}/${TOTAL}` : ready ? "촬영 시작" : "카메라 준비 중…"}
+              </Button>
+
+              <button
+                role="switch"
+                aria-checked={trackingOn}
+                onClick={() => setTrackingOn((v) => !v)}
+                disabled={phase === "running"}
+                className="glass-solid flex items-center justify-between rounded-full py-2 pl-5 pr-2 text-sm disabled:opacity-40"
+              >
+                <span className="flex items-center gap-2">
+                  <ScanFace className="h-4 w-4 text-muted" aria-hidden />
+                  자동 프레이밍
+                  {trackingOn && tracking.status === "loading" && <span className="text-muted">· 준비 중</span>}
+                  {trackingOn && tracking.status === "unavailable" && <span className="text-muted">· 사용 불가</span>}
+                </span>
+                <span className={`flex h-7 w-12 items-center rounded-full p-1 transition ${trackingOn ? "bg-ink" : "bg-black/15"}`}>
+                  <span className={`h-5 w-5 rounded-full bg-white shadow transition ${trackingOn ? "translate-x-5" : ""}`} />
+                </span>
+              </button>
+            </>
+          ) : (
+            <div className="glass flex flex-col gap-2 rounded-card p-5">
+              <p className="mb-1 text-sm text-muted">필터 · {filterLabel}</p>
+              <Button size="lg" onClick={goEdit} className="w-full">
+                꾸미러 가기
+                <ArrowRight className="h-5 w-5" aria-hidden />
+              </Button>
+              <Button variant="secondary" onClick={retake} className="w-full">
+                <RotateCcw className="h-4 w-4" aria-hidden />
+                다시 찍기
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

@@ -25,10 +25,10 @@ export function FrameSelector({
           <button
             key={f.id}
             onClick={() => onChange(f.id)}
-            className={`rounded-xl border-2 p-1 transition ${active ? "border-accent" : "border-transparent hover:border-border"}`}
+            className={`rounded-2xl border-2 p-1 transition ${active ? "border-ink bg-white" : "border-transparent hover:bg-white/60"}`}
           >
             <span
-              className="block h-12 rounded-lg border border-white/10"
+              className="block h-12 rounded-xl border border-black/5"
               style={{ background: swatch(f) }}
             />
             <span className="mt-1 block truncate text-xs text-muted">{f.label}</span>

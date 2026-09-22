@@ -29,7 +29,7 @@ export function PromptInput({
         maxLength={MAX_LENGTH}
         rows={2}
         placeholder="예: 보라색 사이버펑크 느낌으로"
-        className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent disabled:opacity-50"
+        className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-sm outline-none ring-ink/20 focus:ring-2 disabled:opacity-50"
       />
       <div className="flex flex-wrap gap-1.5">
         {EXAMPLES.map((ex) => (
@@ -37,7 +37,7 @@ export function PromptInput({
             key={ex}
             disabled={disabled}
             onClick={() => onChange(ex)}
-            className="rounded-full border border-border px-2.5 py-1 text-xs text-muted hover:border-accent hover:text-foreground disabled:opacity-50"
+            className="rounded-full bg-white/60 px-3 py-1.5 text-xs text-muted hover:bg-white hover:text-foreground disabled:opacity-50"
           >
             {ex}
           </button>

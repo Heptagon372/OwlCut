@@ -1,14 +1,22 @@
 @import "tailwindcss";
 
+/* ============================================================
+   아울네컷 디자인 시스템 — 모노크롬 글래스모피즘
+   흑·백·회색만 사용. 강조색 = 잉크(검정). 카드: 글래스(반투명 흰색) / 잉크(검정).
+   상태색(good/warning/critical)은 관리자 화면의 상태 표시 전용.
+   ============================================================ */
 :root {
-  --background: #0b0b12;
-  --foreground: #f4f4f8;
-  --accent: #a855f7;
-  --accent-2: #22d3ee;
-  --muted: #8a8a9a;
-  --card: #15151f;
-  --border: #2a2a3d;
-  /* 상태 전용 색 (관리자 화면). 항상 아이콘 + 문구와 함께 쓰고 다른 용도로 재사용하지 않음 */
+  --background: #e4e4e8;
+  --foreground: #111114;
+  --muted: #6b6b74;
+  --accent: #111114;          /* 모노크롬: 강조 = 잉크 */
+  --accent-2: #4a4a52;        /* 보조 라벨 */
+  --card: rgba(255, 255, 255, 0.55);
+  --border: rgba(255, 255, 255, 0.78);
+  --line: rgba(17, 17, 20, 0.09);   /* 글래스 위 옅은 구분선 */
+  --ink: #1b1b1e;
+  --ink-2: #2b2b30;
+  --ink-muted: #a3a3ad;
   --status-good: #0ca30c;
   --status-warning: #fab219;
   --status-critical: #d03b3b;
@@ -22,11 +30,58 @@
   --color-muted: var(--muted);
   --color-card: var(--card);
   --color-border: var(--border);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-muted: var(--ink-muted);
   --color-status-good: var(--status-good);
   --color-status-warning: var(--status-warning);
   --color-status-critical: var(--status-critical);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-pretendard), "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+  --font-display: var(--font-manrope), var(--font-pretendard), "Pretendard", sans-serif;
+  --radius-card: 1.75rem;   /* 큰 카드 28px */
+  --radius-tile: 1.25rem;   /* 카드 안 타일 20px */
+}
+
+/* 반투명 흰 카드 (배경이 비침) */
+@utility glass {
+  background: rgba(255, 255, 255, 0.52);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 18px 40px -22px rgba(20, 20, 30, 0.28);
+}
+
+/* 거의 불투명한 흰 카드 (사이드바·입력 영역) */
+@utility glass-solid {
+  background: rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 40px -24px rgba(20, 20, 30, 0.25);
+}
+
+/* 검은 카드 */
+@utility ink {
+  background: var(--ink);
+  color: #f4f4f6;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 22px 44px -22px rgba(0, 0, 0, 0.55);
+}
+
+/* 반투명 검은 카드 */
+@utility ink-glass {
+  background: rgba(30, 30, 34, 0.72);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+  color: #f4f4f6;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html {
+  background: var(--background);
 }
 
 html,
@@ -35,8 +90,65 @@ body {
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), "Pretendard", "Malgun Gothic", sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+/* 숫자는 폭을 고정해 값이 바뀌어도 흔들리지 않게 */
+.num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* 배경: 흑백 유체 형태를 흐리게 겹친 추상 배경 (정적 — 카메라·필터와 GPU를 나눠 쓰므로 애니메이션 없음) */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 45% at 10% 14%, #ffffff 0%, transparent 60%),
+    radial-gradient(40% 40% at 90% 10%, #b4b4bd 0%, transparent 66%),
+    radial-gradient(50% 55% at 80% 90%, #fbfbfc 0%, transparent 58%),
+    radial-gradient(45% 50% at 14% 96%, #9d9da6 0%, transparent 62%),
+    radial-gradient(35% 30% at 55% 45%, #c8c8cf 0%, transparent 70%),
+    linear-gradient(135deg, #e8e8ec 0%, #cfcfd5 55%, #e4e4e8 100%);
+}
+.app-bg::before,
+.app-bg::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+}
+/* 유체 리본 두 개: 흰 리본 + 짙은 회색 리본 (글래스 뒤로 형태가 비쳐야 유리 느낌이 난다) */
+.app-bg::before {
+  width: 70vmax;
+  height: 26vmax;
+  left: -12vmax;
+  top: 34vh;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 1), rgba(236, 236, 240, 0.9) 55%, rgba(120, 120, 128, 0.55));
+  transform: rotate(-16deg);
+  filter: blur(46px);
+}
+.app-bg::after {
+  width: 56vmax;
+  height: 20vmax;
+  right: -14vmax;
+  top: 4vh;
+  background: linear-gradient(90deg, rgba(110, 110, 118, 0.55), rgba(250, 250, 252, 0.95) 60%);
+  transform: rotate(26deg);
+  filter: blur(50px);
+}
+
+/* 가로 스크롤 영역 스크롤바 숨김 (필터 칩 등) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

@@ -4,7 +4,7 @@ import { LAYOUTS } from "@/lib/data/registry";
 import { outputSize } from "@/lib/image/layoutGeometry";
 import type { LayoutConfig } from "@/types/design";
 
-function LayoutThumb({ layout }: { layout: LayoutConfig }) {
+export function LayoutThumb({ layout, numbered = true }: { layout: LayoutConfig; numbered?: boolean }) {
   const { width, height } = outputSize(layout);
   const tw = layout.canvas.width;
   const th = layout.canvas.height;
@@ -29,7 +29,7 @@ function LayoutThumb({ layout }: { layout: LayoutConfig }) {
               fill="currentColor"
               opacity={0.55}
             />
-            {ti === 0 && (
+            {numbered && ti === 0 && (
               <text
                 x={t.x + s.x + s.w / 2}
                 y={t.y + s.y + s.h / 2}
@@ -60,7 +60,7 @@ export function LayoutPicker({ value, onChange }: { value: string; onChange: (id
             onClick={() => onChange(l.id)}
             aria-pressed={active}
             title={l.description}
-            className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 transition ${active ? "border-accent text-foreground" : "border-transparent bg-background text-muted hover:border-border hover:text-foreground"}`}
+            className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 p-2 transition ${active ? "border-ink bg-white text-foreground" : "border-transparent bg-white/45 text-muted hover:bg-white/80 hover:text-foreground"}`}
           >
             <LayoutThumb layout={l} />
             <span className="text-center text-xs leading-tight">{l.label}</span>

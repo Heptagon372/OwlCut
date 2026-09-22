@@ -27,7 +27,7 @@ function AnchorGrid({
         <button
           key={a}
           onClick={() => onChange(a)}
-          className={`h-7 w-7 rounded text-sm ${value === a ? "bg-accent text-white" : "bg-background text-muted hover:text-foreground"}`}
+          className={`h-7 w-7 rounded-lg text-sm ${value === a ? "bg-ink text-white" : "bg-white/70 text-muted hover:text-foreground"}`}
         >
           {ANCHOR_LABEL[a]}
         </button>
@@ -58,7 +58,7 @@ export function StickerPanel({
             key={s.id}
             onClick={() => add(s.id)}
             title={`${s.label} 추가`}
-            className="rounded-xl border border-border bg-background py-2 text-2xl hover:border-accent"
+            className="rounded-2xl bg-white/55 py-2 text-2xl transition hover:bg-white"
           >
             {s.glyph}
           </button>
@@ -75,7 +75,7 @@ export function StickerPanel({
             return (
               <li
                 key={i}
-                className="flex items-center gap-3 rounded-xl border border-border bg-card p-2"
+                className="flex items-center gap-3 rounded-2xl bg-white/55 p-2.5"
               >
                 <span className="text-2xl">{def?.glyph}</span>
                 <AnchorGrid value={s.anchor} onChange={(a) => update(i, { anchor: a })} />
@@ -92,7 +92,7 @@ export function StickerPanel({
                 </div>
                 <button
                   onClick={() => remove(i)}
-                  className="rounded-lg px-2 py-1 text-sm text-muted hover:text-red-400"
+                  className="rounded-full px-3 py-1 text-sm text-muted hover:bg-white hover:text-status-critical"
                 >
                   삭제
                 </button>

@@ -8,6 +8,8 @@ import { uploadFinal } from "@/lib/api";
 import { QRCodeView } from "@/components/result/QRCodeView";
 import { PrintButton } from "@/components/result/PrintButton";
 import { Button } from "@/components/ui/Button";
+import { Logo, OwlMark } from "@/components/brand/Logo";
+import { Download, House, Images, Smartphone } from "lucide-react";
 
 type Status = "composing" | "uploading" | "done" | "error";
 
@@ -45,11 +47,23 @@ export default function ResultPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const goHome = () => {
+    reset();
+    router.push("/");
+  };
+
   if (photos.length === 0) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-        <p className="text-lg text-muted">완성할 사진이 없어요.</p>
-        <Button onClick={() => router.push("/")}>처음으로</Button>
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-4 text-center">
+        <div className="glass w-full rounded-card p-8">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-ink text-white">
+            <Images className="h-6 w-6" aria-hidden />
+          </span>
+          <p className="mt-4 text-xl font-semibold">완성할 사진이 없어요</p>
+          <Button className="mt-6" onClick={() => router.push("/")}>
+            처음으로
+          </Button>
+        </div>
       </main>
     );
   }
@@ -62,64 +76,89 @@ export default function ResultPage() {
     a.click();
   };
 
+  const statusText =
+    status === "composing" ? "합성 중…" : status === "uploading" ? "저장 중…" : status === "error" ? "합성에 실패했어요" : null;
+
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center gap-8 px-4 py-6 md:flex-row md:items-start md:justify-center">
-      <div className="flex justify-center">
-        {finalDataUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={finalDataUrl}
-            alt="완성된 네컷"
-            className="max-h-[74vh] rounded-2xl border border-border"
-          />
-        ) : (
-          <div className="h-96 w-64 animate-pulse rounded-2xl bg-card" />
-        )}
-      </div>
-
-      <div className="flex w-full max-w-xs flex-col items-center gap-4">
-        <h1 className="text-3xl font-black">완성! 🦉</h1>
-
-        {status === "composing" && <p className="text-muted">합성 중…</p>}
-        {status === "uploading" && <p className="text-muted">저장 중…</p>}
-        {status === "done" && remote && (
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-center text-sm text-muted">QR을 스캔해 폰으로 받으세요</p>
-            <QRCodeView url={remote} />
-            <a
-              href={remote}
-              target="_blank"
-              rel="noreferrer"
-              className="max-w-full break-all text-center text-xs text-accent-2 underline"
-            >
-              {remote}
-            </a>
-          </div>
-        )}
-        {status === "done" && !remote && (
-          <p className="text-center text-sm text-muted">
-            원격 저장이 설정되지 않아 QR은 비활성화됐어요. 아래에서 바로 다운로드하세요.
-          </p>
-        )}
-        {status === "error" && (
-          <p className="text-center text-red-400">합성에 실패했어요. 다시 시도해 주세요.</p>
-        )}
-
-        <Button onClick={download} disabled={!finalDataUrl} className="w-full">
-          다운로드
-        </Button>
-        <PrintButton sessionId={uploadedSessionId} />
-        <Button
-          variant="ghost"
-          onClick={() => {
-            reset();
-            router.push("/");
-          }}
-          className="w-full"
-        >
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
+      <header className="flex items-center justify-between gap-3">
+        <Logo />
+        <Button variant="secondary" size="sm" onClick={goHome}>
+          <House className="h-4 w-4" aria-hidden />
           처음으로
         </Button>
-      </div>
+      </header>
+
+      <section className="grid flex-1 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_400px]">
+        {/* 완성 이미지 */}
+        <div className="glass rounded-card p-4">
+          <div className="grid min-h-[60vh] place-items-center rounded-[22px] bg-white/35 p-5">
+            {finalDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={finalDataUrl}
+                alt="완성된 네컷"
+                className="max-h-[70vh] rounded-md shadow-[0_28px_56px_-24px_rgba(0,0,0,0.5)]"
+              />
+            ) : (
+              <div className="h-[56vh] w-56 animate-pulse rounded-md bg-white/60" />
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {/* QR (검은 카드) */}
+          <div className="ink rounded-card p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-ink-muted">S.OWL PHOTO BOOTH</p>
+                <h1 className="mt-1 text-5xl font-[200] tracking-[-0.04em]">완성!</h1>
+              </div>
+              <OwlMark className="h-10 w-10 text-white" />
+            </div>
+
+            <div className="mt-6" aria-live="polite">
+              {statusText && (
+                <p className={`text-sm ${status === "error" ? "text-[#ff8a8a]" : "text-ink-muted"}`}>{statusText}</p>
+              )}
+              {status === "done" && remote && (
+                <div className="flex items-center gap-4">
+                  <div className="shrink-0 rounded-2xl bg-white p-1.5">
+                    <QRCodeView url={remote} size={140} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1.5 font-semibold">
+                      <Smartphone className="h-4 w-4" aria-hidden />
+                      폰으로 받기
+                    </p>
+                    <p className="mt-1 text-sm text-ink-muted">휴대폰 카메라로 QR을 스캔하세요</p>
+                    <a
+                      href={remote}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 block truncate text-xs text-ink-muted underline"
+                    >
+                      {remote}
+                    </a>
+                  </div>
+                </div>
+              )}
+              {status === "done" && !remote && (
+                <p className="text-sm text-ink-muted">원격 저장이 설정되지 않아 QR은 꺼져 있어요. 아래에서 바로 저장하세요.</p>
+              )}
+            </div>
+          </div>
+
+          {/* 저장 · 출력 */}
+          <div className="glass flex flex-col gap-3 rounded-card p-5">
+            <Button size="lg" onClick={download} disabled={!finalDataUrl} className="w-full">
+              <Download className="h-5 w-5" aria-hidden />
+              이미지 저장
+            </Button>
+            <PrintButton sessionId={uploadedSessionId} />
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

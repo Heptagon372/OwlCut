@@ -23,6 +23,16 @@ npm run build      # 프로덕션 빌드
 `/` (시작) → `/camera` (4컷 촬영) → `/edit` (프레임·필터·스티커·텍스트) → `/result` (합성·QR·다운로드)
 `/download/[id]` 는 QR로 접속하는 모바일 다운로드 페이지 (SSR). `/admin` 은 운영자용 대시보드.
 
+## 디자인 시스템 (모노크롬 글래스모피즘)
+- 흑·백·회색만. 강조 = 잉크(검정). 상태색(good/warning/critical)은 관리자 상태 표시 전용(아이콘+문구 동반).
+- 토큰·유틸은 `app/globals.css`: `glass`(반투명 흰 카드) · `glass-solid`(거의 불투명) · `ink`(검은 카드) · `ink-glass`(반투명 검정), `rounded-card`(28px) · `rounded-tile`(20px), `.num`(Manrope 숫자, 폭 고정).
+- 배경은 고정된 흐린 흑백 리본(`.app-bg`, 정적 — 카메라·WebGL과 GPU를 나눠 쓰므로 애니메이션 없음). 글래스는 뒤에 형태가 비쳐야 살아난다.
+- 폰트: 한글 **Pretendard** 가변(`node_modules/pretendard`, `next/font/local`, OFL-1.1), 영문·숫자 **Manrope**(`next/font/google`, OFL-1.1). 큰 제목은 Pretendard 아주 가는 굵기(150~250).
+- 아이콘: `lucide-react` (선형). 이모지는 콘텐츠(스티커)에만.
+- 공용 컴포넌트: `ui/Button`(알약: primary 검정 · secondary 흰색 · light), `ui/IconButton`(흰 원), `ui/Panel`(제목+아이콘 카드), `ui/ProgressRing`, `ui/Segmented`(검은 알약 탭), `brand/Logo`·`OwlMark`.
+- 레이아웃: 헤더(로고 + 원형/알약 버튼) → 벤토 그리드. **그리드엔 항상 `grid-cols-1`(minmax(0,1fr))** 을 명시할 것 — 없으면 가로 스크롤 칩 등 넓은 내용 때문에 모바일에서 열이 수천 px로 늘어난다.
+- 좁은 카드 안 큰 숫자는 `@container` + `@sm:` 등 컨테이너 쿼리로 크기 조절 (관리자 개요 카드 참고).
+
 ## 아키텍처 원칙
 - **수동 편집과 AI 편집은 동일한 `compose()` 엔진을 공유**한다. AI(Phase 5)는 `DesignState` JSON만 만들어 넣는다.
 - 합성은 **브라우저(클라이언트) Canvas**에서 수행. `lib/image/compose.ts`는 서버에서 import 금지.

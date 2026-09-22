@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Bot, Sparkles } from "lucide-react";
 import { ModelSelector } from "./ModelSelector";
 import { PromptInput } from "./PromptInput";
 import { Button } from "@/components/ui/Button";
@@ -56,14 +57,16 @@ export function AIDesignPanel({
   };
 
   if (status.kind === "loading-models") {
-    return <div className="h-40 animate-pulse rounded-2xl bg-card" />;
+    return <div className="glass h-48 animate-pulse rounded-card" />;
   }
 
   if (models.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-5 text-center">
-        <p className="text-3xl">🤖</p>
-        <p className="mt-2 font-semibold">AI 꾸미기를 사용할 수 없어요</p>
+      <div className="glass rounded-card p-6 text-center">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-ink text-white">
+          <Bot className="h-5 w-5" aria-hidden />
+        </span>
+        <p className="mt-3 font-semibold">AI 꾸미기를 사용할 수 없어요</p>
         <p className="mt-1 text-sm text-muted">
           설정된 AI 모델이 없습니다. <code className="text-xs">.env.local</code>에 API 키를 추가하면
           활성화돼요. 지금은 직접 꾸미기를 이용해 주세요.
@@ -73,8 +76,13 @@ export function AIDesignPanel({
   }
 
   return (
-    <div className="space-y-5 rounded-2xl border border-border bg-card p-4">
-      <p className="text-sm font-bold tracking-wide">🤖 AI PHOTO DESIGNER</p>
+    <div className="glass space-y-5 rounded-card p-5">
+      <div className="flex items-center justify-between">
+        <p className="font-display text-sm font-extrabold tracking-[0.14em]">AI PHOTO DESIGNER</p>
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-ink text-white">
+          <Sparkles className="h-4 w-4" aria-hidden />
+        </span>
+      </div>
 
       <section>
         <h4 className="mb-2 text-xs font-semibold text-muted">사용할 AI 모델</h4>
@@ -86,18 +94,18 @@ export function AIDesignPanel({
         <PromptInput value={prompt} onChange={setPrompt} onSubmit={submit} disabled={generating} />
       </section>
 
-      <Button onClick={submit} disabled={generating || !prompt.trim()} className="w-full">
+      <Button size="lg" onClick={submit} disabled={generating || !prompt.trim()} className="w-full">
         {generating ? "AI가 디자인을 고르는 중…" : "AI 꾸미기"}
       </Button>
 
       <div aria-live="polite" className="text-center text-sm">
         {status.kind === "applied" && !status.fallback && (
-          <p className="text-accent-2">✨ 적용됐어요! &apos;직접 꾸미기&apos; 탭에서 더 다듬을 수 있어요.</p>
+          <p className="font-medium">✨ 적용됐어요! &apos;꾸미기&apos; 탭에서 더 다듬을 수 있어요.</p>
         )}
         {status.kind === "applied" && status.fallback && (
-          <p className="text-muted">AI 응답을 해석하지 못해 기본 디자인을 적용했어요. 직접 꾸미기로 다듬어 주세요.</p>
+          <p className="text-muted">AI 응답을 해석하지 못해 기본 디자인을 적용했어요. &apos;꾸미기&apos; 탭에서 다듬어 주세요.</p>
         )}
-        {status.kind === "error" && <p className="text-red-400">{status.message}</p>}
+        {status.kind === "error" && <p className="text-status-critical">{status.message}</p>}
       </div>
     </div>
   );

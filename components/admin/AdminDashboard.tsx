@@ -1,15 +1,38 @@
 "use client";
 // 관리자 대시보드 (설계도 Phase 8): 세션 수 · AI 사용량 · 출력 완료 · 장비 상태.
+// 레이아웃: 흰 사이드바 + 인사말 헤더 + 벤토 카드 (검은 개요 카드 / 진행 링 카드 / 표 카드)
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { StatTile } from "./StatTile";
+import {
+  Activity,
+  LayoutDashboard,
+  ListOrdered,
+  LogOut,
+  MonitorSmartphone,
+  RefreshCw,
+  Settings2,
+  Sparkles,
+} from "lucide-react";
 import { StatusBadge, type StatusTone } from "./StatusBadge";
+import { Logo } from "@/components/brand/Logo";
+import { IconButton } from "@/components/ui/Button";
+import { Panel } from "@/components/ui/Panel";
+import { ProgressRing } from "@/components/ui/ProgressRing";
 import type { AdminStats } from "@/types/admin";
 
 const REFRESH_MS = 10_000;
 const PROVIDER_LABEL = { claude: "Claude", openai: "OpenAI", gemini: "Gemini" } as const;
 
+const NAV = [
+  { href: "#overview", label: "대시보드", icon: LayoutDashboard },
+  { href: "#devices", label: "장비 상태", icon: MonitorSmartphone },
+  { href: "#queue", label: "출력 큐", icon: ListOrdered },
+  { href: "#ai", label: "AI 사용량", icon: Sparkles },
+  { href: "#setup", label: "설정 상태", icon: Settings2 },
+];
+
 const num = (n: number) => n.toLocaleString("ko-KR");
+const ratio = (part: number, whole: number) => (whole ? part / whole : 0);
 const pct = (part: number, whole: number) => (whole ? `${Math.round((part / whole) * 100)}%` : "–");
 
 function ago(iso: string, now: number): string {
@@ -18,15 +41,6 @@ function ago(iso: string, now: number): string {
   if (s < 3600) return `${Math.floor(s / 60)}분 전`;
   if (s < 86400) return `${Math.floor(s / 3600)}시간 전`;
   return `${Math.floor(s / 86400)}일 전`;
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl border border-border bg-card p-4">
-      <h2 className="mb-3 text-sm font-semibold text-muted">{title}</h2>
-      {children}
-    </section>
-  );
 }
 
 export function AdminDashboard() {
@@ -63,18 +77,46 @@ export function AdminDashboard() {
     router.refresh();
   };
 
+  const sidebar = (
+    <aside className="glass-solid sticky top-6 hidden h-[calc(100vh-3rem)] w-60 shrink-0 flex-col rounded-card p-5 lg:flex">
+      <Logo />
+      <nav className="mt-10 space-y-1" aria-label="관리자 메뉴">
+        {NAV.map(({ href, label, icon: Icon }, i) => (
+          <a
+            key={href}
+            href={href}
+            className={`flex h-11 items-center gap-3 rounded-full px-4 text-sm font-medium transition ${i === 0 ? "bg-ink text-white" : "text-foreground hover:bg-black/5"}`}
+          >
+            <Icon className="h-4 w-4" aria-hidden />
+            {label}
+          </a>
+        ))}
+      </nav>
+      <button
+        onClick={logout}
+        className="mt-auto flex h-11 items-center gap-3 rounded-full px-4 text-sm font-medium text-muted hover:bg-black/5 hover:text-foreground"
+      >
+        <LogOut className="h-4 w-4" aria-hidden />
+        로그아웃
+      </button>
+    </aside>
+  );
+
   if (!stats) {
     return (
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
-        {loadError ? (
-          <p className="text-status-critical">통계를 불러오지 못했어요. 잠시 후 자동으로 다시 시도합니다.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-28 animate-pulse rounded-2xl bg-card" />
-            ))}
-          </div>
-        )}
+      <main className="mx-auto flex w-full max-w-7xl flex-1 gap-4 px-4 py-6 sm:px-6">
+        {sidebar}
+        <div className="flex-1">
+          {loadError ? (
+            <p className="glass rounded-card p-6 text-status-critical">통계를 불러오지 못했어요. 잠시 후 자동으로 다시 시도합니다.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="glass h-56 animate-pulse rounded-card" />
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     );
   }
@@ -109,154 +151,228 @@ export function AdminDashboard() {
   // 설정이 덜 됐으면 운영자가 먼저 보도록 설정 상태를 맨 위로
   const needsSetup = setup.some((s) => s.tone !== "good");
   const setupSection = (
-    <Section title="설정 상태">
-      <ul className="space-y-2">
-        {setup.map((s) => (
-          <li key={s.label} className="flex flex-wrap items-baseline justify-between gap-2">
-            <span className="text-sm text-muted">{s.label}</span>
-            <StatusBadge tone={s.tone} label={s.text} />
-          </li>
-        ))}
-      </ul>
-    </Section>
+    <div id="setup" className="scroll-mt-6">
+      <Panel title="설정 상태" icon={<Settings2 className="h-4 w-4" />}>
+        <ul className="grid gap-x-8 gap-y-2.5 md:grid-cols-2">
+          {setup.map((s) => (
+            <li key={s.label} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-2.5 last:border-0 md:[&:nth-last-child(2)]:border-0">
+              <span className="text-sm text-muted">{s.label}</span>
+              <StatusBadge tone={s.tone} label={s.text} />
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    </div>
   );
 
+  const printDoneRatio = printQueue && today ? ratio(today.printsCompleted, today.printsCompleted + printQueue.failedToday) : 0;
+
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 space-y-4 px-4 py-6">
-      <header className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold tracking-widest text-accent-2">S.OWL PHOTO BOOTH</p>
-          <h1 className="text-2xl font-black">관리자 대시보드</h1>
-        </div>
-        <div className="flex items-center gap-3 text-xs text-muted">
-          <span>
-            {new Date(stats.generatedAt).toLocaleTimeString("ko-KR")} 기준 · 10초마다 갱신
-            {loadError && <span className="text-status-warning"> · 갱신 실패</span>}
-          </span>
-          <button onClick={logout} className="rounded-lg border border-border px-2 py-1 hover:text-foreground">
-            로그아웃
-          </button>
-        </div>
-      </header>
+    <main className="mx-auto flex w-full max-w-7xl flex-1 gap-4 px-4 py-6 sm:px-6">
+      {sidebar}
 
-      {needsSetup && setupSection}
+      <div className="flex min-w-0 flex-1 flex-col gap-4" id="overview">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted">S.OWL PHOTO BOOTH 관리자</p>
+            <h1 className="text-3xl font-semibold tracking-tight">안녕하세요, 운영자님!</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="glass-solid flex items-center gap-2 rounded-full px-4 py-2 text-sm">
+              <RefreshCw className="h-3.5 w-3.5 text-muted" aria-hidden />
+              <span className="num">{new Date(stats.generatedAt).toLocaleTimeString("ko-KR")}</span>
+              <span className="text-muted">기준 · 10초마다</span>
+              {loadError && <span className="text-status-critical">· 갱신 실패</span>}
+            </span>
+            <IconButton aria-label="로그아웃" onClick={logout} className="lg:hidden">
+              <LogOut className="h-4 w-4" />
+            </IconButton>
+          </div>
+        </header>
 
-      {today ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatTile label="오늘 세션" value={num(today.sessions)} detail={`최근 1시간 ${num(today.sessionsLastHour)}`} />
-          <StatTile
-            label="완성된 네컷"
-            value={num(today.completed)}
-            detail={`AI ${num(today.completedAi)} · 직접 ${num(today.completed - today.completedAi)}`}
-          />
-          <StatTile
-            label="AI 꾸미기 요청"
-            value={num(today.aiRequests)}
-            detail={`성공률 ${pct(today.aiSuccess, today.aiRequests)}`}
-          />
-          <StatTile
-            label="출력 완료"
-            value={num(today.printsCompleted)}
-            detail={printQueue ? `대기 ${num(printQueue.waiting + printQueue.printing)} · 실패 ${num(printQueue.failedToday)}` : undefined}
-          />
-        </div>
-      ) : (
-        <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted">
-          Supabase가 설정되지 않아 통계를 집계할 수 없어요. 아래 설정 상태를 확인해 주세요.
-        </p>
-      )}
+        {needsSetup && setupSection}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Section title="장비 상태">
-          {stats.devices.length === 0 ? (
-            <p className="text-sm text-muted">연결된 프린트 서버가 없어요. 행사장 PC에서 print-server를 실행해 주세요.</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {stats.devices.map((d) => (
-                <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <div>
-                    <p className="font-medium">{d.id}</p>
-                    <p className="text-xs text-muted">
-                      {d.systemPrinter ?? "기본 프린터"} · {d.platform ?? "?"}
-                      {d.dryRun && " · DRY_RUN(실제 출력 안 함)"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <StatusBadge tone={d.online ? "good" : "critical"} label={d.online ? "온라인" : "오프라인"} />
-                    <p className="text-xs text-muted">{ago(d.lastSeenAt, now)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <Section title="출력 큐">
-          {printQueue ? (
-            <>
-              <div className="mb-3 flex flex-wrap gap-4">
-                <StatusBadge tone={printQueue.waiting > 5 ? "warning" : "good"} label={`대기 ${num(printQueue.waiting)}`} />
-                <StatusBadge tone="good" label={`출력 중 ${num(printQueue.printing)}`} />
-                <StatusBadge
-                  tone={printQueue.failedToday ? "critical" : "good"}
-                  label={`오늘 실패 ${num(printQueue.failedToday)}`}
-                />
+        {today ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr]">
+            {/* 오늘 개요 (검은 카드) — @container: 카드 폭에 맞춰 숫자 크기 조절 */}
+            <section className="@container ink flex flex-col rounded-card p-6 md:col-span-2 xl:col-span-1">
+              <header className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">오늘 개요</h2>
+                <Activity className="h-5 w-5 text-ink-muted" aria-hidden />
+              </header>
+              {/* 숫자 위 · 설명 아래 2칸 (좁은 카드에서도 줄바꿈되지 않게) */}
+              <div className="mt-4 grid grid-cols-2">
+                <div className="min-w-0 pr-4">
+                  <p className="num text-[34px] font-light leading-none @sm:text-[44px]">{num(today.sessions)}</p>
+                  <p className="mt-2 text-xs text-ink-muted">세션 · 최근 1시간 {num(today.sessionsLastHour)}</p>
+                </div>
+                <div className="min-w-0 border-l border-white/15 pl-4">
+                  <p className="num text-[34px] font-light leading-none @sm:text-[44px]">{num(today.completed)}</p>
+                  <p className="mt-2 text-xs text-ink-muted">완성된 네컷</p>
+                </div>
               </div>
-              {stats.recentFailures.length > 0 && (
-                <table className="w-full text-left text-sm">
-                  <caption className="mb-1 text-left text-xs text-muted">최근 실패</caption>
-                  <thead className="text-xs text-muted">
-                    <tr>
-                      <th className="py-1 font-normal">시각</th>
-                      <th className="py-1 font-normal">프린터</th>
-                      <th className="py-1 font-normal">원인</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {stats.recentFailures.map((f) => (
-                      <tr key={f.id}>
-                        <td className="py-1.5 pr-2 whitespace-nowrap text-muted">{ago(f.updatedAt, now)}</td>
-                        <td className="py-1.5 pr-2">{f.printer ?? "–"}</td>
-                        <td className="py-1.5 break-all">{f.error ?? "–"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-muted">Supabase 미설정</p>
-          )}
-        </Section>
-
-        <Section title="AI 모델별 사용량 (오늘)">
-          {stats.aiByModel.length === 0 ? (
-            <p className="text-sm text-muted">오늘 AI 꾸미기 요청이 없어요.</p>
-          ) : (
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs text-muted">
-                <tr>
-                  <th className="py-1 font-normal">모델</th>
-                  <th className="py-1 text-right font-normal">요청</th>
-                  <th className="py-1 text-right font-normal">성공률</th>
-                  <th className="py-1 text-right font-normal">평균 응답</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border tabular-nums">
-                {stats.aiByModel.map((m) => (
-                  <tr key={m.model}>
-                    <td className="py-1.5">{m.model}</td>
-                    <td className="py-1.5 text-right">{num(m.requests)}</td>
-                    <td className="py-1.5 text-right">{pct(m.success, m.requests)}</td>
-                    <td className="py-1.5 text-right">
-                      {m.avgLatencyMs == null ? "–" : `${(m.avgLatencyMs / 1000).toFixed(1)}초`}
-                    </td>
-                  </tr>
+              <div className="mt-6 grid grid-cols-3 gap-2">
+                {[
+                  { label: "AI 꾸미기", value: today.completedAi },
+                  { label: "직접 꾸미기", value: today.completed - today.completedAi },
+                  { label: "출력 완료", value: today.printsCompleted },
+                ].map((t, i) => (
+                  <div key={t.label} className={`min-w-0 rounded-tile px-2 py-3 text-center ${i === 0 ? "bg-white text-ink" : "bg-white/10"}`}>
+                    {/* 네 자리 수(행사 당일 수천 건)도 타일 안에 들어가게 카드 폭에 따라 축소 */}
+                    <p className="num text-xl font-medium @[19rem]:text-2xl @sm:text-3xl">{num(t.value)}</p>
+                    <p className={`text-xs ${i === 0 ? "text-muted" : "text-ink-muted"}`}>{t.label}</p>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </Section>
+              </div>
+            </section>
+
+            {/* AI 성공률 */}
+            <Panel title="AI 성공률" icon={<Sparkles className="h-4 w-4" />} aside="오늘">
+              <div className="flex items-center gap-6">
+                <ProgressRing
+                  value={ratio(today.aiSuccess, today.aiRequests)}
+                  size={128}
+                  stroke={10}
+                  label={`AI 성공률 ${pct(today.aiSuccess, today.aiRequests)}`}
+                >
+                  <span className="num text-2xl font-semibold">{pct(today.aiSuccess, today.aiRequests)}</span>
+                </ProgressRing>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-ink" aria-hidden />
+                    요청 <span className="num font-semibold">{num(today.aiRequests)}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-ink/60" aria-hidden />
+                    성공 <span className="num font-semibold">{num(today.aiSuccess)}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-ink/25" aria-hidden />
+                    실패 <span className="num font-semibold">{num(today.aiRequests - today.aiSuccess)}</span>
+                  </li>
+                </ul>
+              </div>
+            </Panel>
+
+            {/* 출력 완료율 */}
+            <div id="queue" className="scroll-mt-6">
+              <Panel title="출력" icon={<ListOrdered className="h-4 w-4" />} aside="오늘" className="h-full">
+                <div className="flex items-center gap-6">
+                  <ProgressRing value={printDoneRatio} size={128} stroke={10} label={`출력 성공률 ${Math.round(printDoneRatio * 100)}%`}>
+                    <span className="text-center">
+                      <span className="num block text-2xl font-semibold">{num(today.printsCompleted)}</span>
+                      <span className="block text-[11px] text-muted">완료</span>
+                    </span>
+                  </ProgressRing>
+                  {printQueue && (
+                    <ul className="space-y-2.5">
+                      <li>
+                        <StatusBadge tone={printQueue.waiting > 5 ? "warning" : "good"} label={`대기 ${num(printQueue.waiting)}`} />
+                      </li>
+                      <li>
+                        <StatusBadge tone="good" label={`출력 중 ${num(printQueue.printing)}`} />
+                      </li>
+                      <li>
+                        <StatusBadge
+                          tone={printQueue.failedToday ? "critical" : "good"}
+                          label={`실패 ${num(printQueue.failedToday)}`}
+                        />
+                      </li>
+                    </ul>
+                  )}
+                </div>
+              </Panel>
+            </div>
+          </div>
+        ) : (
+          <Panel>
+            <p className="text-sm text-muted">Supabase가 설정되지 않아 통계를 집계할 수 없어요. 위의 설정 상태를 확인해 주세요.</p>
+          </Panel>
+        )}
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <div id="devices" className="scroll-mt-6">
+            <Panel title="장비 상태" icon={<MonitorSmartphone className="h-4 w-4" />} className="h-full">
+              {stats.devices.length === 0 ? (
+                <p className="text-sm text-muted">연결된 프린트 서버가 없어요. 행사장 PC에서 print-server를 실행해 주세요.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {stats.devices.map((d) => (
+                    <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 rounded-tile bg-white/55 px-4 py-3">
+                      <div>
+                        <p className="font-semibold">{d.id}</p>
+                        <p className="text-xs text-muted">
+                          {d.systemPrinter ?? "기본 프린터"} · {d.platform ?? "?"}
+                          {d.dryRun && " · DRY_RUN(실제 출력 안 함)"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <StatusBadge tone={d.online ? "good" : "critical"} label={d.online ? "온라인" : "오프라인"} />
+                        <p className="text-xs text-muted">{ago(d.lastSeenAt, now)}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          </div>
+
+          <Panel title="최근 출력 실패" icon={<ListOrdered className="h-4 w-4" />} className="h-full">
+            {stats.recentFailures.length === 0 ? (
+              <p className="text-sm text-muted">최근 실패한 출력이 없어요.</p>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs text-muted">
+                  <tr>
+                    <th className="pb-2 font-normal">시각</th>
+                    <th className="pb-2 font-normal">프린터</th>
+                    <th className="pb-2 font-normal">원인</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {stats.recentFailures.map((f) => (
+                    <tr key={f.id}>
+                      <td className="whitespace-nowrap py-2 pr-2 text-muted">{ago(f.updatedAt, now)}</td>
+                      <td className="py-2 pr-2">{f.printer ?? "–"}</td>
+                      <td className="break-all py-2">{f.error ?? "–"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Panel>
+        </div>
+
+        <div id="ai" className="scroll-mt-6">
+          <Panel title="AI 모델별 사용량" icon={<Sparkles className="h-4 w-4" />} aside="오늘">
+            {stats.aiByModel.length === 0 ? (
+              <p className="text-sm text-muted">오늘 AI 꾸미기 요청이 없어요.</p>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs text-muted">
+                  <tr>
+                    <th className="pb-2 font-normal">모델</th>
+                    <th className="pb-2 text-right font-normal">요청</th>
+                    <th className="pb-2 text-right font-normal">성공률</th>
+                    <th className="pb-2 text-right font-normal">평균 응답</th>
+                  </tr>
+                </thead>
+                <tbody className="num divide-y divide-line">
+                  {stats.aiByModel.map((m) => (
+                    <tr key={m.model}>
+                      <td className="py-2.5 font-sans">{m.model}</td>
+                      <td className="py-2.5 text-right">{num(m.requests)}</td>
+                      <td className="py-2.5 text-right">{pct(m.success, m.requests)}</td>
+                      <td className="py-2.5 text-right">
+                        {m.avgLatencyMs == null ? "–" : `${(m.avgLatencyMs / 1000).toFixed(1)}s`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Panel>
+        </div>
 
         {!needsSetup && setupSection}
       </div>

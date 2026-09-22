@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { generateQrDataUrl } from "@/lib/qr/generateQr";
 
-export function QRCodeView({ url }: { url: string }) {
+export function QRCodeView({ url, size = 192 }: { url: string; size?: number }) {
   const [qr, setQr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -15,15 +15,9 @@ export function QRCodeView({ url }: { url: string }) {
     };
   }, [url]);
 
-  if (!qr) return <div className="h-48 w-48 animate-pulse rounded-xl bg-card" />;
+  if (!qr) return <div className="animate-pulse rounded-xl bg-black/10" style={{ width: size, height: size }} />;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={qr}
-      alt="다운로드 QR 코드"
-      width={192}
-      height={192}
-      className="rounded-xl bg-white p-2"
-    />
+    <img src={qr} alt="다운로드 QR 코드" width={size} height={size} className="rounded-xl bg-white" />
   );
 }
