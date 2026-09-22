@@ -113,27 +113,37 @@ export function StickerLayer({
   };
 
   const pct = (v: number, total: number) => `${(v / total) * 100}%`;
+  const short = Math.min(tw, th);
+  // 앞뒤 순서는 z-index 로만 바꾸고 DOM 순서는 uid 로 고정한다.
+  // 누른 스티커를 맨 앞으로 보낼 때 요소 자체가 옮겨지면 브라우저가 포인터 캡처를 풀어 끌기가 끊긴다.
+  const zOf = new Map(stickers.map((s, i) => [s.uid, i + 1]));
+  const stable = [...stickers].sort((a, b) => (a.uid < b.uid ? -1 : a.uid > b.uid ? 1 : 0));
 
   return (
-    // overflow-clip: hidden 과 달리 스크롤 상자가 아니라서, 큰 스티커에 포커스가 가도 층이 밀려 사진과 어긋나지 않음
     <div
       ref={rootRef}
-      className="absolute inset-0 overflow-clip"
+      className="absolute inset-0"
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) onSelect(null); // 빈 곳을 누르면 선택 해제
       }}
     >
-      {tiles.map((t, ti) =>
-        stickers.map((s) => {
+      {tiles.map((t, ti) => (
+        // 타일(스트립 한 장)마다 잘라서 보여 준다 — 합성도 타일 단위로 그려 이음매에서 잘리므로 미리보기와 같게.
+        // overflow-clip: hidden 과 달리 스크롤 상자가 아니라서, 큰 스티커에 포커스가 가도 층이 밀리지 않음
+        <div
+          key={ti}
+          className="pointer-events-none absolute overflow-clip"
+          style={{ left: pct(t.x, out.width), top: pct(t.y, out.height), width: pct(tw, out.width), height: pct(th, out.height) }}
+        >
+        {stable.map((s) => {
           const img = getStickerImage(s.id);
           if (!img) return null;
-          const short = Math.min(tw, th);
           const primary = ti === 0;
           const active = primary && selected === s.uid;
           const label = getSticker(s.id)?.label ?? "스티커";
           return (
             <div
-              key={`${ti}-${s.uid}`}
+              key={s.uid}
               role={primary ? "button" : undefined}
               tabIndex={primary ? 0 : -1}
               aria-label={primary ? `${label} 스티커 — 끌어서 옮기기, 화살표로 이동, Delete로 삭제` : undefined}
@@ -142,12 +152,14 @@ export function StickerLayer({
               onPointerMove={primary ? onMove : undefined}
               onPointerUp={primary ? endDrag : undefined}
               onPointerCancel={primary ? endDrag : undefined}
+              onLostPointerCapture={primary ? endDrag : undefined}
               onKeyDown={primary ? (e) => onKey(e, s) : undefined}
-              className={`absolute select-none outline-none ${primary ? "cursor-grab touch-none active:cursor-grabbing" : "pointer-events-none"}`}
+              className={`absolute select-none outline-none ${primary ? "pointer-events-auto cursor-grab touch-none active:cursor-grabbing" : ""}`}
               style={{
-                left: pct(t.x + s.x * tw, out.width),
-                top: pct(t.y + s.y * th, out.height),
-                width: pct(s.size * short, out.width),
+                left: `${s.x * 100}%`,
+                top: `${s.y * 100}%`,
+                width: pct(s.size * short, tw),
+                zIndex: zOf.get(s.uid),
                 transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`,
               }}
             >
@@ -172,6 +184,7 @@ export function StickerLayer({
                     onPointerMove={onMove}
                     onPointerUp={endDrag}
                     onPointerCancel={endDrag}
+                    onLostPointerCapture={endDrag}
                     className="absolute -bottom-5 -right-5 grid h-10 w-10 cursor-nwse-resize touch-none place-items-center rounded-full bg-white text-ink shadow-lg ring-1 ring-black/10"
                   >
                     <RotateCw className="h-4 w-4" aria-hidden />
@@ -180,8 +193,9 @@ export function StickerLayer({
               )}
             </div>
           );
-        }),
-      )}
+        })}
+        </div>
+      ))}
     </div>
   );
 }

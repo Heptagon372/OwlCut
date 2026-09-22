@@ -27,14 +27,13 @@ const topCategories = FILTER_CATEGORIES.map((c) => ({
 
 export default function Home() {
   const router = useRouter();
-  const { reset, setSessionId } = useBoothStore();
+  const { reset, setSession } = useBoothStore();
   const [loading, setLoading] = useState(false);
 
   const start = async () => {
     setLoading(true);
     reset();
-    const id = await createSession();
-    setSessionId(id);
+    setSession(await createSession());
     router.push("/camera");
   };
 

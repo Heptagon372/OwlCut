@@ -139,6 +139,9 @@ npm run build      # 프로덕션 빌드
 - 버킷 `photos`는 **비공개**. DB에는 경로만(`designs.final_image_path`, `prints.image_path`, `photos.image_path`) 저장하고, 보여줄 때마다 서버가 **서명 URL** 발급(`lib/storage/photos.ts`). 공개 URL(`getPublicUrl`) 사용 금지.
   - 다운로드 페이지: 열 때마다 최대 1시간(남은 보관시간이 더 짧으면 그만큼) 서명 URL. 프린트 서버: claim 시 10분짜리.
 - 세션 id는 저장소 경로에 들어가므로 **UUID만 허용**(`lib/ids.ts`) — 경로 조작 방지.
+- **세션 쓰기 권한 = 업로드 토큰**(`lib/storage/sessionAuth.ts`): 세션 id 는 QR·다운로드 주소에 보이므로 id 만으로는 쓸 수 없다. `/api/session`이 부스에만 토큰을 주고 DB 에는 SHA-256 해시(`sessions.upload_token_hash`)만. `/api/final`·`/api/photo`·`/api/design`·출력 요청(`POST /api/print`)은 토큰 필수(틀리면 403), 만료 세션은 410(되살리지 않음), 다시 올려도 보관기간 연장 없음. 오프라인에서 만든 세션은 부스가 id·토큰을 직접 만들고 첫 업로드 때 등록. 토큰은 스토어(`sessionToken`)에만, 주소·QR 에 넣지 말 것.
+  - 컬럼이 없으면(schema.sql 재실행 전) 업로드를 막지 않고 경고 로그만 — 행사 중 중단 방지.
+- 업로드 이미지는 dataURL 의 형식 이름을 믿지 않고 **파일 시그니처로 PNG/JPEG 만**, 12MB 제한(`decodeImage`). 업로드 API 는 IP당 분당 제한, 오류 응답에 내부 메시지를 싣지 않음.
 - 보관기간 `PHOTO_RETENTION_HOURS`(기본 2시간, 설계도). 만료 후 다운로드 페이지는 "보관 기간이 지났어요".
 - 삭제: `GET /api/cron/cleanup` (Bearer `CRON_SECRET`, `lib/storage/cleanup.ts`) — 파일 먼저 지우고, 성공하면 행은 **지우지 않고** 방문자 입력(AI 프롬프트·문구)만 비운 뒤 `sessions.status='expired'`, 대기 중 출력은 `failed(expired)`. 실패 시 만료 표시를 안 해서 다음 실행에 재시도.
   - 행을 남기는 이유: 지우면 관리자 "오늘" 통계(세션·완성·출력)가 보관기간(2시간)치만 남는다. 남는 건 선택값·개수·지워진 파일 경로뿐. 오래된 행 정리 SQL은 `schema.sql` 맨 아래.
@@ -154,7 +157,9 @@ Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT
 
 ## 검증 방법
 - `npm test` (Vitest, `tests/*.test.ts`). CI 순서: lint → typecheck → test → build (Node 22 — Vitest 5 요구).
-- 테스트 대상: AI 응답 보정, 얼굴 프레이밍·크롭, 랜드마크 기준점·떨림 보정, AR 배치 기하·셰이더 uniform·효과/SVG 유효성, 스티커 목록·그림·끌기/손잡이 계산, 프레임 데이터·장식, 레이아웃 데이터·기하, 톤 커브·CSS 폴백, 필터 프리셋 유효성, 관리자 인증·통계, 대비 색, **프린트 서버 전체 루프**(가짜 API + 실제 `print-server/index.mjs` 실행).
+- 브라우저 QA(헤드리스 Chrome + CDP, 가짜 웹캠): 전체 흐름·다시 찍기·뒤로 가기·다음 방문자 초기화·6컷·자리 비움·직접 접속, 터치 끌기, 긴 작업(50ms+) 측정. 썸네일 수십 장 만들기처럼 긴 반복은 `forEachChunked`(`lib/yieldToMain.ts`)로 나눠 실시간 미리보기가 멈칫하지 않게.
+- 편집 미리보기(`PhotoCanvas`)는 화면 밖 캔버스에 그리고 가장 최근 합성만 옮긴다 (빠른 연속 변경 시 옛 합성이 덧그려지는 잔상 방지). 스티커 층은 DOM 순서를 uid 로 고정하고 앞뒤는 z-index 로만 (요소가 옮겨지면 포인터 캡처가 풀림).
+- 테스트 대상: AI 응답 보정, 세션 업로드 토큰·이미지 검사, 얼굴 프레이밍·크롭, 랜드마크 기준점·떨림 보정, AR 배치 기하·셰이더 uniform·효과/SVG 유효성, 스티커 목록·그림·끌기/손잡이 계산, 프레임 데이터·장식, 레이아웃 데이터·기하, 톤 커브·CSS 폴백, 필터 프리셋 유효성, 관리자 인증·통계, 대비 색, **프린트 서버 전체 루프**(가짜 API + 실제 `print-server/index.mjs` 실행).
 - 브라우저 전용 렌더링(WebGL 셰이더·canvas 합성)은 Node 테스트 불가 → 개발 모드 `window.__owlcutFilters`, AR은 `/dev/ar`로 수동 점검.
 - 로컬 `.next`가 남아 있으면 CI에서만 나는 타입 오류를 놓칠 수 있음 → 의심되면 깨끗한 clone에서 `npm ci && npm run typecheck`.
 

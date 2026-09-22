@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FILTERS, FILTER_CATEGORIES } from "@/lib/data/registry";
 import { filteredSnapshot, loadImage } from "@/lib/filters/offline";
+import { forEachChunked } from "@/lib/yieldToMain";
 import type { FilterCategory } from "@/types/filter";
 
 type ThumbSource = HTMLCanvasElement | string | null;
@@ -33,8 +34,11 @@ export function FilterPicker({
       const img = typeof source === "string" ? await loadImage(source).catch(() => null) : source;
       if (!img || !active) return;
       const next: Record<string, string> = {};
-      for (const f of FILTERS) next[f.id] = filteredSnapshot(img, f.params, { width: THUMB, height: THUMB, mirror });
-      if (active) setThumbs(next);
+      // 43장을 한 번에 만들면 실시간 미리보기가 멈칫하므로 나눠서
+      const done = await forEachChunked(FILTERS, (f) => {
+        next[f.id] = filteredSnapshot(img, f.params, { width: THUMB, height: THUMB, mirror });
+      }, () => active);
+      if (done) setThumbs(next);
     })();
     return () => {
       active = false;

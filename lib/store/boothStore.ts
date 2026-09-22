@@ -29,12 +29,13 @@ const initialDesign: DesignState = {
 
 interface BoothState {
   sessionId: string | null;
+  sessionToken: string | null; // 이 세션에 쓸 수 있는 업로드 토큰 (부스만 앎, 주소·QR 에 절대 넣지 않음)
   photos: CapturedPhoto[];
   design: DesignState;
   finalDataUrl: string | null;
   downloadUrl: string | null;
   aiModelId: string | null; // 모델 선택 창의 선택값 (null = 서버 기본 모델)
-  setSessionId: (id: string | null) => void;
+  setSession: (session: { id: string; token: string } | null) => void;
   setPhotos: (photos: CapturedPhoto[]) => void;
   resetPhotos: () => void;
   setDesign: (patch: Partial<DesignState>) => void;
@@ -45,12 +46,13 @@ interface BoothState {
 
 export const useBoothStore = create<BoothState>((set) => ({
   sessionId: null,
+  sessionToken: null,
   photos: [],
   design: initialDesign,
   finalDataUrl: null,
   downloadUrl: null,
   aiModelId: null,
-  setSessionId: (sessionId) => set({ sessionId }),
+  setSession: (s) => set({ sessionId: s?.id ?? null, sessionToken: s?.token ?? null }),
   setPhotos: (photos) => set({ photos }),
   resetPhotos: () => set({ photos: [] }),
   setDesign: (patch) => set((s) => ({ design: { ...s.design, ...patch } })),
@@ -59,6 +61,7 @@ export const useBoothStore = create<BoothState>((set) => ({
   reset: () =>
     set({
       sessionId: null,
+      sessionToken: null,
       photos: [],
       design: initialDesign,
       finalDataUrl: null,

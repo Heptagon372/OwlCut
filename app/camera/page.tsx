@@ -33,7 +33,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export default function CameraPage() {
   const router = useRouter();
   const { videoRef, videoElRef, ready, error, start, capture, mirror } = useCamera({ mirror: true });
-  const { sessionId, setSessionId, setPhotos, design, setDesign } = useBoothStore();
+  const { sessionId, setSession, setPhotos, design, setDesign } = useBoothStore();
 
   const [phase, setPhase] = useState<"idle" | "running" | "review">("idle");
   const [count, setCount] = useState<number | null>(null);
@@ -65,7 +65,7 @@ export default function CameraPage() {
 
   useEffect(() => {
     void start();
-    if (!sessionId) void createSession().then(setSessionId);
+    if (!sessionId) void createSession().then(setSession);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

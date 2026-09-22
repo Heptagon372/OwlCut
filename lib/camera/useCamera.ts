@@ -45,6 +45,8 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
   const mirror = options.mirror ?? true;
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const alive = useRef(true);
+  const request = useRef(0); // 가장 최근 start 호출 번호
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +68,7 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
   }, []);
 
   const start = useCallback(async () => {
+    const my = ++request.current;
     setError(null);
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setError("이 브라우저는 카메라를 지원하지 않습니다. (HTTPS 또는 localhost 필요)");
@@ -78,10 +81,16 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
+      // 카메라가 켜지는 사이 화면을 떠났거나(카메라 불이 계속 켜져 있게 됨) 더 최근 start 가 있으면 버린다
+      if (!alive.current || my !== request.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       streamRef.current = stream;
       if (videoElRef.current) attach(videoElRef.current, stream);
       setReady(true);
     } catch (err) {
+      if (!alive.current || my !== request.current) return;
       setError(toFriendlyError(err));
       setReady(false);
     }
@@ -111,7 +120,13 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
     return canvas.toDataURL("image/jpeg", 0.92);
   }, [mirror]);
 
-  useEffect(() => stop, [stop]);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      stop();
+    };
+  }, [stop]);
 
   return { videoRef, videoElRef, ready, error, start, stop, capture, mirror };
 }

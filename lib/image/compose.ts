@@ -1,7 +1,7 @@
 // ============================================================
 // 이미지 합성 엔진 (설계도 7-3) — 프로젝트의 핵심 모듈.
 // 레이어 순서: 배경(단색·그라데이션·패턴) → 프레임 장식(아래) → 사진(+필터, AR 얼굴 효과) → 테두리
-//            → 프레임 장식(위: 테이프·리본) → 스티커 → 문구 → 하단 브랜딩
+//            → 프레임 장식(위: 테이프·리본) → 문구 → 하단 브랜딩 → 스티커 (편집 화면의 스티커 층과 같은 순서)
 // 수동 편집과 AI 편집이 이 동일한 엔진을 공유한다.
 // * 브라우저 전용 (canvas/Image 사용). 서버에서 import 후 호출하지 말 것.
 // ============================================================
@@ -162,9 +162,8 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement, scale 
     }
   }
 
-  // 3) 사진 위 장식 → 스티커 → 문구
+  // 3) 사진 위 장식 → 문구
   drawDecorations(ctx, frame, layout, width, height, true, slots);
-  drawStickers(ctx, stickers, width, height);
   drawTextLayers(ctx, textLayers, width, height);
 
   // 4) 하단 브랜딩
@@ -179,6 +178,9 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement, scale 
     ctx.fillText(frame.footer.text, width / 2, height - Math.round(height * 0.015));
     ctx.restore();
   }
+
+  // 5) 스티커는 맨 위 — 편집 화면에서도 스티커 층이 문구·브랜딩 위에 있으므로 인화도 같게
+  drawStickers(ctx, stickers, width, height);
 }
 
 // 실제 렌더링 (미리보기 + 최종 export 공유). tile 레이아웃이면 스트립을 반복해 붙인다.

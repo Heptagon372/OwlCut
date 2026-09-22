@@ -8,6 +8,7 @@ import { effectSnapshot, mirroredCopy } from "@/lib/ar/draw";
 import { CANONICAL_FACE, canonicalFaceCanvas } from "@/lib/ar/canonical";
 import { mirrorFace } from "@/lib/tracking/landmarks";
 import { loadImage, type Drawable } from "@/lib/filters/offline";
+import { forEachChunked } from "@/lib/yieldToMain";
 import type { EffectCategory, FaceGeometry } from "@/types/ar";
 
 const THUMB = 112;
@@ -51,8 +52,11 @@ export function EffectPicker({
       const next: Record<string, string> = {
         [NO_EFFECT]: effectSnapshot(base, { width: THUMB, height: THUMB, effect: null, faces: null }),
       };
-      for (const e of EFFECTS) next[e.id] = effectSnapshot(base, { width: THUMB, height: THUMB, effect: e, faces: list });
-      if (active) setThumbs(next);
+      // 56장을 한 번에 만들면 실시간 미리보기가 멈칫하므로 나눠서
+      const done = await forEachChunked(EFFECTS, (e) => {
+        next[e.id] = effectSnapshot(base, { width: THUMB, height: THUMB, effect: e, faces: list });
+      }, () => active);
+      if (done) setThumbs(next);
     })();
     return () => {
       active = false;

@@ -1,41 +1,63 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, isSupabaseConfigured, STORAGE_BUCKET } from "@/lib/supabase/client";
-import { dataUrlToBuffer } from "@/lib/image/dataurl";
+import { decodeImage } from "@/lib/image/dataurl";
 import { layoutOptions } from "@/lib/image/layoutOptions";
 import { expiresAt, finalPath } from "@/lib/storage/photos";
 import { saveFinalDesign } from "@/lib/storage/finalDesign";
+import { authorizeSessionWrite, hashToken, insertSession } from "@/lib/storage/sessionAuth";
+import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 import { isUuid } from "@/lib/ids";
 
 export const runtime = "nodejs";
 
+const RATE_PER_MINUTE = 30; // 부스 한 대는 분당 몇 번이면 충분 (재시도 포함)
+
 // POST /api/final — 최종 합성 이미지 업로드 + designs 저장 + 다운로드 페이지 주소 발급 (설계도 6)
 // 이미지는 비공개 버킷에 저장하고 DB에는 경로만 남긴다 (보여줄 때 서명 URL 발급).
 // 같은 세션으로 여러 번 불려도 결과가 같다 (파일 덮어쓰기 + 세션당 designs 1행) → 클라이언트 재시도 안전.
+// 쓰기는 세션을 만든 부스의 업로드 토큰이 있어야 함 (QR 로 id 를 본 사람이 사진을 바꿔치기하지 못하게).
 export async function POST(req: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ error: "SUPABASE_NOT_CONFIGURED" }, { status: 503 });
   }
+  if (!checkRateLimit(`final:${clientKey(req)}`, RATE_PER_MINUTE)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+  let body: { session_id?: unknown; image?: unknown; design?: Record<string, unknown>; token?: unknown };
   try {
-    const { session_id, image, design } = await req.json();
-    if (!isUuid(session_id) || typeof image !== "string") {
-      return NextResponse.json({ error: "session_id(UUID), image 필수" }, { status: 400 });
-    }
-    const { buffer, contentType } = dataUrlToBuffer(image);
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+  const { session_id, design, token } = body;
+  if (!isUuid(session_id)) return NextResponse.json({ error: "bad_session" }, { status: 400 });
+  const image = decodeImage(body.image); // PNG/JPEG 시그니처 확인 + 크기 제한
+  if (!image) return NextResponse.json({ error: "bad_image" }, { status: 400 });
+
+  try {
     const supabase = getSupabaseAdmin();
+    const access = await authorizeSessionWrite(supabase, session_id, token);
+    if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.httpStatus });
 
     const path = finalPath(session_id);
-    const up = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(path, buffer, { contentType: contentType || "image/png", upsert: true });
+    const up = await supabase.storage.from(STORAGE_BUCKET).upload(path, image.buffer, { contentType: image.contentType, upsert: true });
     if (up.error) throw up.error;
 
-    // 오프라인 생성 세션도 FK 만족하도록 upsert. 보관기간은 사진이 완성된 시점부터.
+    // 보관기간은 처음 완성된 시점부터 — 다시 올려도(재시도·편집 후 재완성) 늘어나지 않음.
     // DB 저장이 실패하면 500 → 클라이언트가 재시도 (실패를 삼키면 QR은 뜨는데 다운로드 페이지엔 사진이 없다)
-    const expires = expiresAt();
-    const ses = await supabase
-      .from("sessions")
-      .upsert({ id: session_id, status: "composed", expires_at: expires }, { onConflict: "id" });
-    if (ses.error) throw ses.error;
+    let expires: string;
+    if (!access.exists) {
+      // 오프라인에서 만든 세션 (세션 생성 요청이 실패했던 경우)
+      expires = expiresAt();
+      await insertSession(supabase, { id: session_id, status: "composed", expires_at: expires }, token);
+    } else {
+      const first = access.status !== "composed";
+      expires = first || !access.expiresAt ? expiresAt() : access.expiresAt;
+      const patch: Record<string, unknown> = { status: "composed", expires_at: expires };
+      if (access.claim) patch.upload_token_hash = hashToken(token as string);
+      const upd = await supabase.from("sessions").update(patch).eq("id", session_id);
+      if (upd.error) throw upd.error;
+    }
     await saveFinalDesign(supabase, session_id, {
       mode: design?.mode ?? "manual",
       prompt: design?.prompt ?? null,
@@ -55,7 +77,7 @@ export async function POST(req: Request) {
       expires_at: expires,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "최종 이미지 업로드 실패";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[final] 업로드 실패", e);
+    return NextResponse.json({ error: "upload_failed" }, { status: 500 });
   }
 }

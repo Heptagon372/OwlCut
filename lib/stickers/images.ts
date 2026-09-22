@@ -3,9 +3,11 @@
 import { getSticker } from "@/lib/data/registry";
 import { getArt, loadArt, svgDataUrl } from "@/lib/art/svg";
 import { STICKER_ART } from "./art";
-import { renderEmojiSticker, renderWordSticker } from "./word";
+import { renderEmojiSticker, renderWordSticker, stampDate } from "./word";
 
-const key = (id: string) => `st:${id}`;
+// 날짜 도장처럼 오늘 날짜가 들어가는 글자 스티커는 날짜별로 캐시한다
+// (id 로만 캐시하면 키오스크를 며칠 켜 둘 때 첫날 날짜가 계속 찍힘)
+const key = (id: string) => (getSticker(id)?.word?.text.includes("{date}") ? `st:${id}:${stampDate()}` : `st:${id}`);
 const pending = new Map<string, Promise<HTMLImageElement | null>>();
 
 async function sourceFor(id: string): Promise<string | null> {
@@ -24,13 +26,17 @@ export function getStickerImage(id: string): HTMLImageElement | null {
 }
 
 export function loadSticker(id: string): Promise<HTMLImageElement | null> {
-  const hit = getArt(key(id));
+  const k = key(id);
+  const hit = getArt(k);
   if (hit) return Promise.resolve(hit);
-  let p = pending.get(id);
+  let p = pending.get(k);
   if (!p) {
-    p = sourceFor(id).then((src) => loadArt(key(id), src));
-    pending.set(id, p);
-    void p.finally(() => pending.delete(id));
+    // 그림을 못 만들면(오프라인에서 낙서 묶음 로드 실패 등) 그 스티커만 건너뛴다 — 합성 전체가 실패하면 안 됨
+    p = sourceFor(id)
+      .catch(() => null)
+      .then((src) => loadArt(k, src));
+    pending.set(k, p);
+    void p.finally(() => pending.delete(k));
   }
   return p;
 }

@@ -24,13 +24,28 @@ export function PhotoCanvas({ photos, design, className, overlay }: Props) {
     [design, excludeStickers],
   );
 
+  // 슬라이더를 끌거나 글자를 빠르게 치면 합성이 여러 번 겹쳐 돈다. 보이는 캔버스에 바로 그리면
+  // 먼저 시작한 합성이 나중에 끝나며 새 그림 위에 덧그려진다(옛 사진 가장자리·글자 겹침).
+  // → 화면 밖 캔버스에 그리고, 가장 최근에 시작한 합성만 화면에 옮긴다.
+  const generation = useRef(0);
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
+    const gen = ++generation.current;
     const d = JSON.parse(key) as DesignState;
-    void renderToCanvas(buildComposeInput(photos, d), canvas).catch(() => {
-      /* 미리보기 실패는 무시 (다음 렌더에서 복구) */
-    });
+    const off = document.createElement("canvas");
+    renderToCanvas(buildComposeInput(photos, d), off)
+      .then(() => {
+        if (gen !== generation.current) return;
+        if (canvas.width !== off.width) canvas.width = off.width;
+        if (canvas.height !== off.height) canvas.height = off.height;
+        const ctx = canvas.getContext("2d");
+        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+        ctx?.drawImage(off, 0, 0);
+      })
+      .catch(() => {
+        /* 미리보기 실패는 무시 (다음 렌더에서 복구) */
+      });
   }, [photos, key]);
 
   // 높이 제한은 className(max-h-*)으로. 인라인 maxHeight:100%는 부모 높이가 auto라 무효가 되어

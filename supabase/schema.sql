@@ -84,6 +84,11 @@ create index if not exists idx_ai_requests_created on ai_requests(created_at);
 create index if not exists idx_designs_created on designs(created_at);
 create index if not exists idx_sessions_created on sessions(created_at);
 
+-- ---------- 세션 쓰기 권한 ----------
+-- QR·다운로드 주소에 세션 id 가 보이므로, 사진 업로드·출력은 세션을 만든 부스만 아는 토큰으로 확인한다.
+-- 토큰 원문은 저장하지 않고 SHA-256 해시만 (lib/storage/sessionAuth.ts).
+alter table sessions add column if not exists upload_token_hash text;
+
 -- ---------- 사진 경로 (비공개 버킷 + 서명 URL) ----------
 -- DB에는 공개 URL 대신 저장소 경로만 둔다. 보여줄 때마다 서버가 만료되는 서명 URL을 발급.
 alter table designs add column if not exists final_image_path text;

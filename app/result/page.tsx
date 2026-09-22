@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { composeToDataUrl } from "@/lib/image/compose";
 import { buildComposeInput } from "@/lib/image/buildComposeInput";
-import { UPLOAD_ATTEMPTS, uploadFinal } from "@/lib/api";
+import { UPLOAD_ATTEMPTS, localSession, uploadFinal, type BoothSession } from "@/lib/api";
 import { QRCodeView } from "@/components/result/QRCodeView";
 import { PrintButton } from "@/components/result/PrintButton";
 import { Button } from "@/components/ui/Button";
@@ -20,29 +20,29 @@ const AUTO_RETRY_MS = 20_000;
 
 export default function ResultPage() {
   const router = useRouter();
-  const { photos, design, sessionId, setSessionId, finalDataUrl, setFinal, reset } = useBoothStore();
+  const { photos, design, sessionId, sessionToken, setSession, finalDataUrl, setFinal, reset } = useBoothStore();
   const [status, setStatus] = useState<Status>("composing");
   const [attempt, setAttempt] = useState(1);
   const [localReason, setLocalReason] = useState<"not_configured" | "rejected">("not_configured");
   const [remote, setRemote] = useState<string | null>(null);
-  const [uploadedSessionId, setUploadedSessionId] = useState<string | null>(null);
-  const sidRef = useRef<string | null>(null);
+  const [uploadedSession, setUploadedSession] = useState<BoothSession | null>(null);
+  const sessionRef = useRef<BoothSession | null>(null);
   const uploadingRef = useRef(false);
   const mountedRef = useRef(false);
 
   const upload = useCallback(
     async (dataUrl: string) => {
-      const sid = sidRef.current;
-      if (!sid || uploadingRef.current) return;
+      const session = sessionRef.current;
+      if (!session || uploadingRef.current) return;
       uploadingRef.current = true;
       setStatus("uploading");
-      const res = await uploadFinal(sid, dataUrl, design, setAttempt);
+      const res = await uploadFinal(session, dataUrl, design, setAttempt);
       uploadingRef.current = false;
       if (!mountedRef.current) return;
       if (res.ok) {
         setFinal(dataUrl, res.downloadUrl);
         setRemote(res.downloadUrl);
-        setUploadedSessionId(sid);
+        setUploadedSession(session);
         setStatus("done");
       } else if (res.reason === "failed") {
         setStatus("offline");
@@ -64,9 +64,10 @@ export default function ResultPage() {
         const dataUrl = await composeToDataUrl(buildComposeInput(photos, design));
         if (!active) return;
         setFinal(dataUrl, null); // 올리는 동안에도 완성본을 보여 주고 바로 저장할 수 있게
-        const sid = sessionId ?? crypto.randomUUID();
-        if (!sessionId) setSessionId(sid);
-        sidRef.current = sid;
+        // 세션이 없으면(홈을 거치지 않음) 부스가 직접 id·토큰을 만든다
+        const session = sessionId && sessionToken ? { id: sessionId, token: sessionToken } : localSession();
+        if (session.id !== sessionId) setSession(session);
+        sessionRef.current = session;
         await upload(dataUrl);
       } catch {
         if (active) setStatus("error");
@@ -226,7 +227,7 @@ export default function ResultPage() {
               이미지 저장
             </Button>
             {/* 출력은 사진이 서버에 올라가야 가능 — 안 되는 상황이면 버튼을 아예 숨긴다 */}
-            {uploadedSessionId && <PrintButton sessionId={uploadedSessionId} />}
+            {uploadedSession && <PrintButton session={uploadedSession} />}
           </div>
         </div>
       </section>

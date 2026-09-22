@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleAlert, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { fetchPrintStatus, requestPrint } from "@/lib/api";
+import { fetchPrintStatus, requestPrint, type BoothSession } from "@/lib/api";
 import type { PrintStatus } from "@/types/print";
 
 const POLL_MS = 2000;
@@ -23,8 +23,9 @@ type State =
   | { kind: "tracking"; status: PrintStatus }
   | { kind: "error"; message: string };
 
-// sessionId = 서버에 올라간 세션 (결과 화면은 업로드가 끝난 뒤에만 이 버튼을 보여 준다)
-export function PrintButton({ sessionId }: { sessionId: string }) {
+// session = 서버에 올라간 세션 + 업로드 토큰 (결과 화면은 업로드가 끝난 뒤에만 이 버튼을 보여 준다)
+export function PrintButton({ session }: { session: BoothSession }) {
+  const sessionId = session.id;
   const [state, setState] = useState<State>({ kind: "idle" });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -48,7 +49,7 @@ export function PrintButton({ sessionId }: { sessionId: string }) {
 
   const start = async () => {
     setState({ kind: "requesting" });
-    const res = await requestPrint(sessionId);
+    const res = await requestPrint(session);
     if (!res.ok) {
       setState({ kind: "error", message: res.message });
       return;
