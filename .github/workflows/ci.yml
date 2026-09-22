@@ -17,5 +17,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npx tsc --noEmit
+      # LayoutProps/PageProps 등 Next가 생성하는 타입이 필요하므로 typegen 후 tsc
+      - run: npm run typecheck
       - run: npm run build
