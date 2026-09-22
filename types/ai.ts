@@ -11,8 +11,8 @@ export interface ModelInfo {
   default?: boolean;
 }
 
-// AI가 채워주는 디자인 필드 (레이아웃은 사용자 선택 유지)
-export type AIDesignResult = Pick<DesignState, "frameId" | "stickers" | "textLayers" | "filter">;
+// AI가 채워주는 디자인 필드 (레이아웃·사진 구성은 사용자 선택 유지)
+export type AIDesignResult = Pick<DesignState, "frameId" | "stickers" | "textLayers" | "filter" | "effect">;
 
 // POST /api/ai 응답
 export interface AIDesignApiResponse {

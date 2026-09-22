@@ -59,7 +59,8 @@ npm run build      # 프로덕션 빌드
 
 ## AI 꾸미기 (Phase 5)
 - 흐름: `POST /api/ai` → `lib/ai/generateDesign.ts` → `registry`에서 모델→프로바이더 → `providers/*.generate()` → `normalize.ts` 검증·보정.
-- AI는 이미지를 만들지 않고 `frame/filter/stickers/text` JSON만 고른다. 출력 스키마의 enum은 `data/*` 레지스트리에서 자동 생성(`lib/ai/prompt.ts`).
+- AI는 이미지를 만들지 않고 `frame/filter/effect/stickers/text` JSON만 고른다. 출력 스키마의 enum은 `data/*` 레지스트리·`lib/ar/effects.ts`에서 자동 생성(`lib/ai/prompt.ts`). 얼굴 모자이크는 방문자가 요청할 때만 고르도록 지시.
+- AI 응답을 해석하지 못해 기본 디자인으로 대체될 땐 촬영 전에 고른 필터·AR 효과는 유지(`AIDesignPanel`).
 - Claude: 공식 SDK, 구조화 출력 + `effort: "low"` + Opus 5 서버측 refusal fallback. OpenAI: json_schema strict. Gemini: JSON 모드 + 보정.
 - 키가 없는 프로바이더는 `/api/ai/models`에서 숨김. 새 프로바이더 = `providers/xxx.ts` + `registry.ts` 한 줄.
 - `/api/ai`는 과금되는 공개 엔드포인트 → 프롬프트 200자 제한 + IP당 분당 8회 제한(`lib/rateLimit.ts`, 인스턴스 메모리 기반).
@@ -90,7 +91,8 @@ npm run build      # 프로덕션 빌드
 
 ## 관리자 (Phase 8)
 - `/admin`: `ADMIN_PASSWORD` 게이트. 로그인 시 만료시각을 HMAC(키=비밀번호) 서명한 httpOnly 쿠키(12시간) → 비밀번호 변경 시 전 세션 무효. 로그인 IP당 분당 5회 제한.
-- `GET /api/admin/stats`(`lib/admin/stats.ts`): 오늘(KST) 세션·완성 네컷·AI 요청/성공률·출력, 출력 큐, 장비(heartbeat 30초 이내=온라인), 모델별 사용량, 설정 상태.
+- `GET /api/admin/stats`(`lib/admin/stats.ts`): 오늘(KST) 세션·완성 네컷·AI 요청/성공률·출력, 출력 큐, 장비(heartbeat 30초 이내=온라인), 모델별 사용량, 오늘 인기 필터·AR 효과·레이아웃(완성 네컷 기준 상위 5, `summarizePopular`), 설정 상태.
+- Supabase 없이 화면 확인: production 서버를 임시 `ADMIN_PASSWORD`로 띄워 API로 로그인 → 헤드리스 Chrome(CDP `Fetch.fulfillRequest`)으로 `/api/admin/stats` 응답을 샘플 데이터로 바꿔 캡처.
 - AI 사용량은 `/api/ai`가 호출마다 `ai_requests`에 기록 (저장 안 된 시도 포함). 디자인별 모델은 `designs.ai_model`.
 - 상태색(`--status-good/warning/critical`)은 상태 표시 전용, 항상 아이콘+문구와 함께.
 
@@ -105,7 +107,8 @@ npm run build      # 프로덕션 빌드
   - 다운로드 페이지: 열 때마다 최대 1시간(남은 보관시간이 더 짧으면 그만큼) 서명 URL. 프린트 서버: claim 시 10분짜리.
 - 세션 id는 저장소 경로에 들어가므로 **UUID만 허용**(`lib/ids.ts`) — 경로 조작 방지.
 - 보관기간 `PHOTO_RETENTION_HOURS`(기본 2시간, 설계도). 만료 후 다운로드 페이지는 "보관 기간이 지났어요".
-- 삭제: `GET /api/cron/cleanup` (Bearer `CRON_SECRET`) — 파일 먼저 지우고 성공하면 세션 행 삭제(cascade). 실패 시 행을 남겨 다음 실행에 재시도.
+- 삭제: `GET /api/cron/cleanup` (Bearer `CRON_SECRET`, `lib/storage/cleanup.ts`) — 파일 먼저 지우고, 성공하면 행은 **지우지 않고** 방문자 입력(AI 프롬프트·문구)만 비운 뒤 `sessions.status='expired'`, 대기 중 출력은 `failed(expired)`. 실패 시 만료 표시를 안 해서 다음 실행에 재시도.
+  - 행을 남기는 이유: 지우면 관리자 "오늘" 통계(세션·완성·출력)가 보관기간(2시간)치만 남는다. 남는 건 선택값·개수·지워진 파일 경로뿐. 오래된 행 정리 SQL은 `schema.sql` 맨 아래.
   - 스케줄: `.github/workflows/cleanup.yml`(매시간, 저장소 Secrets `OWLCUT_URL`·`CRON_SECRET` 필요, 없으면 건너뜀). Vercel이면 Cron으로도 가능(Hobby 플랜은 하루 1회 제한).
 
 ## 환경변수

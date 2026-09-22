@@ -31,6 +31,20 @@ export interface AdminPrintFailure {
   updatedAt: string;
 }
 
+// 오늘 완성된 네컷에서 많이 쓴 항목 (상위 몇 개)
+export interface AdminRankItem {
+  id: string;
+  label: string;
+  count: number;
+}
+
+export interface AdminPopular {
+  total: number; // 집계한 완성 네컷 수
+  filters: AdminRankItem[];
+  effects: AdminRankItem[];
+  layouts: AdminRankItem[];
+}
+
 export interface AdminStats {
   generatedAt: string;
   config: AdminConfigStatus;
@@ -48,4 +62,5 @@ export interface AdminStats {
   recentFailures: AdminPrintFailure[];
   devices: AdminDevice[];
   aiByModel: AdminModelUsage[];
+  popular: AdminPopular | null;
 }

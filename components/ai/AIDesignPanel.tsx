@@ -19,7 +19,7 @@ type Status =
 export function AIDesignPanel({
   onApply,
 }: {
-  onApply: (design: AIDesignResult, prompt: string, model: string | null) => void;
+  onApply: (design: Partial<AIDesignResult>, prompt: string, model: string | null) => void;
 }) {
   const { aiModelId, setAiModelId, design } = useBoothStore();
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -48,7 +48,9 @@ export function AIDesignPanel({
     setStatus({ kind: "generating" });
     const result = await requestAIDesign(text, aiModelId);
     if (result.ok) {
-      onApply(result.design, text, result.model);
+      // AI 응답을 해석하지 못한 기본 디자인이면, 촬영 전에 고른 필터·AR 효과는 지우지 않는다
+      const { filter, effect, ...rest } = result.design;
+      onApply(result.fallback ? rest : { ...rest, filter, effect }, text, result.model);
       setStatus({ kind: "applied", fallback: result.fallback });
     } else {
       const hint = models.length > 1 ? " 다른 모델을 선택하거나 직접 꾸미기를 이용해 주세요." : " 직접 꾸미기를 이용해 주세요.";

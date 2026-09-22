@@ -6,12 +6,13 @@ import { DESIGN_SCHEMA, SYSTEM_PROMPT } from "@/lib/ai/prompt";
 
 t("정상 응답 → 그대로 적용, 텍스트색은 프레임 기본색", () => {
   const { design, warnings } = normalizeAIDesign({
-    frame: "cyber_purple", filter: "cool",
+    frame: "cyber_purple", filter: "cool", effect: "cat",
     stickers: [{ type: "owl", position: "top-right" }, { type: "star", position: "top_left" }],
     text: { content: "S.OWL 2026", position: "bottom" },
   });
   assert.equal(design.frameId, "cyber_purple");
   assert.equal(design.filter, "cool");
+  assert.equal(design.effect, "cat");
   assert.deepEqual(design.stickers.map((s) => [s.id, s.anchor]), [["owl", "top-right"], ["star", "top-left"]]);
   assert.equal(design.textLayers[0].content, "S.OWL 2026");
   assert.equal(design.textLayers[0].color, "#f0d5ff");
@@ -43,6 +44,16 @@ t("같은 위치 중복 제거 + 최대 4개 제한", () => {
   assert.deepEqual(design.stickers.map((s) => s.anchor), ["top-left", "top-right", "bottom-left", "bottom-right"]);
 });
 
+t("AR 효과: 모르는 값은 없음 + 경고, 빠져 있으면 조용히 없음", () => {
+  const bad = normalizeAIDesign({ frame: "basic", filter: "none", effect: "unicorn-horn", stickers: [], text: { content: "", position: "bottom" } });
+  assert.equal(bad.design.effect, "none");
+  assert.ok(bad.warnings.includes("unknown_effect"));
+  const missing = normalizeAIDesign({ frame: "basic", filter: "none", stickers: [], text: { content: "", position: "bottom" } });
+  assert.equal(missing.design.effect, "none");
+  assert.deepEqual(missing.warnings, []);
+  assert.equal(fallbackDesign().effect, "none");
+});
+
 t("형식이 깨진 응답 → basic fallback", () => {
   assert.deepEqual(normalizeAIDesign("not json").design, fallbackDesign());
   assert.deepEqual(normalizeAIDesign(null).design, fallbackDesign());
@@ -65,6 +76,9 @@ t("코드펜스/설명이 섞인 응답에서 JSON 추출", () => {
 t("스키마 enum이 레지스트리에서 생성됨", () => {
   const props = DESIGN_SCHEMA.properties as Record<string, { enum?: string[] }>;
   assert.deepEqual(props.frame.enum, ["basic", "owl_classic", "cyber_purple", "mono"]);
-  assert.ok(SYSTEM_PROMPT.includes("cyber_purple") && SYSTEM_PROMPT.includes("🦉"));
+  assert.equal(props.effect.enum?.[0], "none");
+  assert.ok(props.effect.enum?.includes("bunny") && props.effect.enum.includes("mosaic"));
+  assert.ok((DESIGN_SCHEMA.required as string[]).includes("effect")); // OpenAI strict 는 모든 속성이 required 여야 함
+  assert.ok(SYSTEM_PROMPT.includes("cyber_purple") && SYSTEM_PROMPT.includes("🦉") && SYSTEM_PROMPT.includes("bunny: 토끼"));
 });
 

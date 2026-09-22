@@ -12,13 +12,14 @@ import {
   RefreshCw,
   Settings2,
   Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { StatusBadge, type StatusTone } from "./StatusBadge";
 import { Logo } from "@/components/brand/Logo";
 import { IconButton } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { ProgressRing } from "@/components/ui/ProgressRing";
-import type { AdminStats } from "@/types/admin";
+import type { AdminRankItem, AdminStats } from "@/types/admin";
 
 const REFRESH_MS = 10_000;
 const PROVIDER_LABEL = { claude: "Claude", openai: "OpenAI", gemini: "Gemini" } as const;
@@ -28,12 +29,41 @@ const NAV = [
   { href: "#devices", label: "장비 상태", icon: MonitorSmartphone },
   { href: "#queue", label: "출력 큐", icon: ListOrdered },
   { href: "#ai", label: "AI 사용량", icon: Sparkles },
+  { href: "#popular", label: "인기 항목", icon: TrendingUp },
   { href: "#setup", label: "설정 상태", icon: Settings2 },
 ];
 
 const num = (n: number) => n.toLocaleString("ko-KR");
 const ratio = (part: number, whole: number) => (whole ? part / whole : 0);
 const pct = (part: number, whole: number) => (whole ? `${Math.round((part / whole) * 100)}%` : "–");
+
+// 순위 목록: 이름 · 장수 · 비율 + 가는 막대 (막대는 완성 네컷 전체 대비)
+function RankList({ title, items, total }: { title: string; items: AdminRankItem[]; total: number }) {
+  return (
+    <div className="min-w-0">
+      <h3 className="mb-2.5 text-xs font-semibold text-muted">{title}</h3>
+      <ol className="space-y-3">
+        {items.map((it, i) => (
+          <li key={it.id}>
+            <div className="flex items-baseline justify-between gap-2 text-sm">
+              <span className="min-w-0 truncate">
+                <span className="num mr-2 text-muted">{i + 1}</span>
+                {it.label}
+              </span>
+              <span className="num shrink-0 font-semibold">
+                {num(it.count)}
+                <span className="ml-1.5 text-xs font-normal text-muted">{pct(it.count, total)}</span>
+              </span>
+            </div>
+            <div className="mt-1.5 h-1.5 rounded-full bg-black/[0.06]" aria-hidden>
+              <div className="h-full rounded-full bg-ink" style={{ width: `${Math.max(2, ratio(it.count, total) * 100)}%` }} />
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
 
 function ago(iso: string, now: number): string {
   const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
@@ -110,7 +140,7 @@ export function AdminDashboard() {
           {loadError ? (
             <p className="glass rounded-card p-6 text-status-critical">통계를 불러오지 못했어요. 잠시 후 자동으로 다시 시도합니다.</p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="glass h-56 animate-pulse rounded-card" />
               ))}
@@ -153,7 +183,7 @@ export function AdminDashboard() {
   const setupSection = (
     <div id="setup" className="scroll-mt-6">
       <Panel title="설정 상태" icon={<Settings2 className="h-4 w-4" />}>
-        <ul className="grid gap-x-8 gap-y-2.5 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-x-8 gap-y-2.5 md:grid-cols-2">
           {setup.map((s) => (
             <li key={s.label} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-2.5 last:border-0 md:[&:nth-last-child(2)]:border-0">
               <span className="text-sm text-muted">{s.label}</span>
@@ -193,7 +223,7 @@ export function AdminDashboard() {
         {needsSetup && setupSection}
 
         {today ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr]">
             {/* 오늘 개요 (검은 카드) — @container: 카드 폭에 맞춰 숫자 크기 조절 */}
             <section className="@container ink flex flex-col rounded-card p-6 md:col-span-2 xl:col-span-1">
               <header className="flex items-center justify-between">
@@ -290,7 +320,7 @@ export function AdminDashboard() {
           </Panel>
         )}
 
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <div id="devices" className="scroll-mt-6">
             <Panel title="장비 상태" icon={<MonitorSmartphone className="h-4 w-4" />} className="h-full">
               {stats.devices.length === 0 ? (
@@ -373,6 +403,26 @@ export function AdminDashboard() {
             )}
           </Panel>
         </div>
+
+        {stats.popular && (
+          <div id="popular" className="scroll-mt-6">
+            <Panel
+              title="오늘 인기"
+              icon={<TrendingUp className="h-4 w-4" />}
+              aside={`완성 네컷 ${num(stats.popular.total)}장 기준`}
+            >
+              {stats.popular.total === 0 ? (
+                <p className="text-sm text-muted">오늘 완성된 네컷이 아직 없어요.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <RankList title="필터" items={stats.popular.filters} total={stats.popular.total} />
+                  <RankList title="AR 효과" items={stats.popular.effects} total={stats.popular.total} />
+                  <RankList title="레이아웃" items={stats.popular.layouts} total={stats.popular.total} />
+                </div>
+              )}
+            </Panel>
+          </div>
+        )}
 
         {!needsSetup && setupSection}
       </div>

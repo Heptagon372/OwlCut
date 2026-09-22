@@ -8,6 +8,7 @@ import {
   hasSticker,
   isFilter,
 } from "@/lib/data/registry";
+import { isEffect, NO_EFFECT } from "@/lib/ar/effects";
 import { ANCHORS, type Anchor, type StickerInstance, type TextAnchor } from "@/types/design";
 import type { AIDesignResult } from "@/types/ai";
 import { MAX_CAPTION_LENGTH, MAX_STICKERS } from "./prompt";
@@ -16,7 +17,7 @@ const STICKER_SIZE = 120;
 const CAPTION_SIZE = 44;
 
 export function fallbackDesign(): AIDesignResult {
-  return { frameId: DEFAULT_FRAME_ID, filter: DEFAULT_FILTER, stickers: [], textLayers: [] };
+  return { frameId: DEFAULT_FRAME_ID, filter: DEFAULT_FILTER, effect: NO_EFFECT, stickers: [], textLayers: [] };
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -57,6 +58,11 @@ export function normalizeAIDesign(raw: unknown): { design: AIDesignResult; warni
   if (typeof raw.filter === "string" && isFilter(raw.filter)) filter = raw.filter;
   else warnings.push("unknown_filter");
 
+  // AR 얼굴 효과: 빠져 있으면(스키마를 강제하지 않는 모델) 조용히 없음, 모르는 값이면 경고
+  let effect = NO_EFFECT;
+  if (isEffect(raw.effect)) effect = raw.effect;
+  else if (raw.effect !== undefined) warnings.push("unknown_effect");
+
   // stickers: 알 수 없는 스티커/위치는 버리고, 같은 위치 중복 제거, 최대 개수 제한
   const stickers: StickerInstance[] = [];
   const used = new Set<Anchor>();
@@ -92,5 +98,5 @@ export function normalizeAIDesign(raw: unknown): { design: AIDesignResult; warni
     }
   }
 
-  return { design: { frameId, filter, stickers, textLayers }, warnings };
+  return { design: { frameId, filter, effect, stickers, textLayers }, warnings };
 }

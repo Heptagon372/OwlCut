@@ -3,8 +3,41 @@
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/client";
 import { PROVIDERS } from "@/lib/ai/registry";
 import { isPrintTokenConfigured } from "@/lib/printer/auth";
+import { FILTERS, LAYOUTS } from "@/lib/data/registry";
+import { getEffect, NO_EFFECT } from "@/lib/ar/effects";
 import type { ProviderId } from "@/types/ai";
-import type { AdminModelUsage, AdminStats } from "@/types/admin";
+import type { AdminModelUsage, AdminPopular, AdminRankItem, AdminStats } from "@/types/admin";
+
+export const POPULAR_TOP = 5;
+
+type DesignUsageRow = { filter: string | null; layout: string | null; layout_options: unknown };
+
+// 목록에서 사라진 id(예전 프리셋)는 이름 대신 id 그대로 표시
+function rank(ids: string[], label: (id: string) => string | undefined): AdminRankItem[] {
+  const counts = new Map<string, number>();
+  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, POPULAR_TOP)
+    .map(([id, count]) => ({ id, label: label(id) ?? id, count }));
+}
+
+/** 완성 네컷 행 → 인기 필터·AR 효과·레이아웃 (순수 함수) */
+export function summarizePopular(rows: DesignUsageRow[]): AdminPopular {
+  const effectOf = (o: unknown) => {
+    const e = o && typeof o === "object" ? (o as Record<string, unknown>).effect : undefined;
+    return typeof e === "string" ? e : NO_EFFECT; // AR 기능 이전에 저장된 행은 효과 없음
+  };
+  return {
+    total: rows.length,
+    filters: rank(rows.map((r) => r.filter ?? "none"), (id) => FILTERS.find((f) => f.id === id)?.label),
+    effects: rank(rows.map((r) => effectOf(r.layout_options)), (id) => (id === NO_EFFECT ? "없음" : getEffect(id)?.label)),
+    layouts: rank(
+      rows.flatMap((r) => (r.layout ? [r.layout] : [])),
+      (id) => LAYOUTS.find((l) => l.id === id)?.label,
+    ),
+  };
+}
 
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 export const DEVICE_ONLINE_MS = 30_000; // 프린트 서버는 3초마다 heartbeat
@@ -57,6 +90,7 @@ export async function getAdminStats(now = new Date()): Promise<AdminStats> {
     recentFailures: [],
     devices: [],
     aiByModel: [],
+    popular: null,
   };
   if (!base.config.supabase) return base;
 
@@ -72,7 +106,7 @@ export async function getAdminStats(now = new Date()): Promise<AdminStats> {
   const [
     sessions, sessionsLastHour, completed, completedAi,
     waiting, printing, printsCompleted, failedToday,
-    aiRows, failures, devices,
+    aiRows, failures, devices, usageRows,
   ] = await Promise.all([
     count(db.from("sessions").select("id", head).gte("created_at", today)),
     count(db.from("sessions").select("id", head).gte("created_at", hourAgo)),
@@ -85,10 +119,12 @@ export async function getAdminStats(now = new Date()): Promise<AdminStats> {
     db.from("ai_requests").select("model, ok, latency_ms").gte("created_at", today).limit(5000),
     db.from("prints").select("id, error, printer, updated_at").eq("status", "failed").order("updated_at", { ascending: false }).limit(5),
     db.from("devices").select("id, last_seen_at, info").order("last_seen_at", { ascending: false }).limit(20),
+    db.from("designs").select("filter, layout, layout_options").not("final_image_path", "is", null).gte("created_at", today).limit(5000),
   ]);
 
   const ai = aiRows.error ? [] : (aiRows.data ?? []);
   base.aiByModel = summarizeByModel(ai);
+  base.popular = summarizePopular(usageRows.error ? [] : ((usageRows.data ?? []) as DesignUsageRow[]));
   base.today = {
     sessions,
     sessionsLastHour,

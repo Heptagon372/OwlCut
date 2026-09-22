@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { it as t } from "vitest";
 import * as auth from "@/lib/admin/auth";
-import { startOfTodayKST, summarizeByModel } from "@/lib/admin/stats";
+import { POPULAR_TOP, startOfTodayKST, summarizeByModel, summarizePopular } from "@/lib/admin/stats";
 process.env.ADMIN_PASSWORD = "correct horse"; // auth는 호출 시점에 env를 읽음
 
 
@@ -68,5 +68,32 @@ t("모델별 사용량 집계 (요청 많은 순, 평균 응답)", () => {
     { model: "claude-opus-5", requests: 3, success: 2, avgLatencyMs: 3000 },
     { model: "gemini-2.5-flash", requests: 1, success: 1, avgLatencyMs: null },
   ]);
+});
+
+t("인기 필터·AR 효과·레이아웃 (많이 쓴 순, 상위 5개, 이름 표시)", () => {
+  const row = (filter: string | null, effect: string | undefined, layout: string | null) => ({
+    filter,
+    layout,
+    layout_options: effect === undefined ? null : { effect },
+  });
+  const rows = [
+    row("bw", "cat", "classic-strip"),
+    row("bw", "cat", "classic-strip"),
+    row("warm", "bunny", "classic-strip"),
+    row(null, undefined, null), // AR 기능 이전 행: 효과 없음, 레이아웃 없음은 집계 제외
+    row("retired-preset", "none", "classic-strip"),
+    ...["a", "b", "c", "d", "e"].map((f) => row(f, "none", "classic-strip")),
+  ];
+  const p = summarizePopular(rows);
+  assert.equal(p.total, 10);
+  assert.deepEqual(p.filters[0], { id: "bw", label: "클래식 흑백", count: 2 });
+  assert.equal(p.filters.length, POPULAR_TOP);
+  assert.deepEqual(p.effects.map((e) => [e.id, e.label, e.count]), [
+    ["none", "없음", 7],
+    ["cat", "고양이", 2],
+    ["bunny", "토끼", 1],
+  ]);
+  assert.deepEqual(p.layouts, [{ id: "classic-strip", label: p.layouts[0].label, count: 9 }]);
+  assert.equal(summarizePopular([{ filter: "gone", layout: null, layout_options: null }]).filters[0].label, "gone");
 });
 
