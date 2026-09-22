@@ -1,0 +1,162 @@
+[
+  {
+    "id": "dd-heart-eyes",
+    "label": "하트 눈 얼굴",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-cool",
+    "label": "선글라스 얼굴",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-laugh",
+    "label": "웃는 얼굴",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-wink",
+    "label": "윙크 얼굴",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-grin",
+    "label": "신난 얼굴",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-shocked",
+    "label": "놀란 얼굴",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-crying",
+    "label": "우는 얼굴",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-v",
+    "label": "브이",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-ok",
+    "label": "오케이",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-thumbs-up",
+    "label": "최고 손",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-clap",
+    "label": "박수",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-crown",
+    "label": "낙서 왕관",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-balloon",
+    "label": "풍선",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-camera",
+    "label": "카메라",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-cake",
+    "label": "케이크",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-ice-cream",
+    "label": "아이스크림",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-candy",
+    "label": "사탕",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-heart",
+    "label": "낙서 하트",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-star",
+    "label": "낙서 별",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-zap",
+    "label": "번개",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-music",
+    "label": "음표",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-magic",
+    "label": "요술봉",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-gift",
+    "label": "선물",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-sun",
+    "label": "해",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-moon",
+    "label": "달",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-cloud-sun",
+    "label": "구름과 해",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-rocket",
+    "label": "로켓",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-fire",
+    "label": "불꽃",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-arrow-ne",
+    "label": "화살표 ↗",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-arrow-nw",
+    "label": "화살표 ↖",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-arrow-se",
+    "label": "화살표 ↘",
+    "category": "doodle"
+  },
+  {
+    "id": "dd-arrow-sw",
+    "label": "화살표 ↙",
+    "category": "doodle"
+  }
+]

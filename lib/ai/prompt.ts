@@ -1,6 +1,6 @@
 // 공통 system prompt + 출력 JSON Schema (설계도 7-4).
 // 스키마의 enum은 data/* 레지스트리에서 자동 생성 → 프레임/스티커를 추가하면 AI 선택지도 자동 확장.
-import { FILTERS, FRAMES, STICKERS } from "@/lib/data/registry";
+import { FILTERS, FRAMES, STICKERS, STICKER_CATEGORIES } from "@/lib/data/registry";
 import { EFFECTS, EFFECT_CATEGORIES, NO_EFFECT } from "@/lib/ar/effects";
 import { ANCHORS } from "@/types/design";
 
@@ -9,7 +9,10 @@ export const MAX_CAPTION_LENGTH = 24;
 
 const frameCatalog = FRAMES.map((f) => `- ${f.id}: ${f.label} — ${f.description ?? ""}`).join("\n");
 const filterCatalog = FILTERS.map((f) => `- ${f.id}: ${f.label}${f.description ? ` — ${f.description}` : ""}`).join("\n");
-const stickerCatalog = STICKERS.map((s) => `- ${s.id}: ${s.glyph} ${s.label}`).join("\n");
+const stickerCategoryLabel = Object.fromEntries(STICKER_CATEGORIES.map((c) => [c.id, c.label]));
+const stickerCatalog = STICKERS.map(
+  (s) => `- ${s.id}: ${s.glyph ? `${s.glyph} ` : ""}${s.word ? `"${s.word.text.replace(/\n/g, " ")}" ` : ""}${s.label} (${stickerCategoryLabel[s.category]})`,
+).join("\n");
 const categoryLabel = Object.fromEntries(EFFECT_CATEGORIES.map((c) => [c.id, c.label]));
 const effectCatalog = [
   `- ${NO_EFFECT}: 없음`,

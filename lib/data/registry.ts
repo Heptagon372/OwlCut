@@ -3,13 +3,24 @@
 import layoutsJson from "@/data/layouts/index.json";
 import framesJson from "@/data/frames/index.json";
 import stickersJson from "@/data/stickers/index.json";
+import doodleStickersJson from "@/data/stickers/doodles.json"; // Doodle Icons(CC0) — scripts/import-doodle-icons.mjs
 import filtersJson from "@/data/filters/index.json";
-import type { LayoutConfig, FrameConfig, StickerDef, FilterName } from "@/types/design";
+import type { LayoutConfig, FrameConfig, StickerCategory, StickerDef, FilterName } from "@/types/design";
 import type { FilterCategory, FilterPreset } from "@/types/filter";
 
 export const LAYOUTS = layoutsJson as unknown as LayoutConfig[];
 export const FRAMES = framesJson as unknown as FrameConfig[];
-export const STICKERS = stickersJson as unknown as StickerDef[];
+export const STICKERS = [...stickersJson, ...doodleStickersJson] as unknown as StickerDef[];
+
+// 스티커 종류 탭 (편집 화면 · AI 카탈로그)
+export const STICKER_CATEGORIES: { id: StickerCategory; label: string }[] = [
+  { id: "lovely", label: "러블리" },
+  { id: "y2k", label: "Y2K" },
+  { id: "doodle", label: "낙서" },
+  { id: "word", label: "글자" },
+  { id: "deco", label: "데코" },
+  { id: "emoji", label: "이모지" },
+];
 
 // 필터 프리셋 (촬영 전 선택 · 편집 · AI 공용). 새 필터 = JSON 한 항목 추가.
 export const FILTERS = filtersJson as unknown as FilterPreset[];

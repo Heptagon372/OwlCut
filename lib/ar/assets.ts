@@ -1,43 +1,7 @@
 // AR 스티커 그림 — 전부 직접 그린 SVG (외부 저작물 사용 안 함). 벡터라 얼굴 크기에 맞춰 선명하게 확대된다.
 // 각 그림의 "중심"이 배치 기준점. 크기·위치 조정은 lib/ar/effects.ts 에서.
-
-const svg = (w: number, h: number, body: string, extra = "") =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 2}" height="${h * 2}"${extra}>${body}</svg>`;
-
-// 도트 그림: 문자 지도 → 1x1 사각형
-function pixelSvg(rows: string[], colors: Record<string, string>): string {
-  const h = rows.length;
-  const w = Math.max(...rows.map((r) => r.length));
-  let body = "";
-  rows.forEach((row, y) =>
-    [...row].forEach((c, x) => {
-      if (colors[c]) body += `<rect x="${x}" y="${y}" width="1.04" height="1.04" fill="${colors[c]}"/>`;
-    }),
-  );
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 16}" height="${h * 16}" shape-rendering="crispEdges">${body}</svg>`;
-}
-
-const mirrorRow = (r: string) => [...r].reverse().join("");
-
-function starPath(cx: number, cy: number, r: number): string {
-  const pts: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const a = -Math.PI / 2 + (i * Math.PI) / 5;
-    const rr = i % 2 === 0 ? r : r * 0.45;
-    pts.push(`${(cx + rr * Math.cos(a)).toFixed(1)},${(cy + rr * Math.sin(a)).toFixed(1)}`);
-  }
-  return `M${pts.join("L")}Z`;
-}
-
-const sparklePath = (cx: number, cy: number, s: number) =>
-  `M${cx} ${cy - s}Q${cx + s * 0.16} ${cy - s * 0.16} ${cx + s} ${cy}Q${cx + s * 0.16} ${cy + s * 0.16} ${cx} ${cy + s}` +
-  `Q${cx - s * 0.16} ${cy + s * 0.16} ${cx - s} ${cy}Q${cx - s * 0.16} ${cy - s * 0.16} ${cx} ${cy - s}Z`;
-
-const heartPath = (x: number, y: number, s: number) =>
-  `M${x} ${y + s * 0.3}C${x} ${y - s * 0.1} ${x + s * 0.45} ${y - s * 0.15} ${x + s * 0.5} ${y + s * 0.2}` +
-  `C${x + s * 0.55} ${y - s * 0.15} ${x + s} ${y - s * 0.1} ${x + s} ${y + s * 0.3}` +
-  `C${x + s} ${y + s * 0.6} ${x + s * 0.5} ${y + s * 0.9} ${x + s * 0.5} ${y + s * 0.9}` +
-  `C${x + s * 0.5} ${y + s * 0.9} ${x} ${y + s * 0.6} ${x} ${y + s * 0.3}Z`;
+import { getArt, heartPath, loadArt, mirrorRow, pixelSvg, sparklePath, starPath, svg, svgDataUrl } from "@/lib/art/svg";
+import { MORE_ASSETS } from "./assets-more";
 
 // ---------- 도트 고양이 ----------
 const PIXEL_EAR = ["k.........", "kk........", "kpk.......", "kppk......", "kpppk.....", "kppppk....", "kpwwppk...", "kwwwwwwk..", "kkkkkkkkk."];
@@ -275,40 +239,22 @@ export const ASSETS: Record<string, string> = {
       `<use href="#k" fill="url(#h)" stroke="#7a0a12" stroke-width="3"/><use href="#k" transform="translate(240 0) scale(-1 1)" fill="url(#h)" stroke="#7a0a12" stroke-width="3"/>`,
   ),
   afro: afroSvg(),
+  ...MORE_ASSETS,
 };
 
-// ---------- 브라우저에서 이미지로 로드 (캐시) ----------
-const cache = new Map<string, HTMLImageElement>();
-const pending = new Map<string, Promise<HTMLImageElement | null>>();
-
+// ---------- 브라우저에서 이미지로 로드 (캐시, lib/art/svg) ----------
 export function assetUrl(id: string): string | null {
   const s = ASSETS[id];
-  return s ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s)}` : null;
+  return s ? svgDataUrl(s) : null;
 }
 
 /** 로드된 그림 (없으면 null — 그리기 루프에서 동기로 사용) */
 export function getAsset(id: string): HTMLImageElement | null {
-  return cache.get(id) ?? null;
+  return getArt(`ar:${id}`);
 }
 
 export function loadAsset(id: string): Promise<HTMLImageElement | null> {
-  const hit = cache.get(id);
-  if (hit) return Promise.resolve(hit);
-  const inflight = pending.get(id);
-  if (inflight) return inflight;
-  const url = assetUrl(id);
-  if (!url || typeof Image === "undefined") return Promise.resolve(null);
-  const p = new Promise<HTMLImageElement | null>((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      cache.set(id, img);
-      resolve(img);
-    };
-    img.onerror = () => resolve(null);
-    img.src = url;
-  });
-  pending.set(id, p);
-  return p;
+  return loadArt(`ar:${id}`, assetUrl(id));
 }
 
 export async function ensureAssets(ids: string[]): Promise<void> {

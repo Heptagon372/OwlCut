@@ -13,7 +13,9 @@ t("정상 응답 → 그대로 적용, 텍스트색은 프레임 기본색", () 
   assert.equal(design.frameId, "cyber_purple");
   assert.equal(design.filter, "cool");
   assert.equal(design.effect, "cat");
-  assert.deepEqual(design.stickers.map((s) => [s.id, s.anchor]), [["owl", "top-right"], ["star", "top-left"]]);
+  assert.deepEqual(design.stickers.map((s) => [s.id, s.x, s.y]), [["owl", 0.82, 0.08], ["star", 0.18, 0.08]]);
+  assert.ok(design.stickers.every((s) => s.uid && s.size > 0 && s.rotation === 0));
+  assert.notEqual(design.stickers[0].uid, design.stickers[1].uid);
   assert.equal(design.textLayers[0].content, "S.OWL 2026");
   assert.equal(design.textLayers[0].color, "#f0d5ff");
   assert.deepEqual(warnings, []);
@@ -41,7 +43,7 @@ t("같은 위치 중복 제거 + 최대 4개 제한", () => {
     ],
     text: { content: "x", position: "top" },
   });
-  assert.deepEqual(design.stickers.map((s) => s.anchor), ["top-left", "top-right", "bottom-left", "bottom-right"]);
+  assert.deepEqual(design.stickers.map((s) => [s.x, s.y]), [[0.18, 0.08], [0.82, 0.08], [0.18, 0.86], [0.82, 0.86]]);
 });
 
 t("AR 효과: 모르는 값은 없음 + 경고, 빠져 있으면 조용히 없음", () => {
@@ -75,7 +77,9 @@ t("코드펜스/설명이 섞인 응답에서 JSON 추출", () => {
 
 t("스키마 enum이 레지스트리에서 생성됨", () => {
   const props = DESIGN_SCHEMA.properties as Record<string, { enum?: string[] }>;
-  assert.deepEqual(props.frame.enum, ["basic", "owl_classic", "cyber_purple", "mono"]);
+  assert.deepEqual(props.frame.enum?.slice(0, 4), ["basic", "owl_classic", "cyber_purple", "mono"]);
+  assert.ok(props.frame.enum?.includes("film_black") && props.frame.enum.includes("pink_gingham"));
+  assert.ok(props.stickers && JSON.stringify(props.stickers).includes("bow-pink"));
   assert.equal(props.effect.enum?.[0], "none");
   assert.ok(props.effect.enum?.includes("bunny") && props.effect.enum.includes("mosaic"));
   assert.ok((DESIGN_SCHEMA.required as string[]).includes("effect")); // OpenAI strict 는 모든 속성이 required 여야 함

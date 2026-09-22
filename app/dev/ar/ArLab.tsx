@@ -101,10 +101,11 @@ export function ArLab() {
       await ensureAssets(EFFECTS.flatMap((e) => effectAssets(e)));
       const h = Math.round((TILE * src.height) / src.width);
       setRatio(src.width / src.height);
+      const only = q.get("only")?.split(",").filter(Boolean); // &only=cat,dog → 그 효과만
       setTiles([
         { id: "anchors", label: "기준점", url: anchorsTile(src, faces, TILE, h) },
         { id: "none", label: "원본", url: effectSnapshot(src, { width: TILE, height: h, effect: null, faces }) },
-        ...EFFECTS.map((e) => ({
+        ...EFFECTS.filter((e) => !only?.length || only.includes(e.id)).map((e) => ({
           id: e.id,
           label: e.label,
           url: effectSnapshot(src, { width: TILE, height: h, effect: e, faces }),

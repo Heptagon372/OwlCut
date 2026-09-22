@@ -75,13 +75,32 @@ npm run build      # 프로덕션 빌드
 - 얼굴이 화면 폭의 ~5% 미만(멀리 선 단체)이면 근거리 모델 특성상 못 찾음. 부스 거리(1~2m)에서는 문제없음.
 
 ## AR 얼굴 효과 (스티커·왜곡·모자이크)
-- 효과 27종(`lib/ar/effects.ts`, 동물·러블리·펀·얼굴 효과) + 그림 28장은 **직접 그린 SVG**(`lib/ar/assets.ts`, 외부 저작물 없음). 새 효과 = 배열 한 항목, 새 그림 = SVG 문자열 하나.
+- 효과 56종(`lib/ar/effects.ts`, 동물·러블리·펀·얼굴 효과) + 그림 58장은 **직접 그린 SVG**(`lib/ar/assets.ts`, 2차 `assets-more.ts`, 외부 저작물 없음). 새 효과 = 배열 한 항목, 새 그림 = SVG 문자열 하나. 한 효과에 스티커+왜곡을 함께 쓸 수 있음(햄스터·프리쿠라).
+- 같은 모양의 색 바꿈(흰 강아지·노란 고양이·핑크 토끼·공룡 후드)은 원본과 SVG 좌표를 똑같이 맞춰 배치값을 공유한다.
 - 배치 단위는 **얼굴 좌표계**(x: 두 눈 방향, y: 아래, 단위: 얼굴 폭, `lib/ar/geometry.ts`) → 가까우면 커지고 고개를 기울이면 같이 돈다. `mirrorSecond`로 양쪽 귀·리본 대칭.
 - 왜곡(왕눈이·퍼니 페이스·볼빵빵·작은 얼굴)과 모자이크는 필터 셰이더 맨 앞에서 샘플 좌표를 옮김(`uWarp[8]`, `uMosaicA/B[4]`). 배율 곡선 `1-s(1-u²)²`(가장자리 연속, |s|<1이면 접힘 없음). WebGL 없으면 모자이크만 캔버스로 대체.
 - 필터처럼 **비파괴**: 사진은 원본 저장 + 셔터 순간 얼굴 기준점을 `CapturedPhoto.faces`(캡처 이미지 좌표, 거울 반전 반영)로 보관 → 편집 화면에서 효과를 바꿔도 다시 계산해 합성(`lib/ar/draw.ts`의 `drawWithEffect`를 합성·확인 썸네일·효과 썸네일이 공유).
 - 촬영 화면 스티커 레이어(`AROverlay`)는 캔버스를 뒤집지 않고 **얼굴 좌표를 뒤집어** 그림 → 비대칭 그림(리본 위치 등)이 캡처 결과와 똑같이 보임. 왜곡은 `FilteredPreview`가 비디오 원본 좌표로 처리.
 - 효과를 켜면 자동 프레이밍을 꺼도 추적은 계속 (프레이밍 가이드만 숨김). `designs.layout_options.effect`로 저장.
-- **점검판 `/dev/ar`** (개발 모드 전용, production 404): 기본 얼굴 일러스트 또는 `?src=<CORS 허용 이미지>`의 실제 얼굴에 전 효과를 한 번에. `&zoom=3`(확대) `&rotate=25`(기울임) `&mirror=1`. 브라우저 창이 가려져 있으면 헤드리스 Chrome `--screenshot`으로 캡처(제목이 `AR LAB READY`가 되면 완료).
+- **점검판 `/dev/ar`** (개발 모드 전용, production 404): 기본 얼굴 일러스트 또는 `?src=<CORS 허용 이미지>`의 실제 얼굴에 전 효과를 한 번에. `&zoom=3`(확대) `&rotate=25`(기울임) `&mirror=1` `&only=cat,dog`(그 효과만). 브라우저 창이 가려져 있으면 헤드리스 Chrome `--screenshot`으로 캡처(제목이 `AR LAB READY`가 되면 완료).
+
+## 스티커 (꾸미기 탭)
+- 종류 6개(러블리·Y2K·낙서·글자·데코·이모지), 110여 개. 세 가지 방식 — 모두 **이미지로 만들어** 편집 화면과 합성이 같은 그림을 쓴다(`lib/stickers/images.ts`):
+  - 그림: 직접 그린 SVG(`lib/stickers/art.ts`). `cut()`이 SVG 필터로 흰 다이컷 테두리+그림자를 자동으로 입힘. 마스킹 테이프는 반투명이라 `plain()`.
+  - 외부 낙서 32개: **Doodle Icons (Khushmeen Sidhu, CC0 — 상업 사용 가능·출처 표기 의무 없음)**. `node scripts/import-doodle-icons.mjs`가 색을 바꾸고 흰 테두리를 더해 `lib/stickers/doodles.ts`(그림, 쓸 때만 동적 import)와 `data/stickers/doodles.json`(목록)을 생성. id는 `dd-` 접두사.
+  - 글자: 웹폰트로 캔버스에 그린 PNG(`lib/stickers/word.ts`) — SVG 이미지 안에서는 웹폰트를 못 쓰기 때문. 말풍선·태그·폭발·옛날 창 모양, 네온(glow), `{date}` = 필름 날짜 도장('26 09 23).
+  - 이모지: 기존 id 유지(AI·저장된 디자인 호환), 역시 이미지로.
+- 배치(`StickerInstance`): `x·y` = 타일 너비·높이 대비 중심, `size` = 타일 **짧은 변** 대비 폭, `rotation` 도, `uid`. 계산은 순수 함수 `lib/stickers/geometry.ts`.
+- 편집: 미리보기 위 `StickerLayer`(Pointer Events, 마우스·터치): 끌어서 이동 · 오른쪽 아래 손잡이로 크기+회전(중심까지 거리 비율·각도 차이) · × 삭제 · 누르면 맨 앞으로 · 키보드(화살표/`+``-`/`[``]`/Delete). 손잡이 40px, `touch-action: none`, pointer capture.
+  - 스티커는 캔버스 합성에서 빼고 이 층이 그린다 → 끄는 동안 무거운 재합성 없음(`PhotoCanvas`는 스티커를 뺀 디자인이 바뀔 때만 렌더). 최종 합성은 같은 이미지·같은 좌표로 그림 → 미리보기와 결과가 픽셀 단위로 같음.
+  - 층은 `overflow-clip`(hidden 금지: 스크롤 상자가 되어 큰 스티커에 포커스가 가면 층이 밀려 사진과 어긋남).
+- AI는 여전히 9분할 위치만 고르고 `anchorToPosition`으로 좌표 변환.
+
+## 프레임
+- 16종(`data/frames/index.json`). 배경 = 단색 · 그라데이션(`stops` 여러 색) · **패턴**(dots·checker·gingham·stripes·grid·hearts·stars·sparkles·confetti, 시드 고정 난수 → 미리보기=인화). 그리기는 `lib/image/frameArt.ts`.
+- 장식(`decorations`): 타일 기준 `sticker`/`text`(over 로 사진 위), `filmHoles`, `border`, 그리고 **사진 칸마다** `slotSticker`(모서리 테이프 등, 오른쪽 모서리는 회전 반대, `every`) · `slotLabel`(필름 번호 ▶ 1A / 날짜 도장) · `slotOutline`(손그림 sketch·점선·이중선). 사진 칸 장식은 간격 조정까지 반영한 실제 칸을 따라가므로 어떤 레이아웃에도 맞는다.
+- 문구·하단 브랜딩 폰트: `lib/fonts.ts`. **캔버스에 폰트 이름을 직접 쓰지 말 것** — next/font 는 family 이름을 해시로 만들어서(`__Caveat_1a2b`) `"Pretendard"`라고 쓰면 시스템 대체 폰트가 나온다. `canvasFont(font, px)`가 CSS 변수에서 실제 이름을 읽고, `ensureFonts`로 미리 받아 둔다. 추가 폰트(모두 OFL): Caveat·Gaegu(손글씨)·DM Serif Display(잡지)·Space Mono(필름)·Black Han Sans(굵은 한글).
+- 프레임 썸네일은 지금 레이아웃에 각 프레임을 합성 엔진으로 작게(`renderToCanvas(…, { scale })`) 그린 것.
 
 ## 최종본 업로드 신뢰성 (설계도 10)
 - 결과 화면: 합성 즉시 완성본 표시·저장 가능 → 업로드는 `uploadFinal`(`lib/api.ts`)이 **네트워크·5xx·408·429일 때만 최대 3회**(1초·3초 간격, `lib/retry.ts`). 미설정(503 `SUPABASE_NOT_CONFIGURED`)·4xx는 재시도 없이 로컬 저장 안내.
@@ -128,7 +147,7 @@ Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT
 
 ## 검증 방법
 - `npm test` (Vitest, `tests/*.test.ts`). CI 순서: lint → typecheck → test → build (Node 22 — Vitest 5 요구).
-- 테스트 대상: AI 응답 보정, 얼굴 프레이밍·크롭, 랜드마크 기준점·떨림 보정, AR 배치 기하·셰이더 uniform·효과/SVG 유효성, 레이아웃 데이터·기하, 톤 커브·CSS 폴백, 필터 프리셋 유효성, 관리자 인증·통계, 대비 색, **프린트 서버 전체 루프**(가짜 API + 실제 `print-server/index.mjs` 실행).
+- 테스트 대상: AI 응답 보정, 얼굴 프레이밍·크롭, 랜드마크 기준점·떨림 보정, AR 배치 기하·셰이더 uniform·효과/SVG 유효성, 스티커 목록·그림·끌기/손잡이 계산, 프레임 데이터·장식, 레이아웃 데이터·기하, 톤 커브·CSS 폴백, 필터 프리셋 유효성, 관리자 인증·통계, 대비 색, **프린트 서버 전체 루프**(가짜 API + 실제 `print-server/index.mjs` 실행).
 - 브라우저 전용 렌더링(WebGL 셰이더·canvas 합성)은 Node 테스트 불가 → 개발 모드 `window.__owlcutFilters`, AR은 `/dev/ar`로 수동 점검.
 - 로컬 `.next`가 남아 있으면 CI에서만 나는 타입 오류를 놓칠 수 있음 → 의심되면 깨끗한 clone에서 `npm ci && npm run typecheck`.
 

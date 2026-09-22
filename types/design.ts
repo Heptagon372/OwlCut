@@ -45,9 +45,33 @@ export interface LayoutConfig {
 }
 
 // ---------- 프레임 (data/frames) ----------
+// 좌표·크기 규칙은 스티커와 같다: x·y 는 타일 너비·높이 대비, size 는 타일 짧은 변 대비.
+export type PatternName = "dots" | "checker" | "gingham" | "stripes" | "grid" | "hearts" | "stars" | "sparkles" | "confetti";
+
 export type FrameBackground =
   | { type: "solid"; color: string }
-  | { type: "gradient"; from: string; to: string; angle?: number };
+  | { type: "gradient"; from: string; to: string; angle?: number; stops?: string[] } // stops 가 있으면 여러 색
+  | { type: "pattern"; pattern: PatternName; bg: string; fg: string; fg2?: string; scale?: number };
+
+export type FrameFont = "sans" | "display" | "hand" | "hangulHand" | "serif" | "mono";
+
+export type FrameDecoration =
+  // 스티커 그림을 프레임 장식으로 (over: 사진 위에 — 테이프·리본처럼 사진 모서리를 덮을 때)
+  | { type: "sticker"; id: string; x: number; y: number; size: number; rotation?: number; over?: boolean }
+  // 필름 스트립 구멍 (좌우 여백에 자동 배치)
+  | { type: "filmHoles"; color: string }
+  | { type: "text"; text: string; x: number; y: number; size: number; color: string; font?: FrameFont; rotation?: number; align?: "left" | "center" | "right"; over?: boolean }
+  // 안쪽 테두리 선 (inset: 가장자리에서 떨어진 거리, 타일 짧은 변 대비)
+  | { type: "border"; color: string; width: number; inset: number; dash?: number[] }
+  // ---- 사진 칸마다 (어떤 레이아웃에서도 자리가 맞게) ----
+  // 사진 모서리에 스티커 (마스킹 테이프 등). 오른쪽 모서리는 회전을 반대로. every: n번째 칸마다만
+  | { type: "slotSticker"; id: string; at: SlotCorner; size: number; rotation?: number; every?: number; offset?: number }
+  // 사진 안쪽 모서리 글자: 필름 번호(▶ 1A…) 또는 날짜 도장('26 09 23)
+  | { type: "slotLabel"; kind: "film" | "date"; color: string; size: number; glow?: string }
+  // 사진 둘레 선: 손그림(sketch)·점선·이중선
+  | { type: "slotOutline"; color: string; width: number; style: "sketch" | "dashed" | "double"; gap?: number };
+
+export type SlotCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "top";
 
 export interface FrameConfig {
   id: string;
@@ -56,24 +80,43 @@ export interface FrameConfig {
   background: FrameBackground;
   accent: string;                 // 슬롯 테두리 / 강조색
   slotBorderWidth?: number;       // 각 사진 슬롯 테두리 두께(px)
-  footer?: { text: string; color: string };
+  decorations?: FrameDecoration[];
+  footer?: { text: string; color: string; font?: FrameFont };
   defaultTextColor?: string;      // 이 프레임 선택 시 텍스트 기본색
 }
 
 // ---------- 스티커 (data/stickers) ----------
-// MVP: 에셋 없이 이모지 글리프로 렌더 (canvas fillText).
+// 그림(svg, lib/stickers/art.ts) · 글자(word, 웹폰트로 그림) · 이모지(glyph) 세 종류. 모두 이미지로 만들어
+// 편집 화면(끌어서 옮기기)과 합성 엔진이 같은 그림을 쓴다.
+export type StickerCategory = "lovely" | "y2k" | "doodle" | "word" | "deco" | "emoji";
+
+export interface WordStyle {
+  text: string;          // "{date}" 는 오늘 날짜('26 09 23)로 바뀜 (필름 날짜 도장)
+  font: "hand" | "hangulHand" | "display" | "serif" | "mono";
+  fill: string;
+  stroke?: string;       // 외곽선 (스티커 테두리 느낌)
+  glow?: string;         // 네온 빛 번짐 색
+  shape?: "none" | "bubble" | "tag" | "burst" | "window"; // 말풍선·태그·폭발·옛날 컴퓨터 창
+  shapeFill?: string;
+  tilt?: number;         // 기본 기울기(도)
+}
+
 export interface StickerDef {
   id: string;
   label: string;
-  glyph: string;
+  category: StickerCategory;
+  glyph?: string;        // 이모지 스티커
+  word?: WordStyle;      // 글자 스티커 (없고 glyph 도 없으면 그림 스티커)
 }
 
-// 캔버스에 실제로 배치된 스티커 1개
+// 배치된 스티커 1개 — 위치·크기는 타일(스트립 한 장) 기준 비율이라 레이아웃·해상도와 무관
 export interface StickerInstance {
+  uid: string;     // 같은 스티커를 여러 개 붙여도 구분
   id: string;      // StickerDef.id
-  anchor: Anchor;
-  size: number;    // 글리프 폰트 크기(px)
-  rotation?: number;
+  x: number;       // 중심 x (타일 너비 대비 0..1)
+  y: number;       // 중심 y (타일 높이 대비 0..1)
+  size: number;    // 폭 (타일 짧은 변 대비)
+  rotation: number; // 도
 }
 
 // ---------- 텍스트 레이어 ----------

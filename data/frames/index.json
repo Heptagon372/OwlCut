@@ -38,5 +38,158 @@
     "slotBorderWidth": 3,
     "footer": { "text": "S.OWL", "color": "#ffffff" },
     "defaultTextColor": "#ffffff"
+  },
+  {
+    "id": "film_black",
+    "label": "필름 블랙",
+    "description": "검은 필름 스트립, 양옆 필름 구멍과 주황 프레임 번호. 필름 카메라, 레트로, 감성, 흑백 필터와 잘 어울림",
+    "background": { "type": "solid", "color": "#111111" },
+    "accent": "#111111",
+    "slotBorderWidth": 0,
+    "decorations": [
+      { "type": "filmHoles", "color": "#f2efe8" },
+      { "type": "slotLabel", "kind": "film", "color": "#ffb35c", "size": 0.032, "glow": "#ff6a00" }
+    ],
+    "footer": { "text": "S.OWL FILM 400", "color": "#ff9a3c", "font": "mono" },
+    "defaultTextColor": "#f2efe8"
+  },
+  {
+    "id": "mint_dots",
+    "label": "민트 도트",
+    "description": "민트 바탕에 흰 물방울무늬. 상큼, 여름, 청량, 귀여운",
+    "background": { "type": "pattern", "pattern": "dots", "bg": "#bfebdd", "fg": "#ffffff", "scale": 0.9 },
+    "accent": "#ffffff",
+    "slotBorderWidth": 0,
+    "footer": { "text": "S.OWL", "color": "#2b6e5b", "font": "display" },
+    "defaultTextColor": "#2b6e5b"
+  },
+  {
+    "id": "stars_cream",
+    "label": "별별별",
+    "description": "크림 바탕에 크고 작은 빨간 별. 빈티지, 귀여운, 생일, 축하",
+    "background": { "type": "pattern", "pattern": "stars", "bg": "#f3ede2", "fg": "#c8352e", "fg2": "#e8665d", "scale": 1.1 },
+    "accent": "#c8352e",
+    "slotBorderWidth": 0,
+    "footer": { "text": "s.owl", "color": "#c8352e", "font": "hand" },
+    "defaultTextColor": "#c8352e"
+  },
+  {
+    "id": "night_sky",
+    "label": "밤하늘",
+    "description": "남색 밤하늘에 반짝이는 별. 몽환적, 밤, 겨울, 크리스마스, 차분",
+    "background": { "type": "pattern", "pattern": "sparkles", "bg": "#1e2a4a", "fg": "#ffffff", "fg2": "#ffd84a" },
+    "accent": "#ffe9a8",
+    "slotBorderWidth": 0,
+    "footer": { "text": "Good Night", "color": "#ffe9a8", "font": "serif" },
+    "defaultTextColor": "#ffe9a8"
+  },
+  {
+    "id": "pink_gingham",
+    "label": "핑크 깅엄",
+    "description": "분홍 깅엄 체크와 사진마다 마스킹 테이프. 러블리, 봄, 스크랩북, 다꾸",
+    "background": { "type": "pattern", "pattern": "gingham", "bg": "#ffffff", "fg": "#f6a5b8", "scale": 0.8 },
+    "accent": "#ffffff",
+    "slotBorderWidth": 0,
+    "decorations": [
+      { "type": "slotSticker", "id": "tape-pink", "at": "top-left", "size": 0.24, "rotation": -38, "offset": 0.012 },
+      { "type": "slotSticker", "id": "tape-pink", "at": "bottom-right", "size": 0.24, "rotation": -38, "offset": 0.012, "every": 2 }
+    ],
+    "footer": { "text": "with love", "color": "#d9577a", "font": "hand" },
+    "defaultTextColor": "#d9577a"
+  },
+  {
+    "id": "cherry_picnic",
+    "label": "체리 피크닉",
+    "description": "빨간 체크 식탁보와 체리. 피크닉, 여름, 레트로, 발랄",
+    "background": { "type": "pattern", "pattern": "gingham", "bg": "#fff8f0", "fg": "#d8343f", "scale": 1.1 },
+    "accent": "#ffffff",
+    "slotBorderWidth": 5,
+    "decorations": [
+      { "type": "sticker", "id": "cherry", "x": 0.9, "y": 0.035, "size": 0.2, "rotation": 14, "over": true },
+      { "type": "sticker", "id": "cherry", "x": 0.12, "y": 0.955, "size": 0.15, "rotation": -10 }
+    ],
+    "footer": { "text": "cherry day", "color": "#b8202c", "font": "hand" },
+    "defaultTextColor": "#b8202c"
+  },
+  {
+    "id": "notebook",
+    "label": "스프링 노트",
+    "description": "모눈 노트에 파란 볼펜 낙서와 손그림 테두리. 학교, 친구, 다이어리, 캐주얼",
+    "background": { "type": "pattern", "pattern": "grid", "bg": "#ffffff", "fg": "#d6e6ff", "scale": 0.7 },
+    "accent": "#2f5bea",
+    "slotBorderWidth": 0,
+    "decorations": [
+      { "type": "slotOutline", "color": "#2f5bea", "width": 0.006, "style": "sketch", "gap": 0.014 },
+      { "type": "sticker", "id": "pen-hearts", "x": 0.87, "y": 0.04, "size": 0.2, "rotation": 10, "over": true },
+      { "type": "sticker", "id": "pen-stars", "x": 0.12, "y": 0.955, "size": 0.15, "rotation": -8 }
+    ],
+    "footer": { "text": "우리 오늘 최고", "color": "#2f5bea", "font": "hangulHand" },
+    "defaultTextColor": "#2f5bea"
+  },
+  {
+    "id": "magazine",
+    "label": "매거진",
+    "description": "잡지 표지처럼 큰 빨간 제호와 바코드. 패션, 시크, 모던, 화보",
+    "background": { "type": "solid", "color": "#f5f1e8" },
+    "accent": "#1b1b1f",
+    "slotBorderWidth": 0,
+    "decorations": [
+      { "type": "text", "text": "S.OWL", "x": 0.5, "y": 0.075, "size": 0.2, "color": "#d7262b", "font": "serif", "over": true },
+      { "type": "sticker", "id": "barcode", "x": 0.16, "y": 0.955, "size": 0.18 }
+    ],
+    "footer": { "text": "ISSUE No.26", "color": "#1b1b1f", "font": "serif" },
+    "defaultTextColor": "#1b1b1f"
+  },
+  {
+    "id": "y2k_chrome",
+    "label": "Y2K 크롬",
+    "description": "라벤더·하늘·핑크 홀로그램 그라데이션과 크롬 하트. Y2K, 힙, 파티, 반짝",
+    "background": { "type": "gradient", "from": "#c9b8ff", "to": "#a8e6ff", "angle": 135, "stops": ["#c9b8ff", "#a8e6ff", "#ffd1f0", "#c9b8ff"] },
+    "accent": "#ffffff",
+    "slotBorderWidth": 3,
+    "decorations": [
+      { "type": "sticker", "id": "chrome-heart", "x": 0.13, "y": 0.04, "size": 0.24, "rotation": -14, "over": true },
+      { "type": "sticker", "id": "sparkle-set", "x": 0.88, "y": 0.05, "size": 0.18, "over": true },
+      { "type": "sticker", "id": "chrome-star", "x": 0.87, "y": 0.955, "size": 0.14, "rotation": 12 }
+    ],
+    "footer": { "text": "S.OWL 2000", "color": "#6a4fd8", "font": "display" },
+    "defaultTextColor": "#6a4fd8"
+  },
+  {
+    "id": "cloud_sky",
+    "label": "구름 하늘",
+    "description": "하늘색 그라데이션과 뭉게구름. 맑은, 청량, 순수, 봄·여름",
+    "background": { "type": "gradient", "from": "#9fd3ff", "to": "#eef8ff", "angle": 90 },
+    "accent": "#ffffff",
+    "slotBorderWidth": 4,
+    "decorations": [
+      { "type": "sticker", "id": "cloud", "x": 0.16, "y": 0.035, "size": 0.26, "over": true },
+      { "type": "sticker", "id": "cloud", "x": 0.86, "y": 0.955, "size": 0.2 }
+    ],
+    "footer": { "text": "Be my sunshine", "color": "#3a86d4", "font": "hand" },
+    "defaultTextColor": "#3a86d4"
+  },
+  {
+    "id": "heart_pop",
+    "label": "하트 팝",
+    "description": "연분홍 바탕에 하트 무늬, 흰 테두리. 발렌타인, 커플, 러블리, 달달",
+    "background": { "type": "pattern", "pattern": "hearts", "bg": "#ffd6e0", "fg": "#ff6f94", "fg2": "#ffffff" },
+    "accent": "#ffffff",
+    "slotBorderWidth": 6,
+    "footer": { "text": "S.OWL ♡", "color": "#e0115f", "font": "display" },
+    "defaultTextColor": "#e0115f"
+  },
+  {
+    "id": "owl_peek",
+    "label": "아울 까꿍",
+    "description": "크림 도트 바탕, 아울네컷 부엉이가 사진 구석에서 빼꼼. 귀여운, 캐릭터, 브랜드, 따뜻한",
+    "background": { "type": "pattern", "pattern": "dots", "bg": "#f5ecd9", "fg": "#e8d6b5", "scale": 0.8 },
+    "accent": "#8b5a3c",
+    "slotBorderWidth": 0,
+    "decorations": [
+      { "type": "sticker", "id": "owl-peek", "x": 0.82, "y": 0.935, "size": 0.32, "over": true }
+    ],
+    "footer": { "text": "S.OWL", "color": "#8b5a3c", "font": "display" },
+    "defaultTextColor": "#8b5a3c"
   }
 ]

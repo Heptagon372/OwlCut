@@ -8,6 +8,7 @@ import { PhotoCanvas } from "@/components/editor/PhotoCanvas";
 import { ScreenPanel } from "@/components/editor/ScreenPanel";
 import { FrameSelector } from "@/components/editor/FrameSelector";
 import { StickerPanel } from "@/components/editor/StickerPanel";
+import { StickerLayer } from "@/components/editor/StickerLayer";
 import { TextEditor } from "@/components/editor/TextEditor";
 import { FilterPicker } from "@/components/filters/FilterPicker";
 import { EffectPicker } from "@/components/filters/EffectPicker";
@@ -41,6 +42,7 @@ export default function EditPage() {
   const router = useRouter();
   const { photos, design, setDesign, setPhotos } = useBoothStore();
   const [tab, setTab] = useState<Tab>("screen");
+  const [selectedSticker, setSelectedSticker] = useState<string | null>(null); // 미리보기에서 조작 중인 스티커
 
   // 찍은 매수와 레이아웃 칸 수가 다르면(예: 6컷 레이아웃이 남아 있는데 4장) 그 매수의 기본 레이아웃으로
   useEffect(() => {
@@ -102,7 +104,20 @@ export default function EditPage() {
         {/* 미리보기 */}
         <div className="glass flex flex-col gap-3 rounded-card p-4 lg:sticky lg:top-6">
           <div className="grid min-h-[50vh] place-items-center rounded-[22px] bg-white/35 p-4">
-            <PhotoCanvas photos={photos} design={design} className="max-h-[66vh] rounded-md shadow-[0_24px_48px_-24px_rgba(0,0,0,0.45)]" />
+            <PhotoCanvas
+              photos={photos}
+              design={design}
+              className="max-h-[66vh] rounded-md shadow-[0_24px_48px_-24px_rgba(0,0,0,0.45)]"
+              overlay={
+                <StickerLayer
+                  layout={getLayout(design.layoutId)}
+                  stickers={design.stickers}
+                  selected={selectedSticker}
+                  onSelect={setSelectedSticker}
+                  onChange={(s) => setDesign({ stickers: s })}
+                />
+              }
+            />
           </div>
           <div className="flex flex-wrap gap-2 px-1 text-xs">
             <span className="rounded-full bg-ink px-3 py-1.5 font-semibold text-white">{getLayout(design.layoutId).label}</span>
@@ -168,11 +183,20 @@ export default function EditPage() {
               </Panel>
 
               <Panel title="프레임" icon={<Frame className="h-4 w-4" />}>
-                <FrameSelector value={design.frameId} onChange={(id) => setDesign({ frameId: id })} />
+                <FrameSelector
+                  value={design.frameId}
+                  onChange={(id) => setDesign({ frameId: id })}
+                  layout={getLayout(design.layoutId)}
+                />
               </Panel>
 
-              <Panel title="스티커" icon={<Smile className="h-4 w-4" />}>
-                <StickerPanel value={design.stickers} onChange={(s) => setDesign({ stickers: s })} />
+              <Panel title="스티커" icon={<Smile className="h-4 w-4" />} aside="끌어서 옮기기">
+                <StickerPanel
+                  value={design.stickers}
+                  onChange={(s) => setDesign({ stickers: s })}
+                  selected={selectedSticker}
+                  onSelect={setSelectedSticker}
+                />
               </Panel>
 
               <Panel title="문구" icon={<Type className="h-4 w-4" />}>

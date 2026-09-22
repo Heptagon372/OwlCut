@@ -9,11 +9,12 @@ import {
   isFilter,
 } from "@/lib/data/registry";
 import { isEffect, NO_EFFECT } from "@/lib/ar/effects";
+import { anchorToPosition, newUid } from "@/lib/stickers/geometry";
 import { ANCHORS, type Anchor, type StickerInstance, type TextAnchor } from "@/types/design";
 import type { AIDesignResult } from "@/types/ai";
 import { MAX_CAPTION_LENGTH, MAX_STICKERS } from "./prompt";
 
-const STICKER_SIZE = 120;
+const STICKER_SIZE = 0.28; // 타일 짧은 변 대비
 const CAPTION_SIZE = 44;
 
 export function fallbackDesign(): AIDesignResult {
@@ -81,7 +82,8 @@ export function normalizeAIDesign(raw: unknown): { design: AIDesignResult; warni
     }
     if (used.has(anchor)) continue;
     used.add(anchor);
-    stickers.push({ id, anchor, size: STICKER_SIZE });
+    // AI는 9분할 위치만 고르고, 좌표로 바꿔 넣는다 (편집 화면에서 끌어서 다듬을 수 있게)
+    stickers.push({ uid: newUid(), id, ...anchorToPosition(anchor), size: STICKER_SIZE, rotation: 0 });
   }
 
   // text

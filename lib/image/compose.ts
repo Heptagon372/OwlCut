@@ -1,24 +1,21 @@
 // ============================================================
 // 이미지 합성 엔진 (설계도 7-3) — 프로젝트의 핵심 모듈.
-// 레이어 순서: Background → Frame → Photos(+filter, AR 얼굴 효과) → Stickers → Text → Footer
+// 레이어 순서: 배경(단색·그라데이션·패턴) → 프레임 장식(아래) → 사진(+필터, AR 얼굴 효과) → 테두리
+//            → 프레임 장식(위: 테이프·리본) → 스티커 → 문구 → 하단 브랜딩
 // 수동 편집과 AI 편집이 이 동일한 엔진을 공유한다.
 // * 브라우저 전용 (canvas/Image 사용). 서버에서 import 후 호출하지 말 것.
 // ============================================================
-import type {
-  ComposeInput,
-  Focus,
-  FrameConfig,
-  PhotoSlot,
-  StickerInstance,
-  TextLayer,
-  Anchor,
-} from "@/types/design";
-import { getFilter, getSticker } from "@/lib/data/registry";
+import type { ComposeInput, Focus, PhotoSlot, StickerInstance, TextLayer } from "@/types/design";
+import { getFilter } from "@/lib/data/registry";
 import { effectAssets, getEffect } from "@/lib/ar/effects";
 import { ensureAssets } from "@/lib/ar/assets";
 import { drawWithEffect } from "@/lib/ar/draw";
+import { ensureStickers, getStickerImage } from "@/lib/stickers/images";
+import { stickerBox } from "@/lib/stickers/geometry";
+import { canvasFont, ensureFonts } from "@/lib/fonts";
 import { cornerRadius, normalizeOrder, outputSize, spacedSlot } from "./layoutGeometry";
 import { readableTextOn } from "./color";
+import { drawDecorations, frameAssets, paintBackground } from "./frameArt";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -28,36 +25,6 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error("이미지 로드 실패"));
     img.src = src;
   });
-}
-
-function paintBackground(
-  ctx: CanvasRenderingContext2D,
-  frame: FrameConfig,
-  w: number,
-  h: number,
-  override?: string | null,
-) {
-  const bg = override ? ({ type: "solid", color: override } as const) : frame.background;
-  if (bg.type === "gradient") {
-    const angle = ((bg.angle ?? 0) * Math.PI) / 180;
-    const dx = Math.cos(angle);
-    const dy = Math.sin(angle);
-    const cx = w / 2;
-    const cy = h / 2;
-    const half = (Math.abs(dx) * w + Math.abs(dy) * h) / 2;
-    const grad = ctx.createLinearGradient(
-      cx - dx * half,
-      cy - dy * half,
-      cx + dx * half,
-      cy + dy * half,
-    );
-    grad.addColorStop(0, bg.from);
-    grad.addColorStop(1, bg.to);
-    ctx.fillStyle = grad;
-  } else {
-    ctx.fillStyle = bg.color;
-  }
-  ctx.fillRect(0, 0, w, h);
 }
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
@@ -93,100 +60,70 @@ function roundRectPath(ctx: CanvasRenderingContext2D, s: PhotoSlot, radius: numb
   ctx.closePath();
 }
 
-function anchorPoint(
-  anchor: Anchor,
-  w: number,
-  h: number,
-  margin: number,
-): [number, number] {
-  const midX = w / 2;
-  const midY = h / 2;
-  const leftX = margin;
-  const rightX = w - margin;
-  const topY = margin;
-  const botY = h - margin;
-  const map: Record<Anchor, [number, number]> = {
-    "top-left": [leftX, topY],
-    top: [midX, topY],
-    "top-right": [rightX, topY],
-    left: [leftX, midY],
-    center: [midX, midY],
-    right: [rightX, midY],
-    "bottom-left": [leftX, botY],
-    bottom: [midX, botY],
-    "bottom-right": [rightX, botY],
-  };
-  return map[anchor];
-}
-
-function drawStickers(
-  ctx: CanvasRenderingContext2D,
-  stickers: StickerInstance[],
-  w: number,
-  h: number,
-) {
-  ctx.save();
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+// 스티커: 편집 화면(끌어서 옮기기)과 같은 이미지·같은 좌표 규칙 (lib/stickers/geometry)
+function drawStickers(ctx: CanvasRenderingContext2D, stickers: StickerInstance[], w: number, h: number) {
   for (const s of stickers) {
-    const def = getSticker(s.id);
-    if (!def) continue;
-    const [px, py] = anchorPoint(s.anchor, w, h, s.size * 0.7);
+    const img = getStickerImage(s.id);
+    if (!img?.naturalWidth) continue;
+    const { cx, cy, w: sw } = stickerBox(s, w, h);
+    const sh = (sw * img.naturalHeight) / img.naturalWidth;
     ctx.save();
-    ctx.translate(px, py);
-    if (s.rotation) ctx.rotate((s.rotation * Math.PI) / 180);
-    ctx.font = `${s.size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
-    ctx.fillText(def.glyph, 0, 0);
+    ctx.translate(cx, cy);
+    ctx.rotate(((s.rotation ?? 0) * Math.PI) / 180);
+    ctx.drawImage(img, -sw / 2, -sh / 2, sw, sh);
     ctx.restore();
   }
-  ctx.restore();
 }
 
-function drawTextLayers(
-  ctx: CanvasRenderingContext2D,
-  layers: TextLayer[],
-  w: number,
-  h: number,
-) {
+function drawTextLayers(ctx: CanvasRenderingContext2D, layers: TextLayer[], w: number, h: number) {
   ctx.save();
   ctx.textAlign = "center";
   for (const t of layers) {
     if (!t.content.trim()) continue;
-    ctx.font = `bold ${t.size}px "Pretendard", "Malgun Gothic", sans-serif`;
+    ctx.font = canvasFont("sans", t.size);
     ctx.fillStyle = t.color;
-    ctx.textBaseline =
-      t.anchor === "top" ? "top" : t.anchor === "bottom" ? "bottom" : "middle";
+    ctx.textBaseline = t.anchor === "top" ? "top" : t.anchor === "bottom" ? "bottom" : "middle";
     const pad = Math.round(t.size * 0.8);
-    const y =
-      t.anchor === "top" ? pad : t.anchor === "bottom" ? h - pad : h / 2;
+    const y = t.anchor === "top" ? pad : t.anchor === "bottom" ? h - pad : h / 2;
     ctx.fillText(t.content, w / 2, y, w * 0.9);
   }
   ctx.restore();
 }
 
-// 타일(스트립 한 장) 렌더링
-async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement): Promise<void> {
+// 타일(스트립 한 장) 렌더링. scale < 1 이면 같은 그림을 작게 (프레임 썸네일용)
+async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement, scale = 1): Promise<void> {
   const { photos, focuses, layout, frame, stickers, textLayers, filter } = input;
   const { width, height } = layout.canvas;
-  canvas.width = width;
-  canvas.height = height;
+
+  // 그림·폰트를 먼저 준비 (그리는 도중에는 기다릴 수 없음)
+  const fa = frameAssets(frame);
+  const effect = getEffect(input.effect);
+  await Promise.all([
+    ensureStickers([...fa.stickers, ...stickers.map((s) => s.id)]),
+    ensureFonts(fa.fonts, fa.texts || "S.OWL"),
+    textLayers.length ? ensureFonts(["sans"], textLayers.map((t) => t.content).join("")) : null,
+    effect ? ensureAssets(effectAssets(effect)) : null,
+  ]);
+
+  canvas.width = Math.round(width * scale);
+  canvas.height = Math.round(height * scale);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas 2d context를 가져오지 못했습니다");
+  ctx.scale(scale, scale);
 
-  // 1) Background (배경색 직접 지정이 있으면 프레임 배경 대신)
-  paintBackground(ctx, frame, width, height, input.backgroundColor);
+  // 1) 배경 (배경색 직접 지정이 있으면 프레임 배경 대신) + 사진 아래 장식
+  const slots = layout.slots.map((s) => spacedSlot(s, input.slotSpacing ?? 0, width));
+  paintBackground(ctx, input.backgroundColor ? { type: "solid", color: input.backgroundColor } : frame.background, width, height);
+  drawDecorations(ctx, frame, layout, width, height, false, slots);
 
-  // 2) Photos (+filter) & slot borders — 자리 i 에는 photoOrder[i] 번 사진
+  // 2) 사진 (+필터·AR) & 테두리 — 자리 i 에는 photoOrder[i] 번 사진
   const order = normalizeOrder(input.photoOrder, layout.slots.length);
   const filterParams = getFilter(filter).params;
   const intensity = input.filterIntensity ?? 1;
   const images = await Promise.all(order.map((p) => (photos[p] ? loadImage(photos[p]) : null)));
-  // AR 얼굴 효과: 사진마다 저장된 얼굴 기준점으로 스티커·왜곡을 다시 계산 (촬영 후에도 효과 변경 가능)
-  const effect = getEffect(input.effect);
-  if (effect) await ensureAssets(effectAssets(effect));
 
-  for (let i = 0; i < layout.slots.length; i++) {
-    const slot = spacedSlot(layout.slots[i], input.slotSpacing ?? 0, width);
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i];
     const radius = cornerRadius(slot, input.slotRounding ?? 0);
 
     // 폴라로이드 카드
@@ -225,23 +162,20 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement): Promi
     }
   }
 
-  // 3) Stickers
+  // 3) 사진 위 장식 → 스티커 → 문구
+  drawDecorations(ctx, frame, layout, width, height, true, slots);
   drawStickers(ctx, stickers, width, height);
-
-  // 4) Text layers
   drawTextLayers(ctx, textLayers, width, height);
 
-  // 5) Footer (프레임 브랜딩) — 하단 중앙
-  if (frame.footer && frame.footer.text) {
+  // 4) 하단 브랜딩
+  if (frame.footer?.text) {
     ctx.save();
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     const size = layout.footerFontSize ?? Math.round(Math.min(width, height) * 0.045);
-    ctx.font = `600 ${size}px "Pretendard", "Malgun Gothic", sans-serif`;
+    ctx.font = canvasFont(frame.footer.font ?? "sans", size);
     // 배경색을 직접 바꿨으면 프레임 기본 글자색 대신 그 배경에서 잘 보이는 색
-    ctx.fillStyle = input.backgroundColor
-      ? readableTextOn(input.backgroundColor, frame.footer.color)
-      : frame.footer.color;
+    ctx.fillStyle = input.backgroundColor ? readableTextOn(input.backgroundColor, frame.footer.color) : frame.footer.color;
     ctx.fillText(frame.footer.text, width / 2, height - Math.round(height * 0.015));
     ctx.restore();
   }
@@ -251,22 +185,28 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement): Promi
 export async function renderToCanvas(
   input: ComposeInput,
   canvas: HTMLCanvasElement,
+  { scale = 1 }: { scale?: number } = {},
 ): Promise<void> {
   const { layout } = input;
   if (!layout.tile) {
-    await renderTile(input, canvas);
+    await renderTile(input, canvas, scale);
     return;
   }
   const tile = document.createElement("canvas");
-  await renderTile(input, tile);
+  await renderTile(input, tile, scale);
 
   const { width, height } = outputSize(layout);
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = Math.round(width * scale);
+  canvas.height = Math.round(height * scale);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas 2d context를 가져오지 못했습니다");
-  const g = layout.tile.gutter ?? 0;
-  if (g > 0) paintBackground(ctx, input.frame, width, height, input.backgroundColor);
+  const g = (layout.tile.gutter ?? 0) * scale;
+  if (g > 0) {
+    ctx.save();
+    ctx.scale(scale, scale);
+    paintBackground(ctx, input.backgroundColor ? { type: "solid", color: input.backgroundColor } : input.frame.background, width, height);
+    ctx.restore();
+  }
   for (let r = 0; r < (layout.tile.rows ?? 1); r++) {
     for (let c = 0; c < layout.tile.columns; c++) {
       ctx.drawImage(tile, c * (tile.width + g), r * (tile.height + g));
@@ -279,10 +219,7 @@ export async function compose(input: ComposeInput): Promise<Blob> {
   const canvas = document.createElement("canvas");
   await renderToCanvas(input, canvas);
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("PNG 변환 실패"))),
-      "image/png",
-    );
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("PNG 변환 실패"))), "image/png");
   });
 }
 
