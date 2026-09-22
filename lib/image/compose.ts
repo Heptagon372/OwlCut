@@ -1,6 +1,6 @@
 // ============================================================
 // 이미지 합성 엔진 (설계도 7-3) — 프로젝트의 핵심 모듈.
-// 레이어 순서: Background → Frame → Photos(+filter) → Stickers → Text → Footer
+// 레이어 순서: Background → Frame → Photos(+filter, AR 얼굴 효과) → Stickers → Text → Footer
 // 수동 편집과 AI 편집이 이 동일한 엔진을 공유한다.
 // * 브라우저 전용 (canvas/Image 사용). 서버에서 import 후 호출하지 말 것.
 // ============================================================
@@ -14,7 +14,9 @@ import type {
   Anchor,
 } from "@/types/design";
 import { getFilter, getSticker } from "@/lib/data/registry";
-import { drawFiltered } from "@/lib/filters/offline";
+import { effectAssets, getEffect } from "@/lib/ar/effects";
+import { ensureAssets } from "@/lib/ar/assets";
+import { drawWithEffect } from "@/lib/ar/draw";
 import { cornerRadius, normalizeOrder, outputSize, spacedSlot } from "./layoutGeometry";
 import { readableTextOn } from "./color";
 
@@ -179,6 +181,9 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement): Promi
   const filterParams = getFilter(filter).params;
   const intensity = input.filterIntensity ?? 1;
   const images = await Promise.all(order.map((p) => (photos[p] ? loadImage(photos[p]) : null)));
+  // AR 얼굴 효과: 사진마다 저장된 얼굴 기준점으로 스티커·왜곡을 다시 계산 (촬영 후에도 효과 변경 가능)
+  const effect = getEffect(input.effect);
+  if (effect) await ensureAssets(effectAssets(effect));
 
   for (let i = 0; i < layout.slots.length; i++) {
     const slot = spacedSlot(layout.slots[i], input.slotSpacing ?? 0, width);
@@ -203,8 +208,9 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement): Promi
     const img = images[i];
     if (img) {
       // 사진은 원본으로 저장돼 있고, 촬영 전에 고른 필터를 여기서 슬롯 크기로 적용 (미리보기와 같은 셰이더)
+      // AR 스티커도 슬롯 클립 안에서 그려 사진 밖으로 삐져나가지 않게
       const crop = coverCrop(img.width, img.height, slot, focuses?.[order[i]]);
-      drawFiltered(ctx, img, crop, slot, filterParams, intensity, i * 17.3);
+      drawWithEffect(ctx, img, crop, slot, filterParams, intensity, effect, input.photoFaces?.[order[i]], i * 17.3);
     } else {
       ctx.fillStyle = "rgba(0,0,0,0.08)"; // 사진 없는 자리
       ctx.fillRect(slot.x, slot.y, slot.w, slot.h);

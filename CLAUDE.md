@@ -44,7 +44,7 @@ npm run build      # 프로덕션 빌드
 - 엔진: `lib/filters/engine.ts` (WebGL, 셰이더 `shaders.ts`). 미리보기(`FilteredPreview`)·썸네일·촬영 후 확인(`FilteredImage`)·최종 합성(`compose` → `drawFiltered`)이 **같은 셰이더** → 보이는 그대로 인화.
   - 파이프라인: 피부보정(YCbCr 피부 마스크 + bilateral) → 노출/화이트밸런스/대비 → 하이라이트·섀도 → 채도/바이브런스 → 톤 커브(단조 3차, `curves.ts`) → 흑백 채널믹스/세피아 → 스플릿 토닝 → 페이드 → 소프트 글로우(저해상도 가우시안) → 비네팅 → 빛샘 → 그레인 → 강도.
   - WebGL 없으면 `cssFallback.ts`로 근사 (밝기/대비/채도/흑백/세피아만).
-- 프리셋 42종: `data/filters/index.json` (카테고리 기본·뷰티·흑백·필름·톤·무드). 새 필터 = JSON 한 항목, 파라미터 설명은 `types/filter.ts`. AI 스키마 enum·썸네일·카테고리 탭 자동 반영.
+- 프리셋 43종: `data/filters/index.json` (카테고리 기본·뷰티·흑백·필름·톤·무드). 새 필터 = JSON 한 항목, 파라미터 설명은 `types/filter.ts`. AI 스키마 enum·썸네일·카테고리 탭 자동 반영.
 - 흑백 인물은 빨강 비중 높은 채널믹스([.5,.4,.1])가 피부를 밝게 보이게 함. 화이트밸런스는 ±1 = 강한 캐스트, 보통 0.05~0.3.
 - 개발 모드 전용 디버그: 브라우저 콘솔 `window.__owlcutFilters` (엔진 직접 렌더·프리셋 조회). production 빌드엔 없음.
 - 카메라 없는 환경에서 촬영 흐름 시험: 홈에서 `navigator.mediaDevices.getUserMedia`를 캔버스 `captureStream()`으로 바꾼 뒤 "촬영 시작"(앱 내 이동이라 패치 유지).
@@ -65,10 +65,21 @@ npm run build      # 프로덕션 빌드
 - `/api/ai`는 과금되는 공개 엔드포인트 → 프롬프트 200자 제한 + IP당 분당 8회 제한(`lib/rateLimit.ts`, 인스턴스 메모리 기반).
 
 ## 사람 추적 / 자동 프레이밍 (Phase 6)
-- MediaPipe Face Detector(`lib/tracking/useFaceTracking.ts`), ~11fps. 여러 명이면 얼굴 박스 합집합으로 판단.
+- MediaPipe **Face Landmarker**(얼굴마다 478점, 최대 4명, `lib/tracking/useFaceTracking.ts`). 프레이밍만 ~11fps, AR 효과를 쓰면 ~30fps. 여러 명이면 얼굴 박스 합집합으로 판단.
+- 랜드마크 → AR 기준점(눈·코·입·볼·윤곽·이마) 추출과 **One Euro 필터 떨림 보정**은 순수 함수 `lib/tracking/landmarks.ts`. 얼굴 좌표는 매 프레임 React 상태가 아니라 `facesRef`로 넘김(리렌더 없음), 화면 가이드 상태는 120ms마다만 갱신.
 - 촬영 화면: 인물 박스 + 이동 안내(`lib/tracking/framing.ts`, 순수 함수). 셔터 순간의 인물 중심을 사진별 `focus`로 저장 → `compose`의 `coverCrop`이 가운데 대신 인물 중심으로 크롭.
-- WASM(34MB)은 `postinstall`이 `public/mediapipe/wasm`으로 복사 (git·eslint 제외). 모델은 Google Storage (`NEXT_PUBLIC_FACE_MODEL_URL`로 교체 가능).
+- WASM(34MB)은 `postinstall`이 `public/mediapipe/wasm`으로 복사 (git·eslint 제외). 모델(3.7MB)은 Google Storage (`NEXT_PUBLIC_FACE_MODEL_URL`로 교체 가능 — Face Landmarker `.task` 모델이어야 함).
 - 보조 기능: 로드 실패 시 "사용 불가" 표시만 하고 촬영은 정상 진행.
+- 얼굴이 화면 폭의 ~5% 미만(멀리 선 단체)이면 근거리 모델 특성상 못 찾음. 부스 거리(1~2m)에서는 문제없음.
+
+## AR 얼굴 효과 (스티커·왜곡·모자이크)
+- 효과 27종(`lib/ar/effects.ts`, 동물·러블리·펀·얼굴 효과) + 그림 28장은 **직접 그린 SVG**(`lib/ar/assets.ts`, 외부 저작물 없음). 새 효과 = 배열 한 항목, 새 그림 = SVG 문자열 하나.
+- 배치 단위는 **얼굴 좌표계**(x: 두 눈 방향, y: 아래, 단위: 얼굴 폭, `lib/ar/geometry.ts`) → 가까우면 커지고 고개를 기울이면 같이 돈다. `mirrorSecond`로 양쪽 귀·리본 대칭.
+- 왜곡(왕눈이·퍼니 페이스·볼빵빵·작은 얼굴)과 모자이크는 필터 셰이더 맨 앞에서 샘플 좌표를 옮김(`uWarp[8]`, `uMosaicA/B[4]`). 배율 곡선 `1-s(1-u²)²`(가장자리 연속, |s|<1이면 접힘 없음). WebGL 없으면 모자이크만 캔버스로 대체.
+- 필터처럼 **비파괴**: 사진은 원본 저장 + 셔터 순간 얼굴 기준점을 `CapturedPhoto.faces`(캡처 이미지 좌표, 거울 반전 반영)로 보관 → 편집 화면에서 효과를 바꿔도 다시 계산해 합성(`lib/ar/draw.ts`의 `drawWithEffect`를 합성·확인 썸네일·효과 썸네일이 공유).
+- 촬영 화면 스티커 레이어(`AROverlay`)는 캔버스를 뒤집지 않고 **얼굴 좌표를 뒤집어** 그림 → 비대칭 그림(리본 위치 등)이 캡처 결과와 똑같이 보임. 왜곡은 `FilteredPreview`가 비디오 원본 좌표로 처리.
+- 효과를 켜면 자동 프레이밍을 꺼도 추적은 계속 (프레이밍 가이드만 숨김). `designs.layout_options.effect`로 저장.
+- **점검판 `/dev/ar`** (개발 모드 전용, production 404): 기본 얼굴 일러스트 또는 `?src=<CORS 허용 이미지>`의 실제 얼굴에 전 효과를 한 번에. `&zoom=3`(확대) `&rotate=25`(기울임) `&mirror=1`. 브라우저 창이 가려져 있으면 헤드리스 Chrome `--screenshot`으로 캡처(제목이 `AR LAB READY`가 되면 완료).
 
 ## 출력 (Phase 7)
 - 부스: `POST /api/print`(큐 등록만) → `GET /api/print?session_id=` 폴링. 세션당 3회·1회 2매 제한.
@@ -107,8 +118,8 @@ Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT
 
 ## 검증 방법
 - `npm test` (Vitest, `tests/*.test.ts`). CI 순서: lint → typecheck → test → build (Node 22 — Vitest 5 요구).
-- 테스트 대상: AI 응답 보정, 얼굴 프레이밍·크롭, 레이아웃 데이터·기하, 톤 커브·CSS 폴백, 필터 프리셋 42종 유효성, 관리자 인증·통계, 대비 색, **프린트 서버 전체 루프**(가짜 API + 실제 `print-server/index.mjs` 실행).
-- 브라우저 전용 렌더링(WebGL 셰이더·canvas 합성)은 Node 테스트 불가 → 개발 모드 `window.__owlcutFilters`로 수동 점검.
+- 테스트 대상: AI 응답 보정, 얼굴 프레이밍·크롭, 랜드마크 기준점·떨림 보정, AR 배치 기하·셰이더 uniform·효과/SVG 유효성, 레이아웃 데이터·기하, 톤 커브·CSS 폴백, 필터 프리셋 유효성, 관리자 인증·통계, 대비 색, **프린트 서버 전체 루프**(가짜 API + 실제 `print-server/index.mjs` 실행).
+- 브라우저 전용 렌더링(WebGL 셰이더·canvas 합성)은 Node 테스트 불가 → 개발 모드 `window.__owlcutFilters`, AR은 `/dev/ar`로 수동 점검.
 - 로컬 `.next`가 남아 있으면 CI에서만 나는 타입 오류를 놓칠 수 있음 → 의심되면 깨끗한 clone에서 `npm ci && npm run typecheck`.
 
 ## 진행 상황

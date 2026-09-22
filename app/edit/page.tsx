@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Frame, Images, RotateCcw, Smile, Sparkles, SunMedium, Type } from "lucide-react";
+import { ArrowRight, Frame, Images, RotateCcw, ScanFace, Smile, Sparkles, SunMedium, Type } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { AIDesignPanel } from "@/components/ai/AIDesignPanel";
 import { PhotoCanvas } from "@/components/editor/PhotoCanvas";
@@ -10,12 +10,14 @@ import { FrameSelector } from "@/components/editor/FrameSelector";
 import { StickerPanel } from "@/components/editor/StickerPanel";
 import { TextEditor } from "@/components/editor/TextEditor";
 import { FilterPicker } from "@/components/filters/FilterPicker";
+import { EffectPicker } from "@/components/filters/EffectPicker";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { Segmented } from "@/components/ui/Segmented";
 import { Logo } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
 import { getFilter, getFrame, getLayout } from "@/lib/data/registry";
+import { getEffect } from "@/lib/ar/effects";
 import { makeSamplePhotos } from "@/lib/dev/samplePhotos";
 import { readableTextOn } from "@/lib/image/color";
 
@@ -61,6 +63,10 @@ export default function EditPage() {
   }
 
   const frame = getFrame(design.frameId);
+  const effectLabel = getEffect(design.effect)?.label;
+  // AR 썸네일: 첫 자리 사진 우선, 얼굴이 잡힌 사진으로
+  const first = photos[design.photoOrder?.[0] ?? 0];
+  const facePhoto = first?.faces?.length ? first : photos.find((p) => p.faces?.length);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
@@ -91,6 +97,7 @@ export default function EditPage() {
             <span className="rounded-full bg-ink px-3 py-1.5 font-semibold text-white">{getLayout(design.layoutId).label}</span>
             <span className="rounded-full bg-white/70 px-3 py-1.5 font-medium">프레임 · {frame.label}</span>
             <span className="rounded-full bg-white/70 px-3 py-1.5 font-medium">필터 · {getFilter(design.filter).label}</span>
+            {effectLabel && <span className="rounded-full bg-white/70 px-3 py-1.5 font-medium">AR · {effectLabel}</span>}
           </div>
         </div>
 
@@ -129,6 +136,24 @@ export default function EditPage() {
                     disabled={design.filter === "none"}
                   />
                 </label>
+              </Panel>
+
+              <Panel
+                title="AR 스티커"
+                icon={<ScanFace className="h-4 w-4" />}
+                aside={facePhoto ? "얼굴을 따라 붙어요" : "얼굴 정보가 없는 사진"}
+              >
+                <EffectPicker
+                  value={design.effect}
+                  onChange={(id) => setDesign({ effect: id })}
+                  source={facePhoto?.dataUrl ?? null}
+                  faces={facePhoto?.faces}
+                />
+                {!facePhoto && (
+                  <p className="mt-3 text-xs text-muted">
+                    촬영할 때 얼굴을 찾지 못해서 사진에는 적용되지 않아요. 다시 찍으면 적용돼요.
+                  </p>
+                )}
               </Panel>
 
               <Panel title="프레임" icon={<Frame className="h-4 w-4" />}>

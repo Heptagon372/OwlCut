@@ -13,6 +13,8 @@ export function buildComposeInput(photos: CapturedPhoto[], design: DesignState):
     textLayers: design.textLayers,
     filter: design.filter,
     filterIntensity: design.filterIntensity,
+    effect: design.effect,
+    photoFaces: photos.map((p) => p.faces),
     photoOrder: design.photoOrder,
     slotSpacing: design.slotSpacing,
     slotRounding: design.slotRounding,

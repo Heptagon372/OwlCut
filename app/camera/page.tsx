@@ -4,21 +4,27 @@ import { useRouter } from "next/navigation";
 import { useCamera } from "@/lib/camera/useCamera";
 import { useFaceTracking } from "@/lib/tracking/useFaceTracking";
 import { framingHint } from "@/lib/tracking/framing";
+import { transformFace } from "@/lib/tracking/landmarks";
 import { CameraView } from "@/components/camera/CameraView";
 import { TrackingOverlay } from "@/components/camera/TrackingOverlay";
+import { AROverlay } from "@/components/camera/AROverlay";
 import { FilteredPreview } from "@/components/filters/FilteredPreview";
 import { FilterPicker } from "@/components/filters/FilterPicker";
+import { EffectPicker } from "@/components/filters/EffectPicker";
 import { FilteredImage } from "@/components/filters/FilteredImage";
 import { Button, IconButton } from "@/components/ui/Button";
 import { ProgressRing } from "@/components/ui/ProgressRing";
+import { Segmented } from "@/components/ui/Segmented";
 import { Logo } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
 import { ArrowRight, Camera as CameraIcon, CameraOff, RotateCcw, ScanFace, X } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { getFilter } from "@/lib/data/registry";
+import { getEffect, NO_EFFECT } from "@/lib/ar/effects";
 import { paramsToCss } from "@/lib/filters/cssFallback";
 import { createSession } from "@/lib/api";
 import type { CapturedPhoto } from "@/types/session";
+import type { FaceGeometry } from "@/types/ar";
 
 const TOTAL = 4;
 const SNAPSHOT_MS = 4000; // 필터 썸네일을 지금 카메라 화면으로 갱신하는 주기
@@ -35,15 +41,20 @@ export default function CameraPage() {
   const [shots, setShots] = useState<CapturedPhoto[]>([]);
   const [trackingOn, setTrackingOn] = useState(true);
   const [glSupported, setGlSupported] = useState(true);
-  const [snapshot, setSnapshot] = useState<HTMLCanvasElement | null>(null);
+  const [snapshot, setSnapshot] = useState<{ canvas: HTMLCanvasElement; faces: FaceGeometry[] } | null>(null);
+  const [pickerTab, setPickerTab] = useState<"filter" | "effect">("filter");
   const runningRef = useRef(false);
 
-  // 촬영 전에 고른 필터 — 사진은 원본으로 찍고, 미리보기·합성에서 같은 필터를 입힌다
+  // 촬영 전에 고른 필터·AR 효과 — 사진은 원본으로 찍고, 미리보기·합성에서 같은 효과를 입힌다
   const filterParams = getFilter(design.filter).params;
+  const effectOn = design.effect !== NO_EFFECT;
 
-  // 사람 추적은 보조 기능: 실패해도 촬영은 그대로 진행
-  const tracking = useFaceTracking(videoElRef, { enabled: trackingOn && ready, mirrored: mirror });
-  const hint = framingHint(tracking.group, tracking.faceHeight, mirror);
+  // 사람 추적은 보조 기능: 실패해도 촬영은 그대로 진행. AR 효과를 쓰면 프레이밍을 꺼도 추적은 켜 둔다.
+  const { status: trackingStatus, group, faceHeight, frameSize, facesRef, getFocus, getFaces } = useFaceTracking(
+    videoElRef,
+    { enabled: (trackingOn || effectOn) && ready, mirrored: mirror, fast: effectOn },
+  );
+  const hint = framingHint(group, faceHeight, mirror);
 
   useEffect(() => {
     void start();
@@ -58,10 +69,16 @@ export default function CameraPage() {
       const v = videoElRef.current;
       if (!v || !v.videoWidth) return;
       const side = Math.min(v.videoWidth, v.videoHeight);
+      const sx = (v.videoWidth - side) / 2;
+      const sy = (v.videoHeight - side) / 2;
       const c = document.createElement("canvas");
       c.width = c.height = 160;
-      c.getContext("2d")?.drawImage(v, (v.videoWidth - side) / 2, (v.videoHeight - side) / 2, side, side, 0, 0, 160, 160);
-      setSnapshot(c);
+      c.getContext("2d")?.drawImage(v, sx, sy, side, side, 0, 0, 160, 160);
+      // AR 효과 썸네일용: 같은 순간의 얼굴 좌표를 정사각형 크롭 기준으로 옮김
+      const faces = (facesRef.current?.faces ?? []).map((g) =>
+        transformFace(g, (p) => ({ x: (p.x * v.videoWidth - sx) / side, y: (p.y * v.videoHeight - sy) / side })),
+      );
+      setSnapshot({ canvas: c, faces });
     };
     const first = setTimeout(take, 600);
     const timer = setInterval(take, SNAPSHOT_MS);
@@ -69,7 +86,7 @@ export default function CameraPage() {
       clearTimeout(first);
       clearInterval(timer);
     };
-  }, [ready, phase, videoElRef]);
+  }, [ready, phase, videoElRef, facesRef]);
 
   const runSequence = async () => {
     if (runningRef.current || !ready) return;
@@ -82,13 +99,14 @@ export default function CameraPage() {
         await sleep(850);
       }
       setCount(null);
-      const focus = tracking.getFocus(); // 셔터 순간의 인물 중심 → 합성 시 크롭 기준
+      const focus = trackingOn ? getFocus() : null; // 셔터 순간의 인물 중심 → 합성 시 크롭 기준
+      const faces = getFaces(); // 셔터 순간의 얼굴 기준점 → 촬영 후에도 AR 효과를 바꿔 적용
       const dataUrl = capture();
       setFlash(true);
       await sleep(120);
       setFlash(false);
       if (dataUrl) {
-        captured.push({ dataUrl, orderIndex: captured.length, focus });
+        captured.push({ dataUrl, orderIndex: captured.length, focus, faces });
         setShots([...captured]);
       }
       await sleep(650);
@@ -125,7 +143,8 @@ export default function CameraPage() {
     );
   }
 
-  const filterLabel = getFilter(design.filter).label;
+  const effectLabel = getEffect(design.effect)?.label;
+  const filterLabel = getFilter(design.filter).label + (effectLabel ? ` · ${effectLabel}` : "");
   const statusText =
     phase === "review"
       ? "마음에 드나요?"
@@ -163,22 +182,29 @@ export default function CameraPage() {
             shotIndex={shots.length}
             total={TOTAL}
             filterLayer={
-              glSupported ? (
-                <FilteredPreview
-                  videoElRef={videoElRef}
-                  params={filterParams}
-                  intensity={design.filterIntensity}
-                  mirror={mirror}
-                  onUnsupported={() => setGlSupported(false)}
-                />
-              ) : null
+              <>
+                {glSupported && (
+                  <FilteredPreview
+                    videoElRef={videoElRef}
+                    params={filterParams}
+                    intensity={design.filterIntensity}
+                    mirror={mirror}
+                    effectId={design.effect}
+                    facesRef={facesRef}
+                    onUnsupported={() => setGlSupported(false)}
+                  />
+                )}
+                {effectOn && (
+                  <AROverlay videoElRef={videoElRef} facesRef={facesRef} effectId={design.effect} mirror={mirror} />
+                )}
+              </>
             }
             videoFilterCss={glSupported ? undefined : paramsToCss(filterParams, design.filterIntensity)}
             overlay={
-              tracking.status === "ready" && !flash ? (
+              trackingOn && trackingStatus === "ready" && !flash ? (
                 <TrackingOverlay
-                  group={tracking.group}
-                  frameSize={tracking.frameSize}
+                  group={group}
+                  frameSize={frameSize}
                   mirrored={mirror}
                   hint={hint}
                 />
@@ -193,6 +219,8 @@ export default function CameraPage() {
                     src={s.dataUrl}
                     filterId={design.filter}
                     intensity={design.filterIntensity}
+                    effectId={design.effect}
+                    faces={s.faces}
                     alt={`컷 ${i + 1}`}
                     className="aspect-[4/3] w-full rounded-[18px] object-cover"
                   />
@@ -223,18 +251,37 @@ export default function CameraPage() {
           {phase !== "review" ? (
             <>
               <div className="glass rounded-card p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-semibold">필터</h2>
-                  <span className="text-xs text-muted">찍은 뒤에도 바꿀 수 있어요</span>
-                </div>
-                <FilterPicker
-                  variant="row"
-                  value={design.filter}
-                  onChange={(id) => setDesign({ filter: id })}
-                  source={snapshot}
-                  mirror={mirror}
-                  disabled={phase === "running"}
+                <Segmented
+                  label="필터 또는 AR 스티커"
+                  items={[
+                    { id: "filter", label: "필터" },
+                    { id: "effect", label: "AR 스티커" },
+                  ]}
+                  value={pickerTab}
+                  onChange={setPickerTab}
+                  className="mb-3"
                 />
+                {pickerTab === "filter" ? (
+                  <FilterPicker
+                    variant="row"
+                    value={design.filter}
+                    onChange={(id) => setDesign({ filter: id })}
+                    source={snapshot?.canvas ?? null}
+                    mirror={mirror}
+                    disabled={phase === "running"}
+                  />
+                ) : (
+                  <EffectPicker
+                    variant="row"
+                    value={design.effect}
+                    onChange={(id) => setDesign({ effect: id })}
+                    source={snapshot?.canvas ?? null}
+                    faces={snapshot?.faces}
+                    mirror={mirror}
+                    disabled={phase === "running"}
+                  />
+                )}
+                <p className="mt-2 text-xs text-muted">찍은 뒤에도 바꿀 수 있어요</p>
               </div>
 
               <Button size="lg" onClick={runSequence} disabled={!ready || phase === "running"} className="w-full">
@@ -252,8 +299,8 @@ export default function CameraPage() {
                 <span className="flex items-center gap-2">
                   <ScanFace className="h-4 w-4 text-muted" aria-hidden />
                   자동 프레이밍
-                  {trackingOn && tracking.status === "loading" && <span className="text-muted">· 준비 중</span>}
-                  {trackingOn && tracking.status === "unavailable" && <span className="text-muted">· 사용 불가</span>}
+                  {trackingOn && trackingStatus === "loading" && <span className="text-muted">· 준비 중</span>}
+                  {trackingOn && trackingStatus === "unavailable" && <span className="text-muted">· 사용 불가</span>}
                 </span>
                 <span className={`flex h-7 w-12 items-center rounded-full p-1 transition ${trackingOn ? "bg-ink" : "bg-black/15"}`}>
                   <span className={`h-5 w-5 rounded-full bg-white shadow transition ${trackingOn ? "translate-x-5" : ""}`} />

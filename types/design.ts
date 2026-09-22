@@ -1,5 +1,6 @@
 // 아울네컷 디자인 관련 타입 정의.
 // 수동 편집과 AI 편집이 "동일한 스키마"를 공유한다 (설계도 7-3, 7-4).
+import type { FaceGeometry } from "./ar";
 
 // ---------- 위치 프리셋 ----------
 // 스티커/텍스트 배치에 쓰는 9분할 앵커. AI 응답의 "position"도 이 값으로 정규화된다.
@@ -94,6 +95,7 @@ export interface DesignState {
   textLayers: TextLayer[];
   filter: FilterName;              // 촬영 전에 고른 필터 (사진은 원본 저장, 합성 때 적용)
   filterIntensity: number;         // 필터 강도 0..1
+  effect: string;                  // AR 얼굴 효과 id (lib/ar/effects.ts, "none" = 없음). 필터처럼 합성 때 적용
   // ---- 화면 구성 (촬영 후 수정) ----
   photoOrder: number[];            // 자리 i 에 들어갈 사진 번호 (기본 [0,1,2,3])
   slotSpacing: number;             // 사진 간격 단계 0~10 (0 = 레이아웃 기본)
@@ -120,6 +122,8 @@ export interface ComposeInput {
   textLayers: TextLayer[];
   filter: FilterName;
   filterIntensity?: number;
+  effect?: string;                 // AR 얼굴 효과 id
+  photoFaces?: (FaceGeometry[] | null | undefined)[]; // 사진별 얼굴 기준점 (사진 정규화 좌표)
   photoOrder?: number[];
   slotSpacing?: number;
   slotRounding?: number;

@@ -1,6 +1,8 @@
 // WebGL 필터 엔진 — 촬영 미리보기(실시간 video), 썸네일, 최종 합성이 같은 셰이더를 쓴다.
 // 브라우저 전용. WebGL이 없으면 생성자가 throw → 호출 측이 CSS 필터로 폴백.
 import type { FilterParams } from "@/types/filter";
+import type { MosaicRegion, Warp } from "@/types/ar";
+import { MAX_MOSAICS, MAX_WARPS } from "@/lib/ar/geometry";
 import { curveTextureData, hasCurves } from "./curves";
 import { FRAG_BLUR, FRAG_COPY, FRAG_MAIN, VERT } from "./shaders";
 
@@ -10,6 +12,26 @@ export interface RenderOptions {
   srcRect?: { x: number; y: number; w: number; h: number }; // 소스에서 쓸 영역(px, 좌상단 기준). 없으면 전체
   intensity?: number; // 0..1 (0 = 원본)
   seed?: number;      // 그레인 난수 시드
+  warps?: Warp[];            // AR 얼굴 왜곡 (소스 이미지 기준 좌표)
+  mosaics?: MosaicRegion[];  // AR 얼굴 모자이크
+}
+
+/** 왜곡 → 셰이더 uniform (텍스처 픽셀, y 위쪽 +). 순수 함수 */
+export function warpUniforms(warps: Warp[] | undefined, srcW: number, srcH: number): Float32Array {
+  const out = new Float32Array(MAX_WARPS * 4);
+  (warps ?? []).slice(0, MAX_WARPS).forEach((w, i) => out.set([w.x * srcW, (1 - w.y) * srcH, w.r, w.s], i * 4));
+  return out;
+}
+
+/** 모자이크 → [중심·반경, 회전·블록] uniform. 이미지(y 아래 +)의 회전은 텍스처에서 부호가 반대 */
+export function mosaicUniforms(regions: MosaicRegion[] | undefined, srcW: number, srcH: number) {
+  const a = new Float32Array(MAX_MOSAICS * 4);
+  const b = new Float32Array(MAX_MOSAICS * 4);
+  (regions ?? []).slice(0, MAX_MOSAICS).forEach((m, i) => {
+    a.set([m.x * srcW, (1 - m.y) * srcH, Math.max(1, m.rx), Math.max(1, m.ry)], i * 4);
+    b.set([-m.angle, Math.max(4, (m.rx + m.ry) / 9), 0, 0], i * 4); // 얼굴 하나에 블록 약 9~10칸
+  });
+  return { a, b };
 }
 
 type Source = TexImageSource;
@@ -179,6 +201,13 @@ export class FilterEngine {
       v3("uLeakColor", hexToRgb(params.leakColor, [1, 0.55, 0.2]));
       f("uSeed", opts.seed ?? 0);
       f("uUseCurve", useCurve ? 1 : 0);
+      gl.uniform2f(p.loc("uSrcSize"), srcW, srcH);
+      gl.uniform4fv(p.loc("uWarp"), warpUniforms(opts.warps, srcW, srcH));
+      f("uWarpCount", Math.min(opts.warps?.length ?? 0, MAX_WARPS));
+      const mosaic = mosaicUniforms(opts.mosaics, srcW, srcH);
+      gl.uniform4fv(p.loc("uMosaicA"), mosaic.a);
+      gl.uniform4fv(p.loc("uMosaicB"), mosaic.b);
+      f("uMosaicCount", Math.min(opts.mosaics?.length ?? 0, MAX_MOSAICS));
     });
     return true;
   }

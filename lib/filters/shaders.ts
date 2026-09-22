@@ -2,6 +2,7 @@
 //   [glow가 있으면] 크롭·축소(COPY) → 가우시안 블러 가로/세로(BLUR) x2
 //   → MAIN: 피부보정 → 노출·화이트밸런스·대비 → 하이라이트/섀도 → 채도/바이브런스 → 커브
 //           → 흑백·세피아 → 스플릿 토닝 → 페이드 → 글로우 → 비네팅 → 빛샘 → 그레인 → 강도 섞기
+//   (MAIN 맨 앞에서 AR 얼굴 왜곡·모자이크로 샘플 좌표를 먼저 옮긴다)
 
 export const VERT = `
 attribute vec2 aPos;
@@ -77,8 +78,49 @@ uniform float uLeak;
 uniform vec3 uLeakColor;
 uniform float uSeed;
 uniform float uUseCurve;
+// AR 얼굴 효과 — 좌표는 소스 텍스처 픽셀 (y 위쪽이 +, 업로드 시 FLIP_Y 기준)
+uniform vec2 uSrcSize;
+uniform vec4 uWarp[8];   // 중심 x, y, 반경, 세기(+ 볼록 / - 오목)
+uniform float uWarpCount;
+uniform vec4 uMosaicA[4]; // 중심 x, y, 반경 x, 반경 y
+uniform vec4 uMosaicB[4]; // 회전(라디안), 블록 크기
+uniform float uMosaicCount;
 
 float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+
+// 볼록 렌즈: 반경 안쪽을 중심 쪽에서 샘플 → 확대.
+// 배율 곡선 k(u) = 1 - s(1-u²)² : 안쪽 절반까지 배율이 고르게 유지되고(눈 전체가 커짐),
+// 가장자리(u=1)에서 값·기울기가 모두 이어져 경계선이 안 생긴다. |s| < 1 이면 접히지 않음.
+vec2 applyWarps(vec2 uv) {
+  vec2 p = uv * uSrcSize;
+  for (int i = 0; i < 8; i++) {
+    if (float(i) >= uWarpCount) break;
+    vec4 w = uWarp[i];
+    vec2 d = p - w.xy;
+    float u = length(d) / w.z;
+    if (u < 1.0) {
+      float q = 1.0 - u * u;
+      p = w.xy + d * (1.0 - w.w * q * q);
+    }
+  }
+  return p / uSrcSize;
+}
+
+// 얼굴 타원 안쪽만 블록 단위로 뭉갬
+vec2 applyMosaic(vec2 uv) {
+  vec2 p = uv * uSrcSize;
+  for (int i = 0; i < 4; i++) {
+    if (float(i) >= uMosaicCount) break;
+    vec4 a = uMosaicA[i];
+    vec4 b = uMosaicB[i];
+    vec2 d = p - a.xy;
+    float cs = cos(b.x);
+    float sn = sin(b.x);
+    vec2 r = vec2(cs * d.x + sn * d.y, -sn * d.x + cs * d.y) / a.zw;
+    if (dot(r, r) < 1.0) return (floor(p / b.y) + 0.5) * b.y / uSrcSize;
+  }
+  return uv;
+}
 
 // 피부색 마스크: YCbCr에서 Cb 77~127, Cr 133~173 (0~255 기준) 부근
 float skinMask(vec3 c) {
@@ -129,7 +171,9 @@ float rand(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.545
 
 void main() {
   vec2 uv = uSrcRect.xy + vUv * uSrcRect.zw;
-  vec3 orig = texture2D(uSrc, uv).rgb;
+  if (uWarpCount > 0.0) uv = applyWarps(uv);
+  if (uMosaicCount > 0.0) uv = applyMosaic(uv);
+  vec3 orig = texture2D(uSrc, uv).rgb; // 강도 섞기의 "원본"도 얼굴 효과는 적용된 상태
   vec3 c = orig;
 
   if (uSmooth > 0.0) {

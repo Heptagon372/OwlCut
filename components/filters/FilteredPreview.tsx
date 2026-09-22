@@ -1,9 +1,13 @@
 "use client";
 // 촬영 화면 실시간 필터 미리보기: <video> 위에 WebGL 캔버스를 겹쳐 같은 셰이더로 그린다.
-// 원본 필터면 캔버스를 숨기고 비디오를 그대로 보여준다 (GPU 절약, 컨텍스트는 유지).
+// AR 얼굴 왜곡·모자이크도 여기서 (추적된 얼굴 좌표를 셰이더에 넘김).
+// 원본 필터이고 얼굴 효과도 없으면 캔버스를 숨기고 비디오를 그대로 보여준다 (GPU 절약, 컨텍스트는 유지).
 import { useEffect, useRef } from "react";
 import { FilterEngine } from "@/lib/filters/engine";
 import { isNeutral } from "@/lib/filters/offline";
+import { getEffect, needsShader } from "@/lib/ar/effects";
+import { effectWarps, mosaicRegions } from "@/lib/ar/geometry";
+import type { FacesFrame } from "@/lib/tracking/useFaceTracking";
 import type { FilterParams } from "@/types/filter";
 
 const MAX_PREVIEW_WIDTH = 960; // 미리보기 해상도 상한 (촬영 원본과 무관)
@@ -13,21 +17,25 @@ export function FilteredPreview({
   params,
   intensity,
   mirror,
+  effectId,
+  facesRef,
   onUnsupported,
 }: {
   videoElRef: React.RefObject<HTMLVideoElement | null>;
   params: FilterParams;
   intensity: number;
   mirror: boolean;
+  effectId?: string;
+  facesRef?: React.RefObject<FacesFrame | null>;
   onUnsupported: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const latest = useRef({ params, intensity, dirty: true });
-  const neutral = isNeutral(params, intensity);
+  const latest = useRef({ params, intensity, effectId, dirty: true });
+  const hidden = isNeutral(params, intensity) && !needsShader(getEffect(effectId));
 
   useEffect(() => {
-    latest.current = { params, intensity, dirty: true };
-  }, [params, intensity]);
+    latest.current = { params, intensity, effectId, dirty: true };
+  }, [params, intensity, effectId]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -46,16 +54,22 @@ export function FilteredPreview({
       raf = requestAnimationFrame(draw);
       const v = videoElRef.current;
       const cur = latest.current;
-      if (!v || v.readyState < 2 || !v.videoWidth || isNeutral(cur.params, cur.intensity)) return;
+      const effect = getEffect(cur.effectId);
+      const shaderFx = needsShader(effect);
+      if (!v || v.readyState < 2 || !v.videoWidth || (isNeutral(cur.params, cur.intensity) && !shaderFx)) return;
       if (v.currentTime === lastTime && !cur.dirty) return; // 새 프레임이 없으면 다시 그리지 않음
       lastTime = v.currentTime;
       cur.dirty = false;
+      // 얼굴 좌표는 비디오 원본 기준(반전 전) — 캔버스도 원본으로 그린 뒤 CSS로 반전하므로 그대로 사용
+      const faces = shaderFx ? (facesRef?.current?.faces ?? []) : [];
       const scale = Math.min(1, MAX_PREVIEW_WIDTH / v.videoWidth);
       const ok = engine.render(v, v.videoWidth, v.videoHeight, cur.params, {
         width: v.videoWidth * scale,
         height: v.videoHeight * scale,
         intensity: cur.intensity,
         seed: (frame++ % 97) * 1.37, // 그레인이 필름처럼 살짝 움직이게
+        warps: effectWarps(effect, faces, v.videoWidth, v.videoHeight),
+        mosaics: mosaicRegions(effect, faces, v.videoWidth, v.videoHeight),
       });
       if (!ok && engine.isLost) {
         cancelAnimationFrame(raf);
@@ -75,7 +89,7 @@ export function FilteredPreview({
       ref={canvasRef}
       aria-hidden
       className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-      style={{ transform: mirror ? "scaleX(-1)" : undefined, visibility: neutral ? "hidden" : "visible" }}
+      style={{ transform: mirror ? "scaleX(-1)" : undefined, visibility: hidden ? "hidden" : "visible" }}
     />
   );
 }
