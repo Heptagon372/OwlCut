@@ -42,6 +42,13 @@ npm run build      # 프로덕션 빌드
 - WASM(34MB)은 `postinstall`이 `public/mediapipe/wasm`으로 복사 (git·eslint 제외). 모델은 Google Storage (`NEXT_PUBLIC_FACE_MODEL_URL`로 교체 가능).
 - 보조 기능: 로드 실패 시 "사용 불가" 표시만 하고 촬영은 정상 진행.
 
+## 출력 (Phase 7)
+- 부스: `POST /api/print`(큐 등록만) → `GET /api/print?session_id=` 폴링. 세션당 3회·1회 2매 제한.
+- 로컬 프린트 서버(`print-server/`, 의존성 없는 Node): `POST /api/print/claim` → 출력 → `PATCH /api/print/[id]`. 둘 다 `Authorization: Bearer PRINT_SERVER_TOKEN` 필수 (없으면 401).
+- 큐 = Supabase `prints` 테이블. claim은 조건부 update(`status='waiting'`)로 중복 방지, 5분 넘게 멈춘 작업은 `failed(timeout)`.
+- claim 호출이 heartbeat → `devices` 테이블 (관리자 장비 상태).
+- 시험: `PRINT_DRY_RUN=1 node print-server/index.mjs` → `print-server/printed/`에 저장.
+
 ## 환경변수
 `.env.local.example` 복사 → `.env.local`. Supabase 키가 없으면 Phase 4(QR/업로드) 기능만 비활성.
 
@@ -50,4 +57,4 @@ npm run build      # 프로덕션 빌드
 
 ## 진행 상황
 - [x] Phase 0 스캐폴딩/CI  [x] Phase 1 카메라  [x] Phase 2 합성  [x] Phase 3 수동편집  [x] Phase 4 QR/Supabase
-- [x] Phase 5 AI 멀티모델  [x] Phase 6 사람추적  [ ] Phase 7 프린터  [ ] Phase 8 관리자
+- [x] Phase 5 AI 멀티모델  [x] Phase 6 사람추적  [x] Phase 7 프린터  [ ] Phase 8 관리자

@@ -6,15 +6,17 @@ import { composeToDataUrl } from "@/lib/image/compose";
 import { getFrame, getLayout } from "@/lib/data/registry";
 import { uploadFinal } from "@/lib/api";
 import { QRCodeView } from "@/components/result/QRCodeView";
+import { PrintButton } from "@/components/result/PrintButton";
 import { Button } from "@/components/ui/Button";
 
 type Status = "composing" | "uploading" | "done" | "error";
 
 export default function ResultPage() {
   const router = useRouter();
-  const { photos, design, sessionId, finalDataUrl, setFinal, reset } = useBoothStore();
+  const { photos, design, sessionId, setSessionId, finalDataUrl, setFinal, reset } = useBoothStore();
   const [status, setStatus] = useState<Status>("composing");
   const [remote, setRemote] = useState<string | null>(null);
+  const [uploadedSessionId, setUploadedSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (photos.length === 0) return;
@@ -34,10 +36,12 @@ export default function ResultPage() {
         if (!active) return;
         setStatus("uploading");
         const sid = sessionId ?? crypto.randomUUID();
+        if (!sessionId) setSessionId(sid);
         const result = await uploadFinal(sid, dataUrl, design);
         if (!active) return;
         setFinal(dataUrl, result?.downloadUrl ?? null);
         setRemote(result?.downloadUrl ?? null);
+        setUploadedSessionId(result ? sid : null);
         setStatus("done");
       } catch {
         if (active) setStatus("error");
@@ -112,9 +116,7 @@ export default function ResultPage() {
         <Button onClick={download} disabled={!finalDataUrl} className="w-full">
           다운로드
         </Button>
-        <Button variant="secondary" disabled className="w-full">
-          출력 (준비 중)
-        </Button>
+        <PrintButton sessionId={uploadedSessionId} />
         <Button
           variant="ghost"
           onClick={() => {

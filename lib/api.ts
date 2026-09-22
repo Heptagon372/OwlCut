@@ -3,6 +3,7 @@
 // 서버/Supabase 실패 시에도 흐름이 막히지 않도록 폴백을 내장.
 import type { DesignState } from "@/types/design";
 import type { AIDesignResult, ModelInfo } from "@/types/ai";
+import type { PrintStatus, PrintStatusResponse } from "@/types/print";
 
 export async function createSession(): Promise<string> {
   try {
@@ -38,6 +39,36 @@ export async function uploadFinal(
     const data = await res.json();
     if (!data?.url) return null;
     return { url: data.url, downloadUrl: data.download_url };
+  } catch {
+    return null;
+  }
+}
+
+// ---------- 출력 (Phase 7) ----------
+
+export type PrintOutcome =
+  | { ok: true; status: PrintStatus }
+  | { ok: false; message: string };
+
+export async function requestPrint(sessionId: string): Promise<PrintOutcome> {
+  try {
+    const res = await fetch("/api/print", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, copies: 1 }),
+    });
+    const data = await res.json();
+    if (res.ok) return { ok: true, status: data.status };
+    return { ok: false, message: data?.message ?? "출력 요청에 실패했어요." };
+  } catch {
+    return { ok: false, message: "서버에 연결하지 못했어요." };
+  }
+}
+
+export async function fetchPrintStatus(sessionId: string): Promise<PrintStatusResponse | null> {
+  try {
+    const res = await fetch(`/api/print?session_id=${encodeURIComponent(sessionId)}`, { cache: "no-store" });
+    return res.ok ? await res.json() : null;
   } catch {
     return null;
   }

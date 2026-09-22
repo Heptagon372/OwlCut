@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.local.example
+!print-server/.env.example
+
+# 프린트 서버 DRY_RUN 출력물
+/print-server/printed
 
 # 촬영 임시 파일 (booth 런타임 캡처)
 /public/tmp
