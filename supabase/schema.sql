@@ -109,7 +109,9 @@ alter table ai_requests enable row level security;
 -- (정책을 추가하지 않으면 anon 키로는 접근 불가. 모든 접근은 서버 라우트 경유.)
 
 -- ---------- 보관기간 정리 ----------
--- 만료 세션의 저장소 파일 + 행 삭제는 앱의 GET /api/cron/cleanup 이 담당 (CRON_SECRET 필요).
--- 세션 행을 지우면 photos/designs/prints 는 cascade 로 함께 삭제된다.
--- 저장소 파일은 SQL로 지울 수 없으므로 이 쿼리만 단독으로 쓰면 파일이 남는다:
---   delete from sessions where expires_at < now();
+-- 만료 세션 정리는 앱의 GET /api/cron/cleanup 이 담당 (CRON_SECRET 필요):
+--   저장소 파일(사진·최종본) 삭제 → designs 의 방문자 입력(prompt, text_layers) 비움
+--   → 대기 중 출력은 failed('expired') → sessions.status = 'expired'.
+-- 행은 지우지 않는다 (관리자 "오늘" 통계가 보관기간만큼만 남지 않도록). 남는 건 선택값·개수·이미 지운 파일 경로뿐.
+-- 오래된 통계 행까지 지우려면 (파일은 이미 지워진 상태이므로 안전):
+--   delete from sessions where status = 'expired' and created_at < now() - interval '90 days';
