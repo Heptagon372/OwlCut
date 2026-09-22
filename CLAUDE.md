@@ -29,6 +29,13 @@ npm run build      # 프로덕션 빌드
 - Supabase/네트워크/프린터 실패가 **전체 흐름을 막지 않는다**. Supabase 미설정 시 카메라·합성·로컬 다운로드는 동작하고 QR만 비활성화.
 - `data/*/index.json` 에 레이아웃/프레임/스티커 정의. 새 항목은 JSON 추가만으로 확장.
 
+## AI 꾸미기 (Phase 5)
+- 흐름: `POST /api/ai` → `lib/ai/generateDesign.ts` → `registry`에서 모델→프로바이더 → `providers/*.generate()` → `normalize.ts` 검증·보정.
+- AI는 이미지를 만들지 않고 `frame/filter/stickers/text` JSON만 고른다. 출력 스키마의 enum은 `data/*` 레지스트리에서 자동 생성(`lib/ai/prompt.ts`).
+- Claude: 공식 SDK, 구조화 출력 + `effort: "low"` + Opus 5 서버측 refusal fallback. OpenAI: json_schema strict. Gemini: JSON 모드 + 보정.
+- 키가 없는 프로바이더는 `/api/ai/models`에서 숨김. 새 프로바이더 = `providers/xxx.ts` + `registry.ts` 한 줄.
+- `/api/ai`는 과금되는 공개 엔드포인트 → 프롬프트 200자 제한 + IP당 분당 8회 제한(`lib/ai/rateLimit.ts`, 인스턴스 메모리 기반).
+
 ## 환경변수
 `.env.local.example` 복사 → `.env.local`. Supabase 키가 없으면 Phase 4(QR/업로드) 기능만 비활성.
 
@@ -37,4 +44,4 @@ npm run build      # 프로덕션 빌드
 
 ## 진행 상황
 - [x] Phase 0 스캐폴딩/CI  [x] Phase 1 카메라  [x] Phase 2 합성  [x] Phase 3 수동편집  [x] Phase 4 QR/Supabase
-- [ ] Phase 5 AI 멀티모델  [ ] Phase 6 사람추적  [ ] Phase 7 프린터  [ ] Phase 8 관리자
+- [x] Phase 5 AI 멀티모델  [ ] Phase 6 사람추적  [ ] Phase 7 프린터  [ ] Phase 8 관리자

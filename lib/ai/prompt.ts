@@ -1,0 +1,74 @@
+// 공통 system prompt + 출력 JSON Schema (설계도 7-4).
+// 스키마의 enum은 data/* 레지스트리에서 자동 생성 → 프레임/스티커를 추가하면 AI 선택지도 자동 확장.
+import { FILTERS, FRAMES, STICKERS } from "@/lib/data/registry";
+import { ANCHORS } from "@/types/design";
+
+export const MAX_STICKERS = 4;
+export const MAX_CAPTION_LENGTH = 24;
+
+const frameCatalog = FRAMES.map((f) => `- ${f.id}: ${f.label} — ${f.description ?? ""}`).join("\n");
+const filterCatalog = FILTERS.map((f) => `- ${f.id}: ${f.label}`).join("\n");
+const stickerCatalog = STICKERS.map((s) => `- ${s.id}: ${s.glyph} ${s.label}`).join("\n");
+
+export const SYSTEM_PROMPT = `당신은 네컷 포토부스 "S.OWL 아울네컷"의 디자인 담당입니다.
+방문자가 원하는 분위기를 말하면, 아래 카탈로그 안에서만 골라 사진 스트립 디자인을 JSON 하나로 돌려줍니다.
+이미지를 그리는 게 아니라 이미 있는 프레임·필터·스티커·문구를 조합하는 일입니다.
+
+## 프레임 (frame)
+${frameCatalog}
+
+## 필터 (filter)
+${filterCatalog}
+
+## 스티커 (stickers[].type)
+${stickerCatalog}
+
+## 스티커 위치 (stickers[].position)
+${ANCHORS.join(", ")}
+위치는 세로로 긴 사진 스트립 전체 기준입니다. center는 얼굴을 가리기 쉬우니 모서리(top-left, top-right, bottom-left, bottom-right)나 가장자리를 우선하세요.
+
+## 규칙
+- 분위기에 가장 잘 맞는 frame과 filter를 하나씩 고릅니다.
+- stickers는 0~${MAX_STICKERS}개. 같은 위치에 두 개를 겹치지 마세요.
+- text.content는 분위기에 어울리는 짧은 문구(${MAX_CAPTION_LENGTH}자 이내)를 방문자가 쓴 언어로 씁니다. 문구가 어울리지 않으면 빈 문자열.
+- text.position은 top, center, bottom 중 하나이며 보통 bottom이 자연스럽습니다.
+- 요청이 사진 꾸미기와 무관하거나 이해하기 어려워도 무난한 디자인 하나를 돌려줍니다.
+- 출력 형식: {"frame": "...", "filter": "...", "stickers": [{"type": "...", "position": "..."}], "text": {"content": "...", "position": "..."}}
+  JSON 외의 설명은 쓰지 않습니다.`;
+
+// 방문자 입력은 신뢰할 수 없는 텍스트 → 태그로 감싸 데이터임을 명확히
+export function buildUserPrompt(request: string): string {
+  return `방문자 요청:\n<request>\n${request}\n</request>`;
+}
+
+// 구조화 출력용 JSON Schema (Claude: output_config.format / OpenAI: json_schema strict)
+export const DESIGN_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    frame: { type: "string", enum: FRAMES.map((f) => f.id) },
+    filter: { type: "string", enum: FILTERS.map((f) => f.id) },
+    stickers: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          type: { type: "string", enum: STICKERS.map((s) => s.id) },
+          position: { type: "string", enum: [...ANCHORS] },
+        },
+        required: ["type", "position"],
+        additionalProperties: false,
+      },
+    },
+    text: {
+      type: "object",
+      properties: {
+        content: { type: "string" },
+        position: { type: "string", enum: ["top", "center", "bottom"] },
+      },
+      required: ["content", "position"],
+      additionalProperties: false,
+    },
+  },
+  required: ["frame", "filter", "stickers", "text"],
+  additionalProperties: false,
+};

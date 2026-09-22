@@ -1,6 +1,8 @@
 "use client";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBoothStore } from "@/lib/store/boothStore";
+import { AIDesignPanel } from "@/components/ai/AIDesignPanel";
 import { PhotoCanvas } from "@/components/editor/PhotoCanvas";
 import { FrameSelector } from "@/components/editor/FrameSelector";
 import { StickerPanel } from "@/components/editor/StickerPanel";
@@ -15,6 +17,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 export default function EditPage() {
   const router = useRouter();
   const { photos, design, setDesign } = useBoothStore();
+  const [tab, setTab] = useState<"manual" | "ai">("manual");
 
   if (photos.length === 0) {
     return (
@@ -52,39 +55,66 @@ export default function EditPage() {
           </div>
         </section>
 
-        <section>
-          <SectionTitle>프레임</SectionTitle>
-          <FrameSelector value={design.frameId} onChange={(id) => setDesign({ frameId: id })} />
-        </section>
+        <div role="tablist" className="grid grid-cols-2 gap-1 rounded-2xl bg-card p-1">
+          {(
+            [
+              ["manual", "직접 꾸미기"],
+              ["ai", "AI 꾸미기 🤖"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`rounded-xl py-2 text-sm font-semibold transition ${tab === key ? "bg-accent text-white" : "text-muted hover:text-foreground"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        <section>
-          <SectionTitle>필터</SectionTitle>
-          <div className="grid grid-cols-3 gap-2">
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setDesign({ filter: f.id })}
-                className={`rounded-xl border px-3 py-2 text-sm ${design.filter === f.id ? "border-accent text-foreground" : "border-border text-muted hover:text-foreground"}`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <SectionTitle>스티커</SectionTitle>
-          <StickerPanel value={design.stickers} onChange={(s) => setDesign({ stickers: s })} />
-        </section>
-
-        <section>
-          <SectionTitle>텍스트</SectionTitle>
-          <TextEditor
-            value={design.textLayers}
-            onChange={(t) => setDesign({ textLayers: t })}
-            defaultColor={frame.defaultTextColor}
+        {tab === "ai" ? (
+          <AIDesignPanel
+            onApply={(result, prompt) => setDesign({ ...result, mode: "ai", prompt })}
           />
-        </section>
+        ) : (
+          <>
+            <section>
+              <SectionTitle>프레임</SectionTitle>
+              <FrameSelector value={design.frameId} onChange={(id) => setDesign({ frameId: id })} />
+            </section>
+
+            <section>
+              <SectionTitle>필터</SectionTitle>
+              <div className="grid grid-cols-3 gap-2">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setDesign({ filter: f.id })}
+                    className={`rounded-xl border px-3 py-2 text-sm ${design.filter === f.id ? "border-accent text-foreground" : "border-border text-muted hover:text-foreground"}`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <SectionTitle>스티커</SectionTitle>
+              <StickerPanel value={design.stickers} onChange={(s) => setDesign({ stickers: s })} />
+            </section>
+
+            <section>
+              <SectionTitle>텍스트</SectionTitle>
+              <TextEditor
+                value={design.textLayers}
+                onChange={(t) => setDesign({ textLayers: t })}
+                defaultColor={frame.defaultTextColor}
+              />
+            </section>
+          </>
+        )}
 
         <div className="flex gap-3 pb-4">
           <Button variant="secondary" onClick={() => router.push("/camera")} className="flex-1">

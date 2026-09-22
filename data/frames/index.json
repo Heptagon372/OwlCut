@@ -2,6 +2,7 @@
   {
     "id": "basic",
     "label": "기본 화이트",
+    "description": "깔끔한 흰 배경. 무난하고 밝은, 미니멀한 분위기",
     "background": { "type": "solid", "color": "#ffffff" },
     "accent": "#111111",
     "slotBorderWidth": 0,
@@ -11,6 +12,7 @@
   {
     "id": "owl_classic",
     "label": "아울 클래식",
+    "description": "크림색 배경에 갈색 테두리. 따뜻한, 빈티지, 아날로그, 가을 감성",
     "background": { "type": "solid", "color": "#f5ecd9" },
     "accent": "#6b4a2b",
     "slotBorderWidth": 6,
@@ -20,6 +22,7 @@
   {
     "id": "cyber_purple",
     "label": "사이버 퍼플",
+    "description": "짙은 보라에서 핑크로 가는 그라데이션, 네온 테두리. 사이버펑크, 몽환적, 파티, 밤",
     "background": { "type": "gradient", "from": "#2a0a4a", "to": "#d76d77", "angle": 45 },
     "accent": "#e0aaff",
     "slotBorderWidth": 4,
@@ -29,6 +32,7 @@
   {
     "id": "mono",
     "label": "모노 블랙",
+    "description": "검은 배경에 흰 테두리. 시크, 모던, 흑백 영화, 차분하고 진지한 분위기",
     "background": { "type": "solid", "color": "#0a0a0a" },
     "accent": "#ffffff",
     "slotBorderWidth": 3,

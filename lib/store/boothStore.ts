@@ -26,11 +26,13 @@ interface BoothState {
   design: DesignState;
   finalDataUrl: string | null;
   downloadUrl: string | null;
+  aiModelId: string | null; // 모델 선택 창의 선택값 (null = 서버 기본 모델)
   setSessionId: (id: string | null) => void;
   setPhotos: (photos: CapturedPhoto[]) => void;
   resetPhotos: () => void;
   setDesign: (patch: Partial<DesignState>) => void;
   setFinal: (dataUrl: string | null, downloadUrl: string | null) => void;
+  setAiModelId: (id: string | null) => void;
   reset: () => void;
 }
 
@@ -40,11 +42,13 @@ export const useBoothStore = create<BoothState>((set) => ({
   design: initialDesign,
   finalDataUrl: null,
   downloadUrl: null,
+  aiModelId: null,
   setSessionId: (sessionId) => set({ sessionId }),
   setPhotos: (photos) => set({ photos }),
   resetPhotos: () => set({ photos: [] }),
   setDesign: (patch) => set((s) => ({ design: { ...s.design, ...patch } })),
   setFinal: (finalDataUrl, downloadUrl) => set({ finalDataUrl, downloadUrl }),
+  setAiModelId: (aiModelId) => set({ aiModelId }),
   reset: () =>
     set({
       sessionId: null,
@@ -52,5 +56,6 @@ export const useBoothStore = create<BoothState>((set) => ({
       design: initialDesign,
       finalDataUrl: null,
       downloadUrl: null,
+      aiModelId: null,
     }),
 }));

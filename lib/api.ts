@@ -2,6 +2,7 @@
 // 페이지에서 API 라우트를 호출하는 얇은 클라이언트 헬퍼.
 // 서버/Supabase 실패 시에도 흐름이 막히지 않도록 폴백을 내장.
 import type { DesignState } from "@/types/design";
+import type { AIDesignResult, ModelInfo } from "@/types/ai";
 
 export async function createSession(): Promise<string> {
   try {
@@ -39,5 +40,42 @@ export async function uploadFinal(
     return { url: data.url, downloadUrl: data.download_url };
   } catch {
     return null;
+  }
+}
+
+// ---------- AI (Phase 5) ----------
+
+export async function fetchModels(): Promise<{ models: ModelInfo[]; defaultModel: string | null }> {
+  try {
+    const res = await fetch("/api/ai/models", { cache: "no-store" });
+    if (res.ok) return await res.json();
+  } catch {
+    // ignore
+  }
+  return { models: [], defaultModel: null };
+}
+
+export type AIDesignOutcome =
+  | { ok: true; design: AIDesignResult; model: string | null; fallback: boolean }
+  | { ok: false; error: string; message: string };
+
+export async function requestAIDesign(prompt: string, model: string | null): Promise<AIDesignOutcome> {
+  try {
+    const res = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, model }),
+    });
+    const data = await res.json();
+    if (res.ok && data?.design && !data.error) {
+      return { ok: true, design: data.design, model: data.model ?? null, fallback: Boolean(data.fallback) };
+    }
+    return {
+      ok: false,
+      error: data?.error ?? "unknown",
+      message: data?.message ?? "AI 꾸미기에 실패했어요.",
+    };
+  } catch {
+    return { ok: false, error: "network", message: "서버에 연결하지 못했어요." };
   }
 }

@@ -43,6 +43,7 @@ export type FrameBackground =
 export interface FrameConfig {
   id: string;
   label: string;
+  description?: string;           // AI가 프레임을 고를 때 참고하는 분위기 설명
   background: FrameBackground;
   accent: string;                 // 슬롯 테두리 / 강조색
   slotBorderWidth?: number;       // 각 사진 슬롯 테두리 두께(px)
