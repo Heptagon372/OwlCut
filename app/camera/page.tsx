@@ -12,6 +12,7 @@ import { FilteredImage } from "@/components/filters/FilteredImage";
 import { Button, IconButton } from "@/components/ui/Button";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Logo } from "@/components/brand/Logo";
+import { IdleGuard } from "@/components/kiosk/IdleGuard";
 import { ArrowRight, Camera as CameraIcon, CameraOff, RotateCcw, ScanFace, X } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { getFilter } from "@/lib/data/registry";
@@ -136,6 +137,8 @@ export default function CameraPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
+      {/* 4컷 촬영 중에는 화면을 만지지 않으므로 멈춤 */}
+      <IdleGuard seconds={90} enabled={phase !== "running"} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
         <div className="flex items-center gap-2">

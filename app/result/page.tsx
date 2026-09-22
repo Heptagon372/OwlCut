@@ -9,6 +9,7 @@ import { QRCodeView } from "@/components/result/QRCodeView";
 import { PrintButton } from "@/components/result/PrintButton";
 import { Button } from "@/components/ui/Button";
 import { Logo, OwlMark } from "@/components/brand/Logo";
+import { IdleGuard } from "@/components/kiosk/IdleGuard";
 import { Download, House, Images, Smartphone } from "lucide-react";
 
 type Status = "composing" | "uploading" | "done" | "error";
@@ -81,6 +82,8 @@ export default function ResultPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
+      {/* QR을 찍고 떠나는 경우가 많아 짧게 */}
+      <IdleGuard seconds={60} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
         <Button variant="secondary" size="sm" onClick={goHome}>

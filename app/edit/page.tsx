@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { Segmented } from "@/components/ui/Segmented";
 import { Logo } from "@/components/brand/Logo";
+import { IdleGuard } from "@/components/kiosk/IdleGuard";
 import { getFilter, getFrame, getLayout } from "@/lib/data/registry";
 import { makeSamplePhotos } from "@/lib/dev/samplePhotos";
 import { readableTextOn } from "@/lib/image/color";
@@ -63,6 +64,7 @@ export default function EditPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
+      <IdleGuard seconds={120} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
         <div className="flex items-center gap-2">

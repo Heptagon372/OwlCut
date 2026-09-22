@@ -83,6 +83,12 @@ npm run build      # 프로덕션 빌드
 - AI 사용량은 `/api/ai`가 호출마다 `ai_requests`에 기록 (저장 안 된 시도 포함). 디자인별 모델은 `designs.ai_model`.
 - 상태색(`--status-good/warning/critical`)은 상태 표시 전용, 항상 아이콘+문구와 함께.
 
+## 키오스크: 자리 비움 자동 초기화
+- `components/kiosk/IdleGuard` (판단 로직은 순수 함수 `lib/kiosk/idle.ts`): 조작이 없으면 마지막 15초 경고("아직 계신가요?") → 처음 화면으로 이동하며 `store.reset()`으로 사진·디자인 삭제.
+- 화면별 기본: 촬영 90초(4컷 촬영 중에는 멈춤) · 편집 120초 · 결과 60초. `NEXT_PUBLIC_IDLE_SECONDS`를 넣으면 모든 화면에 그 값(20초~30분).
+- 새 키오스크 화면을 만들면 `<IdleGuard seconds={…} />`를 꼭 넣을 것 (다음 방문자가 앞 사람 사진을 보지 않게).
+- 브라우저에서 시험할 때는 `Date.now`를 고정값으로 바꿔 경고 구간에 멈춰 두면 편하다 (이동 시켜 두면 도구 지연 동안 실제로 만료됨).
+
 ## 사진 저장·보관 (개인정보)
 - 버킷 `photos`는 **비공개**. DB에는 경로만(`designs.final_image_path`, `prints.image_path`, `photos.image_path`) 저장하고, 보여줄 때마다 서버가 **서명 URL** 발급(`lib/storage/photos.ts`). 공개 URL(`getPublicUrl`) 사용 금지.
   - 다운로드 페이지: 열 때마다 최대 1시간(남은 보관시간이 더 짧으면 그만큼) 서명 URL. 프린트 서버: claim 시 10분짜리.
