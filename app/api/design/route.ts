@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/client";
+import { expiresAt } from "@/lib/storage/photos";
+import { isUuid } from "@/lib/ids";
 import { layoutOptions } from "@/lib/image/layoutOptions";
 
 export const runtime = "nodejs";
@@ -11,13 +13,13 @@ export async function POST(req: Request) {
   }
   try {
     const { session_id, design } = await req.json();
-    if (!session_id || !design) {
-      return NextResponse.json({ error: "session_id, design 필수" }, { status: 400 });
+    if (!isUuid(session_id) || !design) {
+      return NextResponse.json({ error: "session_id(UUID), design 필수" }, { status: 400 });
     }
     const supabase = getSupabaseAdmin();
     await supabase
       .from("sessions")
-      .upsert({ id: session_id, status: "editing" }, { onConflict: "id" });
+      .upsert({ id: session_id, status: "editing", expires_at: expiresAt() }, { onConflict: "id" });
     const { data, error } = await supabase
       .from("designs")
       .insert({

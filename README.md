@@ -28,6 +28,9 @@ http://localhost:3000 접속. **카메라는 localhost 또는 HTTPS에서만 동
 | AI 꾸미기 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY` 중 하나 이상 |
 | 프린터 출력 | `PRINT_SERVER_TOKEN` + 행사장 PC에서 [`print-server/`](print-server/README.md) 실행 |
 | 관리자 대시보드 (`/admin`) | `ADMIN_PASSWORD` |
+| 보관기간 지난 사진 자동 삭제 | `CRON_SECRET` (+ GitHub 저장소 Secrets `OWLCUT_URL`, `CRON_SECRET`) · 보관 시간 `PHOTO_RETENTION_HOURS`(기본 2) |
+
+> 방문자 사진은 **비공개 저장소**에 보관되고, QR 다운로드 링크는 만료되는 임시 링크로만 열립니다.
 
 ## 화면
 

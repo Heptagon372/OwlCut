@@ -2,7 +2,7 @@
 
 export type PrintStatus = "waiting" | "printing" | "completed" | "failed";
 
-// 프린트 서버가 가져가는 작업 1건
+// 프린트 서버가 가져가는 작업 1건. image_url 은 claim 시점에 발급한 10분짜리 서명 URL.
 export interface PrintJob {
   id: string;
   session_id: string;

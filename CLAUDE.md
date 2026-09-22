@@ -83,6 +83,14 @@ npm run build      # 프로덕션 빌드
 - AI 사용량은 `/api/ai`가 호출마다 `ai_requests`에 기록 (저장 안 된 시도 포함). 디자인별 모델은 `designs.ai_model`.
 - 상태색(`--status-good/warning/critical`)은 상태 표시 전용, 항상 아이콘+문구와 함께.
 
+## 사진 저장·보관 (개인정보)
+- 버킷 `photos`는 **비공개**. DB에는 경로만(`designs.final_image_path`, `prints.image_path`, `photos.image_path`) 저장하고, 보여줄 때마다 서버가 **서명 URL** 발급(`lib/storage/photos.ts`). 공개 URL(`getPublicUrl`) 사용 금지.
+  - 다운로드 페이지: 열 때마다 최대 1시간(남은 보관시간이 더 짧으면 그만큼) 서명 URL. 프린트 서버: claim 시 10분짜리.
+- 세션 id는 저장소 경로에 들어가므로 **UUID만 허용**(`lib/ids.ts`) — 경로 조작 방지.
+- 보관기간 `PHOTO_RETENTION_HOURS`(기본 2시간, 설계도). 만료 후 다운로드 페이지는 "보관 기간이 지났어요".
+- 삭제: `GET /api/cron/cleanup` (Bearer `CRON_SECRET`) — 파일 먼저 지우고 성공하면 세션 행 삭제(cascade). 실패 시 행을 남겨 다음 실행에 재시도.
+  - 스케줄: `.github/workflows/cleanup.yml`(매시간, 저장소 Secrets `OWLCUT_URL`·`CRON_SECRET` 필요, 없으면 건너뜀). Vercel이면 Cron으로도 가능(Hobby 플랜은 하루 1회 제한).
+
 ## 환경변수
 `.env.local.example` 복사 → `.env.local`. 모든 외부 설정은 선택이며, 없으면 해당 기능만 비활성:
 Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT_SERVER_TOKEN` 없음 → 프린트 서버 / `ADMIN_PASSWORD` 없음 → `/admin`.

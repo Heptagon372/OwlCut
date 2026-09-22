@@ -84,11 +84,19 @@ create index if not exists idx_ai_requests_created on ai_requests(created_at);
 create index if not exists idx_designs_created on designs(created_at);
 create index if not exists idx_sessions_created on sessions(created_at);
 
+-- ---------- 사진 경로 (비공개 버킷 + 서명 URL) ----------
+-- DB에는 공개 URL 대신 저장소 경로만 둔다. 보여줄 때마다 서버가 만료되는 서명 URL을 발급.
+alter table designs add column if not exists final_image_path text;
+alter table prints  add column if not exists image_path text;
+alter table photos  add column if not exists image_path text;
+alter table photos  alter column image_url drop not null;
+
 -- ---------- Storage 버킷 ----------
--- 최종 합성 이미지 + 원본 사진 저장용. public 읽기 허용(오브젝트 경로가 UUID라 사실상 비공개).
+-- 최종 합성 이미지 + 원본 사진. 비공개: 방문자 사진이 URL만으로 영구히 열리지 않게 한다.
+-- (예전에 public 으로 만든 버킷도 비공개로 전환)
 insert into storage.buckets (id, name, public)
-values ('photos', 'photos', true)
-on conflict (id) do nothing;
+values ('photos', 'photos', false)
+on conflict (id) do update set public = false;
 
 -- ---------- RLS ----------
 -- 서버 라우트는 SERVICE_ROLE_KEY 사용 → RLS 우회. 클라이언트(anon)에는 테이블 직접 접근 미허용.
@@ -100,7 +108,8 @@ alter table devices  enable row level security;
 alter table ai_requests enable row level security;
 -- (정책을 추가하지 않으면 anon 키로는 접근 불가. 모든 접근은 서버 라우트 경유.)
 
--- ---------- TTL 정리 (선택: Supabase Cron / Edge Function에서 주기 실행) ----------
--- 만료 세션과 연결된 스토리지 파일까지 삭제하는 로직은 Edge Function으로 별도 구현 권장.
--- 아래는 만료 세션 행만 삭제하는 예시 (cascade로 photos/designs/prints 함께 삭제됨):
+-- ---------- 보관기간 정리 ----------
+-- 만료 세션의 저장소 파일 + 행 삭제는 앱의 GET /api/cron/cleanup 이 담당 (CRON_SECRET 필요).
+-- 세션 행을 지우면 photos/designs/prints 는 cascade 로 함께 삭제된다.
+-- 저장소 파일은 SQL로 지울 수 없으므로 이 쿼리만 단독으로 쓰면 파일이 남는다:
 --   delete from sessions where expires_at < now();

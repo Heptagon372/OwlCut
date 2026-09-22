@@ -19,8 +19,8 @@ export async function createSession(): Promise<string> {
 }
 
 export interface FinalResult {
-  url: string;
   downloadUrl: string;
+  expiresAt: string | null; // 사진 보관 만료 시각
 }
 
 // 최종 이미지 업로드. 성공 시 원격 URL, 실패/미설정 시 null(→ 로컬 다운로드만).
@@ -37,8 +37,8 @@ export async function uploadFinal(
     });
     if (!res.ok) return null;
     const data = await res.json();
-    if (!data?.url) return null;
-    return { url: data.url, downloadUrl: data.download_url };
+    if (!data?.download_url) return null;
+    return { downloadUrl: data.download_url, expiresAt: data.expires_at ?? null };
   } catch {
     return null;
   }

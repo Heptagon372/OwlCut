@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/client";
+import { expiresAt } from "@/lib/storage/photos";
 
 export const runtime = "nodejs";
 
@@ -17,7 +18,7 @@ export async function POST() {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("sessions")
-      .insert({ status: "created" })
+      .insert({ status: "created", expires_at: expiresAt() })
       .select("id, status")
       .single();
     if (error) throw error;

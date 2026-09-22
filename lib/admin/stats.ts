@@ -76,8 +76,8 @@ export async function getAdminStats(now = new Date()): Promise<AdminStats> {
   ] = await Promise.all([
     count(db.from("sessions").select("id", head).gte("created_at", today)),
     count(db.from("sessions").select("id", head).gte("created_at", hourAgo)),
-    count(db.from("designs").select("id", head).not("final_image_url", "is", null).gte("created_at", today)),
-    count(db.from("designs").select("id", head).not("final_image_url", "is", null).eq("mode", "ai").gte("created_at", today)),
+    count(db.from("designs").select("id", head).not("final_image_path", "is", null).gte("created_at", today)),
+    count(db.from("designs").select("id", head).not("final_image_path", "is", null).eq("mode", "ai").gte("created_at", today)),
     count(db.from("prints").select("id", head).eq("status", "waiting")),
     count(db.from("prints").select("id", head).eq("status", "printing")),
     count(db.from("prints").select("id", head).eq("status", "completed").gte("updated_at", today)),

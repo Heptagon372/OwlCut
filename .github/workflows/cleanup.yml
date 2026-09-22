@@ -1,0 +1,23 @@
+name: Photo cleanup
+
+# 보관기간이 지난 방문자 사진을 매시간 삭제 (배포된 앱의 /api/cron/cleanup 호출).
+# 호스팅(Vercel·AWS 등)과 무관하게 동작. 저장소 Secrets 에 OWLCUT_URL, CRON_SECRET 이 없으면 건너뜀.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 만료 사진 정리
+        env:
+          OWLCUT_URL: ${{ secrets.OWLCUT_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$OWLCUT_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "OWLCUT_URL / CRON_SECRET 미설정 — 건너뜀"
+            exit 0
+          fi
+          curl -fsS -H "Authorization: Bearer $CRON_SECRET" "${OWLCUT_URL%/}/api/cron/cleanup"
