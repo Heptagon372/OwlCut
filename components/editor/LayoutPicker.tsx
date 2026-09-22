@@ -49,10 +49,19 @@ export function LayoutThumb({ layout, numbered = true }: { layout: LayoutConfig;
   );
 }
 
-export function LayoutPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+export function LayoutPicker({
+  value,
+  onChange,
+  count,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  count?: number; // 찍은 사진 수 — 매수가 맞는 레이아웃만
+}) {
+  const list = count ? LAYOUTS.filter((l) => l.photoCount === count) : LAYOUTS;
   return (
     <div className="grid grid-cols-3 gap-2">
-      {LAYOUTS.map((l) => {
+      {(list.length ? list : LAYOUTS).map((l) => {
         const active = value === l.id;
         return (
           <button

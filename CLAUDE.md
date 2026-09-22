@@ -51,7 +51,8 @@ npm run build      # 프로덕션 빌드
 
 ## 화면 구성 (촬영 후 편집)
 - 편집 탭: `화면 구성 | 꾸미기 | AI 꾸미기`. 화면 구성 = 레이아웃 · 사진 자리 바꾸기 · 간격 · 모서리 · 배경색.
-- 레이아웃 7종(`data/layouts/index.json`). `tile`로 스트립 반복(인생네컷 오리지널 = 1200x1800, 4x6), `cards`로 폴라로이드 카드. 썸네일은 슬롯 좌표로 자동 생성되므로 JSON 추가만으로 확장.
+- 레이아웃 9종(`data/layouts/index.json`, 4컷 7 + 6컷 2). `tile`로 스트립 반복(인생네컷 오리지널 = 1200x1800, 4x6), `cards`로 폴라로이드 카드. 썸네일은 슬롯 좌표로 자동 생성되므로 JSON 추가만으로 확장.
+- **촬영 매수는 레이아웃의 `photoCount`가 정한다** (`SHOT_COUNTS`·`layoutsFor`·`defaultLayoutFor` in `registry.ts`). 매수가 여러 가지면 촬영 화면에 "4컷/6컷" 선택이 생기고, 편집 화면 레이아웃 목록은 찍은 매수에 맞는 것만. 8컷도 JSON 추가만으로 된다(`slots.length === photoCount` 테스트).
 - `DesignState.photoOrder`(자리 i ← 사진 번호), `slotSpacing`/`slotRounding`(0~10 단계, 해상도 무관), `backgroundColor`(null=프레임 기본). 계산은 `lib/image/layoutGeometry.ts`(순수).
 - 배경색을 직접 바꾸면 하단 브랜딩·새 문구 기본색은 대비에 맞춰 자동 선택(`lib/image/color.ts`).
 - 미리보기·최종 합성은 모두 `buildComposeInput()`을 거친다 (필드 추가 시 한 곳만 수정).

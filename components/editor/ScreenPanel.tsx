@@ -71,6 +71,7 @@ export function ScreenPanel({
     <div className="space-y-4">
       <Panel title="레이아웃" icon={<LayoutGrid className="h-4 w-4" />} aside={layout.label}>
         <LayoutPicker
+          count={photos.length}
           value={design.layoutId}
           onChange={(id) =>
             onChange({ layoutId: id, photoOrder: normalizeOrder(design.photoOrder, getLayout(id).slots.length) })

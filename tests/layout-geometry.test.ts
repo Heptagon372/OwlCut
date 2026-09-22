@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { it as t } from "vitest";
-import { LAYOUTS } from "@/lib/data/registry";
+import { DEFAULT_LAYOUT_ID, LAYOUTS, SHOT_COUNTS, defaultLayoutFor, layoutsFor } from "@/lib/data/registry";
 import {
   outputSize, normalizeOrder, swapOrder, spacedSlot, cornerRadius, clampLevel, identityOrder,
 } from "@/lib/image/layoutGeometry";
@@ -9,12 +9,25 @@ import { layoutOptions } from "@/lib/image/layoutOptions";
 type R = { x: number; y: number; w: number; h: number };
 const overlap = (a: R, b: R) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-t(`레이아웃 ${LAYOUTS.length}개, id 중복 없음, 모두 4컷`, () => {
-  assert.equal(LAYOUTS.length, 7);
+t(`레이아웃 ${LAYOUTS.length}개, id 중복 없음, 칸 수 = 촬영 매수`, () => {
+  assert.equal(LAYOUTS.length, 9);
   assert.equal(new Set(LAYOUTS.map((l) => l.id)).size, LAYOUTS.length);
-  for (const l of LAYOUTS) {
-    assert.equal(l.slots.length, 4, l.id);
-    assert.equal(l.photoCount, 4, l.id);
+  for (const l of LAYOUTS) assert.equal(l.slots.length, l.photoCount, l.id);
+});
+
+t("촬영 매수는 레이아웃에서: 4·6컷, 매수별 기본 레이아웃", () => {
+  assert.deepEqual(SHOT_COUNTS, [4, 6]);
+  assert.equal(defaultLayoutFor(4).id, DEFAULT_LAYOUT_ID); // 4컷은 기존 기본 그대로
+  assert.equal(defaultLayoutFor(6).photoCount, 6);
+  assert.ok(layoutsFor(6).every((l) => l.photoCount === 6) && layoutsFor(6).length === 2);
+  assert.equal(defaultLayoutFor(8).id, DEFAULT_LAYOUT_ID); // 없는 매수 → 기본 레이아웃
+  assert.deepEqual(normalizeOrder([0, 1, 2, 3], 6), [0, 1, 2, 3, 4, 5]); // 4→6컷 전환 시 순서 초기화
+});
+
+t("6컷 레이아웃은 4x6 인화 크기 (300dpi)", () => {
+  for (const l of layoutsFor(6)) {
+    const { width, height } = outputSize(l);
+    assert.deepEqual([Math.min(width, height), Math.max(width, height)], [1200, 1800], l.id);
   }
 });
 

@@ -19,14 +19,14 @@ import { Logo } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
 import { ArrowRight, Camera as CameraIcon, CameraOff, RotateCcw, ScanFace, X } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
-import { getFilter } from "@/lib/data/registry";
+import { SHOT_COUNTS, defaultLayoutFor, getFilter, getLayout } from "@/lib/data/registry";
+import { identityOrder } from "@/lib/image/layoutGeometry";
 import { getEffect, NO_EFFECT } from "@/lib/ar/effects";
 import { paramsToCss } from "@/lib/filters/cssFallback";
 import { createSession } from "@/lib/api";
 import type { CapturedPhoto } from "@/types/session";
 import type { FaceGeometry } from "@/types/ar";
 
-const TOTAL = 4;
 const SNAPSHOT_MS = 4000; // 필터 썸네일을 지금 카메라 화면으로 갱신하는 주기
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -44,6 +44,13 @@ export default function CameraPage() {
   const [snapshot, setSnapshot] = useState<{ canvas: HTMLCanvasElement; faces: FaceGeometry[] } | null>(null);
   const [pickerTab, setPickerTab] = useState<"filter" | "effect">("filter");
   const runningRef = useRef(false);
+
+  // 촬영 매수 = 고른 레이아웃의 사진 수 (매수가 여러 가지면 아래에서 먼저 고름)
+  const total = getLayout(design.layoutId).photoCount;
+  const chooseCount = (n: number) => {
+    const l = defaultLayoutFor(n);
+    setDesign({ layoutId: l.id, photoOrder: identityOrder(l.photoCount) });
+  };
 
   // 촬영 전에 고른 필터·AR 효과 — 사진은 원본으로 찍고, 미리보기·합성에서 같은 효과를 입힌다
   const filterParams = getFilter(design.filter).params;
@@ -93,7 +100,7 @@ export default function CameraPage() {
     runningRef.current = true;
     setPhase("running");
     const captured: CapturedPhoto[] = [];
-    for (let i = 0; i < TOTAL; i++) {
+    for (let i = 0; i < total; i++) {
       for (let c = 3; c >= 1; c--) {
         setCount(c);
         await sleep(850);
@@ -156,7 +163,7 @@ export default function CameraPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
-      {/* 4컷 촬영 중에는 화면을 만지지 않으므로 멈춤 */}
+      {/* 연속 촬영 중에는 화면을 만지지 않으므로 멈춤 */}
       <IdleGuard seconds={90} enabled={phase !== "running"} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
@@ -180,7 +187,7 @@ export default function CameraPage() {
             count={count}
             flash={flash}
             shotIndex={shots.length}
-            total={TOTAL}
+            total={total}
             filterLayer={
               <>
                 {glSupported && (
@@ -212,7 +219,7 @@ export default function CameraPage() {
             }
             />
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`grid gap-3 ${shots.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
               {shots.map((s, i) => (
                 <div key={i} className="relative">
                   <FilteredImage
@@ -235,17 +242,29 @@ export default function CameraPage() {
 
         {/* 오른쪽: 진행 상태 · 필터 · 셔터 */}
         <div className="flex flex-col gap-4">
-          <div className="ink flex items-center gap-5 rounded-card p-5">
-            <ProgressRing value={shots.length / TOTAL} size={76} stroke={6} tone="light" label={`${shots.length}/${TOTAL}컷`}>
-              <span className="num text-lg font-semibold">
-                {shots.length}
-                <span className="text-ink-muted">/{TOTAL}</span>
-              </span>
-            </ProgressRing>
-            <div className="min-w-0">
-              <p className="text-lg font-semibold">4컷 촬영</p>
-              <p className="text-sm text-ink-muted" aria-live="polite">{statusText}</p>
+          <div className="ink rounded-card p-5">
+            <div className="flex items-center gap-5">
+              <ProgressRing value={shots.length / total} size={76} stroke={6} tone="light" label={`${shots.length}/${total}컷`}>
+                <span className="num text-lg font-semibold">
+                  {shots.length}
+                  <span className="text-ink-muted">/{total}</span>
+                </span>
+              </ProgressRing>
+              <div className="min-w-0">
+                <p className="text-lg font-semibold">{total}컷 촬영</p>
+                <p className="text-sm text-ink-muted" aria-live="polite">{statusText}</p>
+              </div>
             </div>
+            {/* 레이아웃에 매수가 여러 가지 있을 때만: 찍기 전에 몇 컷 찍을지 */}
+            {SHOT_COUNTS.length > 1 && phase === "idle" && (
+              <Segmented
+                label="촬영 매수"
+                items={SHOT_COUNTS.map((n) => ({ id: String(n), label: `${n}컷` }))}
+                value={String(total)}
+                onChange={(id) => chooseCount(Number(id))}
+                className="mt-4"
+              />
+            )}
           </div>
 
           {phase !== "review" ? (
@@ -286,7 +305,7 @@ export default function CameraPage() {
 
               <Button size="lg" onClick={runSequence} disabled={!ready || phase === "running"} className="w-full">
                 <CameraIcon className="h-5 w-5" aria-hidden />
-                {phase === "running" ? `촬영 중 · ${shots.length}/${TOTAL}` : ready ? "촬영 시작" : "카메라 준비 중…"}
+                {phase === "running" ? `촬영 중 · ${shots.length}/${total}` : ready ? "촬영 시작" : "카메라 준비 중…"}
               </Button>
 
               <button

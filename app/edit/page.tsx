@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Frame, Images, RotateCcw, ScanFace, Smile, Sparkles, SunMedium, Type } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
@@ -16,7 +16,8 @@ import { Panel } from "@/components/ui/Panel";
 import { Segmented } from "@/components/ui/Segmented";
 import { Logo } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
-import { getFilter, getFrame, getLayout } from "@/lib/data/registry";
+import { defaultLayoutFor, getFilter, getFrame, getLayout } from "@/lib/data/registry";
+import { identityOrder } from "@/lib/image/layoutGeometry";
 import { getEffect } from "@/lib/ar/effects";
 import { makeSamplePhotos } from "@/lib/dev/samplePhotos";
 import { readableTextOn } from "@/lib/image/color";
@@ -41,6 +42,13 @@ export default function EditPage() {
   const { photos, design, setDesign, setPhotos } = useBoothStore();
   const [tab, setTab] = useState<Tab>("screen");
 
+  // 찍은 매수와 레이아웃 칸 수가 다르면(예: 6컷 레이아웃이 남아 있는데 4장) 그 매수의 기본 레이아웃으로
+  useEffect(() => {
+    if (photos.length === 0 || getLayout(design.layoutId).photoCount === photos.length) return;
+    const l = defaultLayoutFor(photos.length);
+    if (l.photoCount === photos.length) setDesign({ layoutId: l.id, photoOrder: identityOrder(photos.length) });
+  }, [photos.length, design.layoutId, setDesign]);
+
   if (photos.length === 0) {
     return (
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-4 text-center">
@@ -53,7 +61,10 @@ export default function EditPage() {
             처음으로
           </Button>
           {process.env.NODE_ENV !== "production" && (
-            <button onClick={() => setPhotos(makeSamplePhotos())} className="mt-4 block w-full text-xs text-muted underline">
+            <button
+              onClick={() => setPhotos(makeSamplePhotos(getLayout(design.layoutId).photoCount))}
+              className="mt-4 block w-full text-xs text-muted underline"
+            >
               샘플 사진으로 편집기 체험 (개발용)
             </button>
           )}

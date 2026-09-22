@@ -7,10 +7,12 @@ import { Logo } from "@/components/brand/Logo";
 import { LayoutThumb } from "@/components/editor/LayoutPicker";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { createSession } from "@/lib/api";
-import { FILTERS, FILTER_CATEGORIES, LAYOUTS } from "@/lib/data/registry";
+import { FILTERS, FILTER_CATEGORIES, LAYOUTS, SHOT_COUNTS } from "@/lib/data/registry";
+
+const SHOTS = `${SHOT_COUNTS.join("·")}컷`; // 레이아웃에 있는 촬영 매수 (예: 4·6컷)
 
 const STEPS = [
-  { no: "01", icon: Camera, title: "촬영", desc: "4컷 연속 촬영, 얼굴 자동 프레이밍" },
+  { no: "01", icon: Camera, title: "촬영", desc: `${SHOTS} 연속 촬영, 얼굴 자동 프레이밍` },
   { no: "02", icon: WandSparkles, title: "꾸미기", desc: "레이아웃 · 프레임 · 스티커 · AI 꾸미기" },
   { no: "03", icon: QrCode, title: "받기", desc: "QR로 폰에 저장하고 바로 출력" },
 ];
@@ -60,7 +62,7 @@ export default function Home() {
                 <ArrowRight className="h-5 w-5" />
               </span>
             </Button>
-            <span className="text-sm text-muted">4컷 · 약 1분</span>
+            <span className="text-sm text-muted">{SHOTS} · 약 1분</span>
           </div>
         </div>
 

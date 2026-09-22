@@ -35,6 +35,20 @@ const filterMap = new Map(FILTERS.map((f) => [f.id, f]));
 export function getLayout(id?: string): LayoutConfig {
   return (id ? layoutMap.get(id) : undefined) ?? layoutMap.get(DEFAULT_LAYOUT_ID)!;
 }
+
+// 촬영 매수는 레이아웃이 정한다 (설계도 11: 6/8컷도 layout JSON 추가만으로).
+// 매수가 여러 가지면 촬영 화면에서 먼저 고르고, 편집 화면은 찍은 매수에 맞는 레이아웃만 보여 준다.
+export const SHOT_COUNTS: number[] = [...new Set(LAYOUTS.map((l) => l.photoCount))].sort((a, b) => a - b);
+
+export function layoutsFor(count: number): LayoutConfig[] {
+  return LAYOUTS.filter((l) => l.photoCount === count);
+}
+
+/** 그 매수의 기본 레이아웃 (기본 레이아웃이 맞으면 그것, 아니면 목록 첫 번째) */
+export function defaultLayoutFor(count: number): LayoutConfig {
+  const base = getLayout(DEFAULT_LAYOUT_ID);
+  return base.photoCount === count ? base : (layoutsFor(count)[0] ?? base);
+}
 export function getFrame(id?: string): FrameConfig {
   return (id ? frameMap.get(id) : undefined) ?? frameMap.get(DEFAULT_FRAME_ID)!;
 }

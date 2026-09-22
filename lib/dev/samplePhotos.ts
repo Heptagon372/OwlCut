@@ -1,5 +1,5 @@
 "use client";
-// 개발 전용: 카메라 없이 편집 화면을 시험하기 위한 가짜 4컷 (production 빌드에선 버튼이 숨겨짐).
+// 개발 전용: 카메라 없이 편집 화면을 시험하기 위한 가짜 사진 n장 (production 빌드에선 버튼이 숨겨짐).
 import type { CapturedPhoto } from "@/types/session";
 
 const FACES = [
@@ -7,10 +7,12 @@ const FACES = [
   { x: 0.7, y: 0.4, hue: 200 },
   { x: 0.5, y: 0.45, hue: 30 },
   { x: 0.62, y: 0.38, hue: 140 },
+  { x: 0.4, y: 0.4, hue: 340 },
+  { x: 0.56, y: 0.44, hue: 90 },
 ];
 
-export function makeSamplePhotos(): CapturedPhoto[] {
-  return FACES.map((f, i) => {
+export function makeSamplePhotos(count = 4): CapturedPhoto[] {
+  return Array.from({ length: count }, (_, i) => FACES[i % FACES.length]).map((f, i) => {
     const w = 1280;
     const h = 720;
     const canvas = document.createElement("canvas");
