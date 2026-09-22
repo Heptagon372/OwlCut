@@ -15,6 +15,8 @@ import type {
 } from "@/types/design";
 import { getSticker } from "@/lib/data/registry";
 import { FILTER_CSS } from "./filters";
+import { cornerRadius, normalizeOrder, outputSize, spacedSlot } from "./layoutGeometry";
+import { readableTextOn } from "./color";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -31,8 +33,9 @@ function paintBackground(
   frame: FrameConfig,
   w: number,
   h: number,
+  override?: string | null,
 ) {
-  const bg = frame.background;
+  const bg = override ? ({ type: "solid", color: override } as const) : frame.background;
   if (bg.type === "gradient") {
     const angle = ((bg.angle ?? 0) * Math.PI) / 180;
     const dx = Math.cos(angle);
@@ -84,6 +87,18 @@ function drawCover(
 ) {
   const { sx, sy, sw, sh } = coverCrop(img.width, img.height, slot, focus);
   ctx.drawImage(img, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
+}
+
+// 둥근 사각형 경로 (radius 0이면 일반 사각형)
+function roundRectPath(ctx: CanvasRenderingContext2D, s: PhotoSlot, radius: number) {
+  const r = Math.max(0, Math.min(radius, s.w / 2, s.h / 2));
+  ctx.beginPath();
+  ctx.moveTo(s.x + r, s.y);
+  ctx.arcTo(s.x + s.w, s.y, s.x + s.w, s.y + s.h, r);
+  ctx.arcTo(s.x + s.w, s.y + s.h, s.x, s.y + s.h, r);
+  ctx.arcTo(s.x, s.y + s.h, s.x, s.y, r);
+  ctx.arcTo(s.x, s.y, s.x + s.w, s.y, r);
+  ctx.closePath();
 }
 
 function anchorPoint(
@@ -157,11 +172,8 @@ function drawTextLayers(
   ctx.restore();
 }
 
-// 실제 렌더링 (미리보기 + 최종 export 공유)
-export async function renderToCanvas(
-  input: ComposeInput,
-  canvas: HTMLCanvasElement,
-): Promise<void> {
+// 타일(스트립 한 장) 렌더링
+async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement): Promise<void> {
   const { photos, focuses, layout, frame, stickers, textLayers, filter } = input;
   const { width, height } = layout.canvas;
   canvas.width = width;
@@ -169,28 +181,50 @@ export async function renderToCanvas(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas 2d context를 가져오지 못했습니다");
 
-  // 1) Background
-  paintBackground(ctx, frame, width, height);
+  // 1) Background (배경색 직접 지정이 있으면 프레임 배경 대신)
+  paintBackground(ctx, frame, width, height, input.backgroundColor);
 
-  // 2) Photos (+filter) & slot borders
+  // 2) Photos (+filter) & slot borders — 자리 i 에는 photoOrder[i] 번 사진
+  const order = normalizeOrder(input.photoOrder, layout.slots.length);
   const filterCss = FILTER_CSS[filter] ?? "none";
+  const images = await Promise.all(order.map((p) => (photos[p] ? loadImage(photos[p]) : null)));
+
   for (let i = 0; i < layout.slots.length; i++) {
-    const slot = layout.slots[i];
-    const src = photos[i];
-    if (src) {
-      const img = await loadImage(src);
+    const slot = spacedSlot(layout.slots[i], input.slotSpacing ?? 0, width);
+    const radius = cornerRadius(slot, input.slotRounding ?? 0);
+
+    // 폴라로이드 카드
+    if (layout.cards) {
+      const { padding: p, bottomPadding: bp, color } = layout.cards;
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.22)";
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = color;
+      roundRectPath(ctx, { x: slot.x - p, y: slot.y - p, w: slot.w + p * 2, h: slot.h + p + bp }, radius ? radius + p / 2 : 4);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save();
+    roundRectPath(ctx, slot, radius);
+    ctx.clip();
+    const img = images[i];
+    if (img) {
       ctx.filter = filterCss;
-      drawCover(ctx, img, slot, focuses?.[i]);
+      drawCover(ctx, img, slot, focuses?.[order[i]]);
       ctx.filter = "none";
     } else {
-      // 사진 없는 슬롯은 회색 플레이스홀더
-      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillStyle = "rgba(0,0,0,0.08)"; // 사진 없는 자리
       ctx.fillRect(slot.x, slot.y, slot.w, slot.h);
     }
+    ctx.restore();
+
     if (frame.slotBorderWidth && frame.slotBorderWidth > 0) {
       ctx.lineWidth = frame.slotBorderWidth;
       ctx.strokeStyle = frame.accent;
-      ctx.strokeRect(slot.x, slot.y, slot.w, slot.h);
+      roundRectPath(ctx, slot, radius);
+      ctx.stroke();
     }
   }
 
@@ -205,10 +239,41 @@ export async function renderToCanvas(
     ctx.save();
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    ctx.font = `600 ${Math.round(width * 0.045)}px "Pretendard", "Malgun Gothic", sans-serif`;
-    ctx.fillStyle = frame.footer.color;
+    const size = layout.footerFontSize ?? Math.round(Math.min(width, height) * 0.045);
+    ctx.font = `600 ${size}px "Pretendard", "Malgun Gothic", sans-serif`;
+    // 배경색을 직접 바꿨으면 프레임 기본 글자색 대신 그 배경에서 잘 보이는 색
+    ctx.fillStyle = input.backgroundColor
+      ? readableTextOn(input.backgroundColor, frame.footer.color)
+      : frame.footer.color;
     ctx.fillText(frame.footer.text, width / 2, height - Math.round(height * 0.015));
     ctx.restore();
+  }
+}
+
+// 실제 렌더링 (미리보기 + 최종 export 공유). tile 레이아웃이면 스트립을 반복해 붙인다.
+export async function renderToCanvas(
+  input: ComposeInput,
+  canvas: HTMLCanvasElement,
+): Promise<void> {
+  const { layout } = input;
+  if (!layout.tile) {
+    await renderTile(input, canvas);
+    return;
+  }
+  const tile = document.createElement("canvas");
+  await renderTile(input, tile);
+
+  const { width, height } = outputSize(layout);
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas 2d context를 가져오지 못했습니다");
+  const g = layout.tile.gutter ?? 0;
+  if (g > 0) paintBackground(ctx, input.frame, width, height, input.backgroundColor);
+  for (let r = 0; r < (layout.tile.rows ?? 1); r++) {
+    for (let c = 0; c < layout.tile.columns; c++) {
+      ctx.drawImage(tile, c * (tile.width + g), r * (tile.height + g));
+    }
   }
 }
 

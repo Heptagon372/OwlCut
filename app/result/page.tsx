@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { composeToDataUrl } from "@/lib/image/compose";
-import { getFrame, getLayout } from "@/lib/data/registry";
+import { buildComposeInput } from "@/lib/image/buildComposeInput";
 import { uploadFinal } from "@/lib/api";
 import { QRCodeView } from "@/components/result/QRCodeView";
 import { PrintButton } from "@/components/result/PrintButton";
@@ -24,15 +24,7 @@ export default function ResultPage() {
     (async () => {
       try {
         setStatus("composing");
-        const dataUrl = await composeToDataUrl({
-          photos: photos.map((p) => p.dataUrl),
-          focuses: photos.map((p) => p.focus),
-          layout: getLayout(design.layoutId),
-          frame: getFrame(design.frameId),
-          stickers: design.stickers,
-          textLayers: design.textLayers,
-          filter: design.filter,
-        });
+        const dataUrl = await composeToDataUrl(buildComposeInput(photos, design));
         if (!active) return;
         setStatus("uploading");
         const sid = sessionId ?? crypto.randomUUID();

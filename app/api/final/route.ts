@@ -5,6 +5,7 @@ import {
   STORAGE_BUCKET,
 } from "@/lib/supabase/client";
 import { dataUrlToBuffer } from "@/lib/image/dataurl";
+import { layoutOptions } from "@/lib/image/layoutOptions";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,8 @@ export async function POST(req: Request) {
       mode: design?.mode ?? "manual",
       prompt: design?.prompt ?? null,
       ai_model: design?.mode === "ai" ? (design?.aiModel ?? null) : null,
+      layout: design?.layoutId ?? null,
+      layout_options: layoutOptions(design),
       frame: design?.frameId ?? null,
       stickers: design?.stickers ?? [],
       text_layers: design?.textLayers ?? [],

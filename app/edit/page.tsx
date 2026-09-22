@@ -4,11 +4,22 @@ import { useRouter } from "next/navigation";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { AIDesignPanel } from "@/components/ai/AIDesignPanel";
 import { PhotoCanvas } from "@/components/editor/PhotoCanvas";
+import { ScreenPanel } from "@/components/editor/ScreenPanel";
 import { FrameSelector } from "@/components/editor/FrameSelector";
 import { StickerPanel } from "@/components/editor/StickerPanel";
 import { TextEditor } from "@/components/editor/TextEditor";
 import { Button } from "@/components/ui/Button";
-import { FILTERS, LAYOUTS, getFrame } from "@/lib/data/registry";
+import { FILTERS, getFrame } from "@/lib/data/registry";
+import { makeSamplePhotos } from "@/lib/dev/samplePhotos";
+import { readableTextOn } from "@/lib/image/color";
+
+type Tab = "screen" | "decorate" | "ai";
+
+const TABS: [Tab, string][] = [
+  ["screen", "화면 구성"],
+  ["decorate", "꾸미기"],
+  ["ai", "AI 꾸미기 🤖"],
+];
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h3 className="mb-2 text-sm font-semibold text-muted">{children}</h3>;
@@ -16,14 +27,19 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 export default function EditPage() {
   const router = useRouter();
-  const { photos, design, setDesign } = useBoothStore();
-  const [tab, setTab] = useState<"manual" | "ai">("manual");
+  const { photos, design, setDesign, setPhotos } = useBoothStore();
+  const [tab, setTab] = useState<Tab>("screen");
 
   if (photos.length === 0) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
         <p className="text-lg text-muted">촬영된 사진이 없어요.</p>
         <Button onClick={() => router.push("/")}>처음으로</Button>
+        {process.env.NODE_ENV !== "production" && (
+          <button onClick={() => setPhotos(makeSamplePhotos())} className="text-xs text-muted underline">
+            샘플 사진으로 편집기 체험 (개발용)
+          </button>
+        )}
       </main>
     );
   }
@@ -33,34 +49,14 @@ export default function EditPage() {
   return (
     <main className="mx-auto grid w-full max-w-5xl flex-1 gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex items-start justify-center">
-        <div className="flex max-h-[74vh] items-center justify-center overflow-hidden rounded-2xl border border-border bg-card p-3">
+        <div className="flex max-h-[74vh] items-center justify-center overflow-hidden rounded-2xl border border-border bg-card p-3 md:sticky md:top-6">
           <PhotoCanvas photos={photos} design={design} className="max-h-[68vh]" />
         </div>
       </div>
 
       <div className="space-y-6">
-        <section>
-          <SectionTitle>레이아웃</SectionTitle>
-          <div className="flex gap-2">
-            {LAYOUTS.map((l) => (
-              <button
-                key={l.id}
-                onClick={() => setDesign({ layoutId: l.id })}
-                className={`flex-1 rounded-xl border px-3 py-2 text-sm ${design.layoutId === l.id ? "border-accent text-foreground" : "border-border text-muted hover:text-foreground"}`}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <div role="tablist" className="grid grid-cols-2 gap-1 rounded-2xl bg-card p-1">
-          {(
-            [
-              ["manual", "직접 꾸미기"],
-              ["ai", "AI 꾸미기 🤖"],
-            ] as const
-          ).map(([key, label]) => (
+        <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-card p-1">
+          {TABS.map(([key, label]) => (
             <button
               key={key}
               role="tab"
@@ -73,13 +69,17 @@ export default function EditPage() {
           ))}
         </div>
 
-        {tab === "ai" ? (
+        {tab === "screen" && <ScreenPanel photos={photos} design={design} onChange={setDesign} />}
+
+        {tab === "ai" && (
           <AIDesignPanel
             onApply={(result, prompt, model) =>
               setDesign({ ...result, mode: "ai", prompt, aiModel: model })
             }
           />
-        ) : (
+        )}
+
+        {tab === "decorate" && (
           <>
             <section>
               <SectionTitle>프레임</SectionTitle>
@@ -111,7 +111,11 @@ export default function EditPage() {
               <TextEditor
                 value={design.textLayers}
                 onChange={(t) => setDesign({ textLayers: t })}
-                defaultColor={frame.defaultTextColor}
+                defaultColor={
+                  design.backgroundColor
+                    ? readableTextOn(design.backgroundColor, frame.defaultTextColor)
+                    : frame.defaultTextColor
+                }
               />
             </section>
           </>

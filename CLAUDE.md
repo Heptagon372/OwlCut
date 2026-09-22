@@ -29,6 +29,14 @@ npm run build      # 프로덕션 빌드
 - Supabase/네트워크/프린터 실패가 **전체 흐름을 막지 않는다**. Supabase 미설정 시 카메라·합성·로컬 다운로드는 동작하고 QR만 비활성화.
 - `data/*/index.json` 에 레이아웃/프레임/스티커 정의. 새 항목은 JSON 추가만으로 확장.
 
+## 화면 구성 (촬영 후 편집)
+- 편집 탭: `화면 구성 | 꾸미기 | AI 꾸미기`. 화면 구성 = 레이아웃 · 사진 자리 바꾸기 · 간격 · 모서리 · 배경색.
+- 레이아웃 7종(`data/layouts/index.json`). `tile`로 스트립 반복(인생네컷 오리지널 = 1200x1800, 4x6), `cards`로 폴라로이드 카드. 썸네일은 슬롯 좌표로 자동 생성되므로 JSON 추가만으로 확장.
+- `DesignState.photoOrder`(자리 i ← 사진 번호), `slotSpacing`/`slotRounding`(0~10 단계, 해상도 무관), `backgroundColor`(null=프레임 기본). 계산은 `lib/image/layoutGeometry.ts`(순수).
+- 배경색을 직접 바꾸면 하단 브랜딩·새 문구 기본색은 대비에 맞춰 자동 선택(`lib/image/color.ts`).
+- 미리보기·최종 합성은 모두 `buildComposeInput()`을 거친다 (필드 추가 시 한 곳만 수정).
+- 개발 모드에선 사진이 없을 때 편집 화면에 "샘플 사진으로 체험" 버튼 (카메라 없이 편집기 확인용, production 빌드에선 숨김).
+
 ## AI 꾸미기 (Phase 5)
 - 흐름: `POST /api/ai` → `lib/ai/generateDesign.ts` → `registry`에서 모델→프로바이더 → `providers/*.generate()` → `normalize.ts` 검증·보정.
 - AI는 이미지를 만들지 않고 `frame/filter/stickers/text` JSON만 고른다. 출력 스키마의 enum은 `data/*` 레지스트리에서 자동 생성(`lib/ai/prompt.ts`).

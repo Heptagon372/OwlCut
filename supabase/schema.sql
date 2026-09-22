@@ -63,6 +63,10 @@ create table if not exists ai_requests (
 -- AI로 만든 디자인이 어떤 모델에서 왔는지
 alter table designs add column if not exists ai_model text;
 
+-- 화면 구성: 레이아웃 id + { photoOrder, slotSpacing, slotRounding, backgroundColor }
+alter table designs add column if not exists layout text;
+alter table designs add column if not exists layout_options jsonb;
+
 -- 장비 상태 (프린트 서버 heartbeat). 관리자 대시보드에서 온라인 여부 표시.
 create table if not exists devices (
   id text primary key,              -- 프린터/에이전트 이름

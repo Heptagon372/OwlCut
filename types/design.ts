@@ -30,9 +30,16 @@ export interface PhotoSlot {
 export interface LayoutConfig {
   id: string;
   label: string;
+  description?: string;
+  // 한 장(타일)의 크기. tile이 있으면 최종 이미지는 이 타일을 반복한 크기가 된다.
   canvas: { width: number; height: number };
   photoCount: number;
   slots: PhotoSlot[];
+  // 같은 스트립을 여러 번 반복 (인생네컷 오리지널: 세로 스트립 2줄 = 4x6 용지)
+  tile?: { columns: number; rows?: number; gutter?: number };
+  // 사진마다 뒤에 카드(폴라로이드 느낌)를 깐다
+  cards?: { padding: number; bottomPadding: number; color: string };
+  footerFontSize?: number; // 기본: 타일 짧은 변의 4.5%
 }
 
 // ---------- 프레임 (data/frames) ----------
@@ -85,7 +92,14 @@ export interface DesignState {
   stickers: StickerInstance[];
   textLayers: TextLayer[];
   filter: FilterName;
+  // ---- 화면 구성 (촬영 후 수정) ----
+  photoOrder: number[];            // 자리 i 에 들어갈 사진 번호 (기본 [0,1,2,3])
+  slotSpacing: number;             // 사진 간격 단계 0~10 (0 = 레이아웃 기본)
+  slotRounding: number;            // 사진 모서리 둥글기 단계 0~10
+  backgroundColor: string | null;  // 배경색 직접 지정 (null = 프레임 기본)
 }
+
+export const SCREEN_LEVEL_MAX = 10;
 
 // ---------- 크롭 초점 (Phase 6 사람 추적) ----------
 // 촬영 이미지 안에서 인물(얼굴 묶음)의 중심, 0~1 정규화 좌표.
@@ -103,6 +117,10 @@ export interface ComposeInput {
   stickers: StickerInstance[];
   textLayers: TextLayer[];
   filter: FilterName;
+  photoOrder?: number[];
+  slotSpacing?: number;
+  slotRounding?: number;
+  backgroundColor?: string | null;
 }
 
 // ---------- AI 응답 스키마 (설계도 7-4, Phase 5에서 사용) ----------
