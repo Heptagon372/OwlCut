@@ -1,0 +1,12 @@
+[
+  { "id": "owl", "label": "부엉이", "glyph": "🦉" },
+  { "id": "star", "label": "별", "glyph": "⭐" },
+  { "id": "heart", "label": "하트", "glyph": "❤️" },
+  { "id": "sparkles", "label": "반짝", "glyph": "✨" },
+  { "id": "crown", "label": "왕관", "glyph": "👑" },
+  { "id": "camera", "label": "카메라", "glyph": "📷" },
+  { "id": "moon", "label": "달", "glyph": "🌙" },
+  { "id": "flower", "label": "꽃", "glyph": "🌸" },
+  { "id": "fire", "label": "불꽃", "glyph": "🔥" },
+  { "id": "peace", "label": "브이", "glyph": "✌️" }
+]

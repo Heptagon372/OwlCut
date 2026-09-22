@@ -1,0 +1,38 @@
+[
+  {
+    "id": "basic",
+    "label": "기본 화이트",
+    "background": { "type": "solid", "color": "#ffffff" },
+    "accent": "#111111",
+    "slotBorderWidth": 0,
+    "footer": { "text": "S.OWL", "color": "#111111" },
+    "defaultTextColor": "#111111"
+  },
+  {
+    "id": "owl_classic",
+    "label": "아울 클래식",
+    "background": { "type": "solid", "color": "#f5ecd9" },
+    "accent": "#6b4a2b",
+    "slotBorderWidth": 6,
+    "footer": { "text": "S.OWL PHOTO", "color": "#6b4a2b" },
+    "defaultTextColor": "#6b4a2b"
+  },
+  {
+    "id": "cyber_purple",
+    "label": "사이버 퍼플",
+    "background": { "type": "gradient", "from": "#2a0a4a", "to": "#d76d77", "angle": 45 },
+    "accent": "#e0aaff",
+    "slotBorderWidth": 4,
+    "footer": { "text": "S.OWL 2026", "color": "#f0d5ff" },
+    "defaultTextColor": "#f0d5ff"
+  },
+  {
+    "id": "mono",
+    "label": "모노 블랙",
+    "background": { "type": "solid", "color": "#0a0a0a" },
+    "accent": "#ffffff",
+    "slotBorderWidth": 3,
+    "footer": { "text": "S.OWL", "color": "#ffffff" },
+    "defaultTextColor": "#ffffff"
+  }
+]
