@@ -2,7 +2,7 @@
 // 출력 버튼 (설계도 7-6): 큐 등록 후 상태를 폴링해 보여준다.
 // 프린터 오류는 여기서만 표시되고 QR/다운로드 흐름에는 영향 없음.
 import { useEffect, useRef, useState } from "react";
-import { Printer } from "lucide-react";
+import { CircleAlert, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { fetchPrintStatus, requestPrint } from "@/lib/api";
 import type { PrintStatus } from "@/types/print";
@@ -23,22 +23,14 @@ type State =
   | { kind: "tracking"; status: PrintStatus }
   | { kind: "error"; message: string };
 
-export function PrintButton({ sessionId }: { sessionId: string | null }) {
+// sessionId = 서버에 올라간 세션 (결과 화면은 업로드가 끝난 뒤에만 이 버튼을 보여 준다)
+export function PrintButton({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
   }, []);
-
-  if (!sessionId) {
-    return (
-      <Button variant="secondary" disabled className="w-full" title="원격 저장이 설정돼야 출력할 수 있어요">
-        <Printer className="h-4 w-4" aria-hidden />
-        출력 (원격 저장 필요)
-      </Button>
-    );
-  }
 
   const poll = (startedAt: number) => {
     timer.current = setTimeout(async () => {
@@ -78,7 +70,12 @@ export function PrintButton({ sessionId }: { sessionId: string | null }) {
       </Button>
       <p aria-live="polite" className="min-h-4 text-center text-xs text-muted">
         {state.kind === "tracking" && LABEL[state.status]}
-        {state.kind === "error" && <span className="text-status-critical">{state.message}</span>}
+        {state.kind === "error" && (
+          <span className="inline-flex items-start gap-1 text-foreground">
+            <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+            {state.message}
+          </span>
+        )}
       </p>
     </div>
   );

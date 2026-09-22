@@ -1,48 +1,35 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Frame, Images, RotateCcw, ScanFace, Smile, Sparkles, SunMedium, Type } from "lucide-react";
+import { ArrowRight, Images, RotateCcw } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { AIDesignPanel } from "@/components/ai/AIDesignPanel";
 import { PhotoCanvas } from "@/components/editor/PhotoCanvas";
-import { ScreenPanel } from "@/components/editor/ScreenPanel";
+import { LayoutTool, BackgroundPicker } from "@/components/editor/LayoutTool";
 import { FrameSelector } from "@/components/editor/FrameSelector";
 import { StickerPanel } from "@/components/editor/StickerPanel";
 import { StickerLayer } from "@/components/editor/StickerLayer";
 import { TextEditor } from "@/components/editor/TextEditor";
+import { Section, TOOLS, ToolBar, ToolPanel, type ToolId } from "@/components/editor/EditorTools";
 import { FilterPicker } from "@/components/filters/FilterPicker";
 import { EffectPicker } from "@/components/filters/EffectPicker";
 import { Button } from "@/components/ui/Button";
-import { Panel } from "@/components/ui/Panel";
-import { Segmented } from "@/components/ui/Segmented";
 import { Logo } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
 import { defaultLayoutFor, getFilter, getFrame, getLayout } from "@/lib/data/registry";
 import { identityOrder } from "@/lib/image/layoutGeometry";
 import { getEffect } from "@/lib/ar/effects";
+import { fetchModels } from "@/lib/api";
 import { makeSamplePhotos } from "@/lib/dev/samplePhotos";
 import { readableTextOn } from "@/lib/image/color";
-
-type Tab = "screen" | "decorate" | "ai";
-
-const TABS: { id: Tab; label: React.ReactNode }[] = [
-  { id: "screen", label: "화면 구성" },
-  { id: "decorate", label: "꾸미기" },
-  {
-    id: "ai",
-    label: (
-      <>
-        <Sparkles className="h-4 w-4" aria-hidden /> AI
-      </>
-    ),
-  },
-];
+import type { ModelInfo } from "@/types/ai";
 
 export default function EditPage() {
   const router = useRouter();
   const { photos, design, setDesign, setPhotos } = useBoothStore();
-  const [tab, setTab] = useState<Tab>("screen");
+  const [tool, setTool] = useState<ToolId>("layout");
   const [selectedSticker, setSelectedSticker] = useState<string | null>(null); // 미리보기에서 조작 중인 스티커
+  const [ai, setAi] = useState<{ models: ModelInfo[]; defaultModel: string | null } | null>(null);
 
   // 찍은 매수와 레이아웃 칸 수가 다르면(예: 6컷 레이아웃이 남아 있는데 4장) 그 매수의 기본 레이아웃으로
   useEffect(() => {
@@ -50,6 +37,21 @@ export default function EditPage() {
     const l = defaultLayoutFor(photos.length);
     if (l.photoCount === photos.length) setDesign({ layoutId: l.id, photoOrder: identityOrder(photos.length) });
   }, [photos.length, design.layoutId, setDesign]);
+
+  // 쓸 수 있는 AI 모델이 있을 때만 AI 도구를 보여 준다 (방문객에게 설정 안내를 보이지 않게)
+  useEffect(() => {
+    let alive = true;
+    void fetchModels().then((r) => alive && setAi(r));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const tools = useMemo(() => TOOLS.filter((t) => t.id !== "ai" || (ai?.models.length ?? 0) > 0), [ai]);
+
+  const chooseTool = (id: ToolId) => {
+    setTool(id);
+    if (id !== "sticker") setSelectedSticker(null); // 다른 도구로 가면 스티커 손잡이를 치워 미리보기를 깔끔하게
+  };
 
   if (photos.length === 0) {
     return (
@@ -75,14 +77,116 @@ export default function EditPage() {
     );
   }
 
+  const layout = getLayout(design.layoutId);
   const frame = getFrame(design.frameId);
-  const effectLabel = getEffect(design.effect)?.label;
   // AR 썸네일: 첫 자리 사진 우선, 얼굴이 잡힌 사진으로
   const first = photos[design.photoOrder?.[0] ?? 0];
   const facePhoto = first?.faces?.length ? first : photos.find((p) => p.faces?.length);
 
+  const panel: Record<ToolId, { title: string; aside?: string; body: React.ReactNode }> = {
+    layout: {
+      title: "레이아웃",
+      aside: layout.label,
+      body: <LayoutTool photos={photos} design={design} onChange={setDesign} />,
+    },
+    frame: {
+      title: "프레임",
+      aside: design.backgroundColor ? `${frame.label} · 배경 바꿈` : frame.label,
+      body: (
+        <>
+          <Section>
+            <FrameSelector value={design.frameId} onChange={(id) => setDesign({ frameId: id })} layout={layout} />
+          </Section>
+          <Section title="배경색">
+            <BackgroundPicker value={design.backgroundColor} onChange={(c) => setDesign({ backgroundColor: c })} />
+          </Section>
+        </>
+      ),
+    },
+    filter: {
+      title: "필터",
+      aside: getFilter(design.filter).label,
+      body: (
+        <>
+          <Section>
+            <FilterPicker
+              value={design.filter}
+              onChange={(id) => setDesign({ filter: id })}
+              source={first?.dataUrl ?? photos[0].dataUrl}
+            />
+          </Section>
+          <Section title="강도" aside={`${Math.round(design.filterIntensity * 100)}%`}>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              aria-label="필터 강도"
+              value={Math.round(design.filterIntensity * 100)}
+              onChange={(e) => setDesign({ filterIntensity: Number(e.target.value) / 100 })}
+              className="w-full accent-[var(--ink)]"
+              disabled={design.filter === "none"}
+            />
+          </Section>
+        </>
+      ),
+    },
+    effect: {
+      title: "AR 스티커",
+      aside: facePhoto ? (getEffect(design.effect)?.label ?? "없음") : "얼굴 정보 없음",
+      body: (
+        <>
+          {!facePhoto && (
+            <p className="mb-4 rounded-2xl bg-white/55 px-4 py-3 text-xs text-muted">
+              촬영할 때 얼굴을 찾지 못해 사진에는 적용되지 않아요. 다시 찍으면 적용돼요.
+            </p>
+          )}
+          <EffectPicker
+            value={design.effect}
+            onChange={(id) => setDesign({ effect: id })}
+            source={facePhoto?.dataUrl ?? null}
+            faces={facePhoto?.faces}
+          />
+        </>
+      ),
+    },
+    sticker: {
+      title: "스티커",
+      aside: design.stickers.length ? `${design.stickers.length}개 붙임` : "사진 위에서 끌어서 옮겨요",
+      body: (
+        <StickerPanel
+          value={design.stickers}
+          onChange={(s) => setDesign({ stickers: s })}
+          selected={selectedSticker}
+          onSelect={setSelectedSticker}
+        />
+      ),
+    },
+    text: {
+      title: "문구",
+      body: (
+        <TextEditor
+          value={design.textLayers}
+          onChange={(t) => setDesign({ textLayers: t })}
+          defaultColor={design.backgroundColor ? readableTextOn(design.backgroundColor, frame.defaultTextColor) : frame.defaultTextColor}
+        />
+      ),
+    },
+    ai: {
+      title: "AI 꾸미기",
+      aside: "분위기만 말하면 골라 줘요",
+      body: ai ? (
+        <AIDesignPanel
+          models={ai.models}
+          defaultModel={ai.defaultModel}
+          onApply={(result, prompt, model) => setDesign({ ...result, mode: "ai", prompt, aiModel: model })}
+        />
+      ) : null,
+    },
+  };
+  const current = panel[tools.some((t) => t.id === tool) ? tool : "layout"];
+
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:h-dvh lg:py-6">
       <IdleGuard seconds={120} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
@@ -100,118 +204,30 @@ export default function EditPage() {
         </div>
       </header>
 
-      <section className="grid flex-1 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
-        {/* 미리보기 */}
-        <div className="glass flex flex-col gap-3 rounded-card p-4 lg:sticky lg:top-6">
-          <div className="grid min-h-[50vh] place-items-center rounded-[22px] bg-white/35 p-4">
-            <PhotoCanvas
-              photos={photos}
-              design={design}
-              className="max-h-[66vh] rounded-md shadow-[0_24px_48px_-24px_rgba(0,0,0,0.45)]"
-              overlay={
-                <StickerLayer
-                  layout={getLayout(design.layoutId)}
-                  stickers={design.stickers}
-                  selected={selectedSticker}
-                  onSelect={setSelectedSticker}
-                  onChange={(s) => setDesign({ stickers: s })}
-                />
-              }
-            />
-          </div>
-          <div className="flex flex-wrap gap-2 px-1 text-xs">
-            <span className="rounded-full bg-ink px-3 py-1.5 font-semibold text-white">{getLayout(design.layoutId).label}</span>
-            <span className="rounded-full bg-white/70 px-3 py-1.5 font-medium">프레임 · {frame.label}</span>
-            <span className="rounded-full bg-white/70 px-3 py-1.5 font-medium">필터 · {getFilter(design.filter).label}</span>
-            {effectLabel && <span className="rounded-full bg-white/70 px-3 py-1.5 font-medium">AR · {effectLabel}</span>}
-          </div>
+      {/* 큰 화면: 한 화면에 딱 맞게 (미리보기는 늘 보이고, 도구 패널만 안에서 스크롤) */}
+      <section className="grid grid-cols-1 gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_440px]">
+        <div className="glass grid place-items-center rounded-card p-5 lg:min-h-0">
+          <PhotoCanvas
+            photos={photos}
+            design={design}
+            className="max-h-[48vh] rounded-md shadow-[0_24px_48px_-24px_rgba(0,0,0,0.45)] lg:max-h-[calc(100dvh-9.5rem)]"
+            overlay={
+              <StickerLayer
+                layout={layout}
+                stickers={design.stickers}
+                selected={selectedSticker}
+                onSelect={setSelectedSticker}
+                onChange={(s) => setDesign({ stickers: s })}
+              />
+            }
+          />
         </div>
 
-        {/* 편집 패널 */}
-        <div className="flex flex-col gap-4">
-          <Segmented label="편집 메뉴" items={TABS} value={tab} onChange={setTab} />
-
-          {tab === "screen" && <ScreenPanel photos={photos} design={design} onChange={setDesign} />}
-
-          {tab === "ai" && (
-            <AIDesignPanel
-              onApply={(result, prompt, model) => setDesign({ ...result, mode: "ai", prompt, aiModel: model })}
-            />
-          )}
-
-          {tab === "decorate" && (
-            <>
-              <Panel title="필터" icon={<SunMedium className="h-4 w-4" />} aside="촬영 전에 고른 필터">
-                <FilterPicker
-                  value={design.filter}
-                  onChange={(id) => setDesign({ filter: id })}
-                  source={photos[design.photoOrder?.[0] ?? 0]?.dataUrl ?? photos[0].dataUrl}
-                />
-                <label className="mt-4 block">
-                  <span className="mb-1.5 flex justify-between text-sm font-medium">
-                    필터 강도
-                    <span className="num text-muted">{Math.round(design.filterIntensity * 100)}%</span>
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={Math.round(design.filterIntensity * 100)}
-                    onChange={(e) => setDesign({ filterIntensity: Number(e.target.value) / 100 })}
-                    className="w-full accent-[var(--ink)]"
-                    disabled={design.filter === "none"}
-                  />
-                </label>
-              </Panel>
-
-              <Panel
-                title="AR 스티커"
-                icon={<ScanFace className="h-4 w-4" />}
-                aside={facePhoto ? "얼굴을 따라 붙어요" : "얼굴 정보가 없는 사진"}
-              >
-                <EffectPicker
-                  value={design.effect}
-                  onChange={(id) => setDesign({ effect: id })}
-                  source={facePhoto?.dataUrl ?? null}
-                  faces={facePhoto?.faces}
-                />
-                {!facePhoto && (
-                  <p className="mt-3 text-xs text-muted">
-                    촬영할 때 얼굴을 찾지 못해서 사진에는 적용되지 않아요. 다시 찍으면 적용돼요.
-                  </p>
-                )}
-              </Panel>
-
-              <Panel title="프레임" icon={<Frame className="h-4 w-4" />}>
-                <FrameSelector
-                  value={design.frameId}
-                  onChange={(id) => setDesign({ frameId: id })}
-                  layout={getLayout(design.layoutId)}
-                />
-              </Panel>
-
-              <Panel title="스티커" icon={<Smile className="h-4 w-4" />} aside="끌어서 옮기기">
-                <StickerPanel
-                  value={design.stickers}
-                  onChange={(s) => setDesign({ stickers: s })}
-                  selected={selectedSticker}
-                  onSelect={setSelectedSticker}
-                />
-              </Panel>
-
-              <Panel title="문구" icon={<Type className="h-4 w-4" />}>
-                <TextEditor
-                  value={design.textLayers}
-                  onChange={(t) => setDesign({ textLayers: t })}
-                  defaultColor={
-                    design.backgroundColor
-                      ? readableTextOn(design.backgroundColor, frame.defaultTextColor)
-                      : frame.defaultTextColor
-                  }
-                />
-              </Panel>
-            </>
-          )}
+        <div className="flex flex-col gap-3 lg:min-h-0">
+          <ToolBar value={tool} onChange={chooseTool} tools={tools} />
+          <ToolPanel title={current.title} aside={current.aside}>
+            {current.body}
+          </ToolPanel>
         </div>
       </section>
     </main>

@@ -200,8 +200,8 @@ export default function ResultPage() {
               {status === "local" && (
                 <p className="text-sm text-ink-muted">
                   {localReason === "not_configured"
-                    ? "원격 저장이 설정되지 않아 QR은 꺼져 있어요. 아래에서 바로 저장하세요."
-                    : "사진을 서버에 저장하지 못했어요. 아래 '이미지 저장'을 이용해 주세요."}
+                    ? "지금은 QR로 받을 수 없어요. 아래 '이미지 저장'으로 바로 받아 가세요."
+                    : "사진을 올리지 못했어요. 아래 '이미지 저장'으로 받아 가세요."}
                 </p>
               )}
               {status === "offline" && (
@@ -225,7 +225,8 @@ export default function ResultPage() {
               <Download className="h-5 w-5" aria-hidden />
               이미지 저장
             </Button>
-            <PrintButton sessionId={uploadedSessionId} />
+            {/* 출력은 사진이 서버에 올라가야 가능 — 안 되는 상황이면 버튼을 아예 숨긴다 */}
+            {uploadedSessionId && <PrintButton sessionId={uploadedSessionId} />}
           </div>
         </div>
       </section>

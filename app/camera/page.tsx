@@ -167,14 +167,9 @@ export default function CameraPage() {
       <IdleGuard seconds={90} enabled={phase !== "running"} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
-        <div className="flex items-center gap-2">
-          <span className="glass-solid hidden rounded-full px-4 py-2 text-sm font-medium sm:inline">
-            필터 · {filterLabel}
-          </span>
-          <IconButton aria-label="처음으로" onClick={() => router.push("/")}>
-            <X className="h-5 w-5" />
-          </IconButton>
-        </div>
+        <IconButton aria-label="처음으로" onClick={() => router.push("/")}>
+          <X className="h-5 w-5" />
+        </IconButton>
       </header>
 
       <section className="grid flex-1 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">

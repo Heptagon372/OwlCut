@@ -146,6 +146,13 @@ body {
 }
 
 /* 가로 스크롤 영역 스크롤바 숨김 (필터 칩 등) */
+/* 편집 도구 패널: 안에서 스크롤된다는 걸 알 수 있게 얇은 스크롤바만 */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 17, 20, 0.22) transparent;
+  overscroll-behavior: contain;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
 }
