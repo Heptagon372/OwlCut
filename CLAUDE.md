@@ -92,9 +92,10 @@ Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT
 `supabase/schema.sql` 을 Supabase SQL Editor에서 실행 (테이블 + `photos` 버킷 + RLS). 멱등(`if not exists`)이라 스키마가 바뀌면 다시 실행하면 됨.
 
 ## 검증 방법
-- 테스트 프레임워크는 아직 없음. CI는 lint + typecheck + build.
+- `npm test` (Vitest, `tests/*.test.ts`). CI 순서: lint → typecheck → test → build (Node 22 — Vitest 5 요구).
+- 테스트 대상: AI 응답 보정, 얼굴 프레이밍·크롭, 레이아웃 데이터·기하, 톤 커브·CSS 폴백, 필터 프리셋 42종 유효성, 관리자 인증·통계, 대비 색, **프린트 서버 전체 루프**(가짜 API + 실제 `print-server/index.mjs` 실행).
+- 브라우저 전용 렌더링(WebGL 셰이더·canvas 합성)은 Node 테스트 불가 → 개발 모드 `window.__owlcutFilters`로 수동 점검.
 - 로컬 `.next`가 남아 있으면 CI에서만 나는 타입 오류를 놓칠 수 있음 → 의심되면 깨끗한 clone에서 `npm ci && npm run typecheck`.
-- 순수 로직(`lib/ai/normalize.ts`, `lib/tracking/framing.ts`, `compose.coverCrop`, `lib/admin/auth.ts`, `lib/admin/stats.ts`)은 DOM/네트워크 의존이 없어 `npx tsx`로 바로 검증 가능.
 
 ## 진행 상황
 - [x] Phase 0 스캐폴딩/CI  [x] Phase 1 카메라  [x] Phase 2 합성  [x] Phase 3 수동편집  [x] Phase 4 QR/Supabase
