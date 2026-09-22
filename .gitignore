@@ -36,6 +36,9 @@ yarn-error.log*
 
 # 촬영 임시 파일 (booth 런타임 캡처)
 /public/tmp
+
+# MediaPipe WASM (postinstall로 node_modules에서 복사, 34MB)
+/public/mediapipe
 *.local
 
 # vercel

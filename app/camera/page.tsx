@@ -2,7 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCamera } from "@/lib/camera/useCamera";
+import { useFaceTracking } from "@/lib/tracking/useFaceTracking";
+import { framingHint } from "@/lib/tracking/framing";
 import { CameraView } from "@/components/camera/CameraView";
+import { TrackingOverlay } from "@/components/camera/TrackingOverlay";
 import { Button } from "@/components/ui/Button";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { createSession } from "@/lib/api";
@@ -13,14 +16,19 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function CameraPage() {
   const router = useRouter();
-  const { videoRef, ready, error, start, capture, mirror } = useCamera({ mirror: true });
+  const { videoRef, videoElRef, ready, error, start, capture, mirror } = useCamera({ mirror: true });
   const { sessionId, setSessionId, setPhotos } = useBoothStore();
 
   const [phase, setPhase] = useState<"idle" | "running" | "review">("idle");
   const [count, setCount] = useState<number | null>(null);
   const [flash, setFlash] = useState(false);
-  const [shots, setShots] = useState<string[]>([]);
+  const [shots, setShots] = useState<CapturedPhoto[]>([]);
+  const [trackingOn, setTrackingOn] = useState(true);
   const runningRef = useRef(false);
+
+  // 사람 추적은 보조 기능: 실패해도 촬영은 그대로 진행
+  const tracking = useFaceTracking(videoElRef, { enabled: trackingOn && ready, mirrored: mirror });
+  const hint = framingHint(tracking.group, tracking.faceHeight, mirror);
 
   useEffect(() => {
     void start();
@@ -32,19 +40,20 @@ export default function CameraPage() {
     if (runningRef.current || !ready) return;
     runningRef.current = true;
     setPhase("running");
-    const captured: string[] = [];
+    const captured: CapturedPhoto[] = [];
     for (let i = 0; i < TOTAL; i++) {
       for (let c = 3; c >= 1; c--) {
         setCount(c);
         await sleep(850);
       }
       setCount(null);
+      const focus = tracking.getFocus(); // 셔터 순간의 인물 중심 → 합성 시 크롭 기준
+      const dataUrl = capture();
       setFlash(true);
-      const shot = capture();
       await sleep(120);
       setFlash(false);
-      if (shot) {
-        captured.push(shot);
+      if (dataUrl) {
+        captured.push({ dataUrl, orderIndex: captured.length, focus });
         setShots([...captured]);
       }
       await sleep(650);
@@ -59,11 +68,7 @@ export default function CameraPage() {
   };
 
   const goEdit = () => {
-    const photos: CapturedPhoto[] = shots.map((dataUrl, orderIndex) => ({
-      dataUrl,
-      orderIndex,
-    }));
-    setPhotos(photos);
+    setPhotos(shots);
     router.push("/edit");
   };
 
@@ -99,6 +104,16 @@ export default function CameraPage() {
             flash={flash}
             shotIndex={shots.length}
             total={TOTAL}
+            overlay={
+              tracking.status === "ready" && !flash ? (
+                <TrackingOverlay
+                  group={tracking.group}
+                  frameSize={tracking.frameSize}
+                  mirrored={mirror}
+                  hint={hint}
+                />
+              ) : null
+            }
           />
           <Button onClick={runSequence} disabled={!ready || phase === "running"} className="w-full">
             {phase === "running"
@@ -107,6 +122,15 @@ export default function CameraPage() {
                 ? "촬영 시작"
                 : "카메라 준비 중…"}
           </Button>
+          <button
+            onClick={() => setTrackingOn((v) => !v)}
+            disabled={phase === "running"}
+            className="self-center text-xs text-muted hover:text-foreground disabled:opacity-40"
+          >
+            자동 프레이밍 {trackingOn ? "켜짐" : "꺼짐"}
+            {trackingOn && tracking.status === "loading" && " (준비 중…)"}
+            {trackingOn && tracking.status === "unavailable" && " (이 기기에선 사용 불가)"}
+          </button>
         </>
       ) : (
         <>
@@ -115,7 +139,7 @@ export default function CameraPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={i}
-                src={s}
+                src={s.dataUrl}
                 alt={`컷 ${i + 1}`}
                 className="aspect-[4/3] w-full rounded-xl border border-border object-cover"
               />

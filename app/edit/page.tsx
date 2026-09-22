@@ -28,14 +28,13 @@ export default function EditPage() {
     );
   }
 
-  const photoUrls = photos.map((p) => p.dataUrl);
   const frame = getFrame(design.frameId);
 
   return (
     <main className="mx-auto grid w-full max-w-5xl flex-1 gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex items-start justify-center">
         <div className="flex max-h-[74vh] items-center justify-center overflow-hidden rounded-2xl border border-border bg-card p-3">
-          <PhotoCanvas photos={photoUrls} design={design} className="max-h-[68vh]" />
+          <PhotoCanvas photos={photos} design={design} className="max-h-[68vh]" />
         </div>
       </div>
 

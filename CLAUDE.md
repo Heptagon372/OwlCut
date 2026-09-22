@@ -36,6 +36,12 @@ npm run build      # 프로덕션 빌드
 - 키가 없는 프로바이더는 `/api/ai/models`에서 숨김. 새 프로바이더 = `providers/xxx.ts` + `registry.ts` 한 줄.
 - `/api/ai`는 과금되는 공개 엔드포인트 → 프롬프트 200자 제한 + IP당 분당 8회 제한(`lib/ai/rateLimit.ts`, 인스턴스 메모리 기반).
 
+## 사람 추적 / 자동 프레이밍 (Phase 6)
+- MediaPipe Face Detector(`lib/tracking/useFaceTracking.ts`), ~11fps. 여러 명이면 얼굴 박스 합집합으로 판단.
+- 촬영 화면: 인물 박스 + 이동 안내(`lib/tracking/framing.ts`, 순수 함수). 셔터 순간의 인물 중심을 사진별 `focus`로 저장 → `compose`의 `coverCrop`이 가운데 대신 인물 중심으로 크롭.
+- WASM(34MB)은 `postinstall`이 `public/mediapipe/wasm`으로 복사 (git·eslint 제외). 모델은 Google Storage (`NEXT_PUBLIC_FACE_MODEL_URL`로 교체 가능).
+- 보조 기능: 로드 실패 시 "사용 불가" 표시만 하고 촬영은 정상 진행.
+
 ## 환경변수
 `.env.local.example` 복사 → `.env.local`. Supabase 키가 없으면 Phase 4(QR/업로드) 기능만 비활성.
 
@@ -44,4 +50,4 @@ npm run build      # 프로덕션 빌드
 
 ## 진행 상황
 - [x] Phase 0 스캐폴딩/CI  [x] Phase 1 카메라  [x] Phase 2 합성  [x] Phase 3 수동편집  [x] Phase 4 QR/Supabase
-- [x] Phase 5 AI 멀티모델  [ ] Phase 6 사람추적  [ ] Phase 7 프린터  [ ] Phase 8 관리자
+- [x] Phase 5 AI 멀티모델  [x] Phase 6 사람추적  [ ] Phase 7 프린터  [ ] Phase 8 관리자

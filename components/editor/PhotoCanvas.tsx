@@ -3,9 +3,10 @@ import { useEffect, useRef } from "react";
 import { renderToCanvas } from "@/lib/image/compose";
 import { getFrame, getLayout } from "@/lib/data/registry";
 import type { DesignState } from "@/types/design";
+import type { CapturedPhoto } from "@/types/session";
 
 interface Props {
-  photos: string[];
+  photos: CapturedPhoto[];
   design: DesignState;
   className?: string;
 }
@@ -19,7 +20,8 @@ export function PhotoCanvas({ photos, design, className }: Props) {
     if (!canvas) return;
     void renderToCanvas(
       {
-        photos,
+        photos: photos.map((p) => p.dataUrl),
+        focuses: photos.map((p) => p.focus),
         layout: getLayout(design.layoutId),
         frame: getFrame(design.frameId),
         stickers: design.stickers,

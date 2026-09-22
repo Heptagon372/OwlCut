@@ -86,9 +86,17 @@ export interface DesignState {
   filter: FilterName;
 }
 
+// ---------- 크롭 초점 (Phase 6 사람 추적) ----------
+// 촬영 이미지 안에서 인물(얼굴 묶음)의 중심, 0~1 정규화 좌표.
+export interface Focus {
+  x: number;
+  y: number;
+}
+
 // ---------- 합성 엔진 입력 (lib/image/compose.ts) ----------
 export interface ComposeInput {
   photos: string[];          // dataURL 또는 원격 URL, 길이 = layout.photoCount
+  focuses?: (Focus | null | undefined)[]; // 사진별 크롭 초점 (없으면 가운데 크롭)
   layout: LayoutConfig;
   frame: FrameConfig;
   stickers: StickerInstance[];

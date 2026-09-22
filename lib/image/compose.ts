@@ -6,6 +6,7 @@
 // ============================================================
 import type {
   ComposeInput,
+  Focus,
   FrameConfig,
   PhotoSlot,
   StickerInstance,
@@ -54,26 +55,34 @@ function paintBackground(
   ctx.fillRect(0, 0, w, h);
 }
 
-// 슬롯에 cover(가운데 크롭) 방식으로 이미지 그리기
+const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
+
+// 얼굴 초점이 있을 때 크롭 창에서 얼굴 중심을 둘 세로 위치 (살짝 위 = 자연스러운 헤드룸)
+const FOCUS_Y_IN_CROP = 0.42;
+
+// cover 크롭 영역 계산 (순수 함수). focus가 있으면 인물 중심으로, 없으면 가운데.
+export function coverCrop(
+  imgW: number,
+  imgH: number,
+  slot: Pick<PhotoSlot, "w" | "h">,
+  focus?: Focus | null,
+): { sx: number; sy: number; sw: number; sh: number } {
+  const slotRatio = slot.w / slot.h;
+  const imgRatio = imgW / imgH;
+  const sw = imgRatio > slotRatio ? imgH * slotRatio : imgW;
+  const sh = imgRatio > slotRatio ? imgH : imgW / slotRatio;
+  const sx = focus ? clamp(focus.x * imgW - sw / 2, 0, imgW - sw) : (imgW - sw) / 2;
+  const sy = focus ? clamp(focus.y * imgH - sh * FOCUS_Y_IN_CROP, 0, imgH - sh) : (imgH - sh) / 2;
+  return { sx, sy, sw, sh };
+}
+
 function drawCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   slot: PhotoSlot,
+  focus?: Focus | null,
 ) {
-  const slotRatio = slot.w / slot.h;
-  const imgRatio = img.width / img.height;
-  let sx: number, sy: number, sw: number, sh: number;
-  if (imgRatio > slotRatio) {
-    sh = img.height;
-    sw = sh * slotRatio;
-    sx = (img.width - sw) / 2;
-    sy = 0;
-  } else {
-    sw = img.width;
-    sh = sw / slotRatio;
-    sx = 0;
-    sy = (img.height - sh) / 2;
-  }
+  const { sx, sy, sw, sh } = coverCrop(img.width, img.height, slot, focus);
   ctx.drawImage(img, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
 }
 
@@ -153,7 +162,7 @@ export async function renderToCanvas(
   input: ComposeInput,
   canvas: HTMLCanvasElement,
 ): Promise<void> {
-  const { photos, layout, frame, stickers, textLayers, filter } = input;
+  const { photos, focuses, layout, frame, stickers, textLayers, filter } = input;
   const { width, height } = layout.canvas;
   canvas.width = width;
   canvas.height = height;
@@ -171,7 +180,7 @@ export async function renderToCanvas(
     if (src) {
       const img = await loadImage(src);
       ctx.filter = filterCss;
-      drawCover(ctx, img, slot);
+      drawCover(ctx, img, slot, focuses?.[i]);
       ctx.filter = "none";
     } else {
       // 사진 없는 슬롯은 회색 플레이스홀더

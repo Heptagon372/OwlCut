@@ -11,7 +11,10 @@ export interface UseCameraOptions {
 }
 
 export interface UseCameraResult {
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  // <video ref={videoRef}> 용 콜백 ref: 요소가 (재)마운트될 때마다 스트림을 다시 연결한다.
+  videoRef: (el: HTMLVideoElement | null) => void;
+  // 현재 마운트된 video 요소 (캡처/얼굴 추적에서 읽기용)
+  videoElRef: React.RefObject<HTMLVideoElement | null>;
   ready: boolean;
   error: string | null;
   start: () => Promise<void>;
@@ -40,10 +43,21 @@ function toFriendlyError(err: unknown): string {
 
 export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
   const mirror = options.mirror ?? true;
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoElRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const attach = (video: HTMLVideoElement, stream: MediaStream) => {
+    if (video.srcObject !== stream) video.srcObject = stream;
+    void video.play().catch(() => {});
+  };
+
+  // 재촬영 등으로 <video>가 다시 마운트되어도 기존 스트림을 붙인다.
+  const videoRef = useCallback((el: HTMLVideoElement | null) => {
+    videoElRef.current = el;
+    if (el && streamRef.current) attach(el, streamRef.current);
+  }, []);
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -58,16 +72,14 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
       return;
     }
     try {
+      // 재시도 시 이전 스트림이 남지 않도록 정리
+      streamRef.current?.getTracks().forEach((t) => t.stop());
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = stream;
-      const video = videoRef.current;
-      if (video) {
-        video.srcObject = stream;
-        await video.play().catch(() => {});
-      }
+      if (videoElRef.current) attach(videoElRef.current, stream);
       setReady(true);
     } catch (err) {
       setError(toFriendlyError(err));
@@ -76,7 +88,7 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
   }, []);
 
   const capture = useCallback((): string | null => {
-    const video = videoRef.current;
+    const video = videoElRef.current;
     if (!video || !video.videoWidth) return null;
     let w = video.videoWidth;
     let h = video.videoHeight;
@@ -101,5 +113,5 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
 
   useEffect(() => stop, [stop]);
 
-  return { videoRef, ready, error, start, stop, capture, mirror };
+  return { videoRef, videoElRef, ready, error, start, stop, capture, mirror };
 }

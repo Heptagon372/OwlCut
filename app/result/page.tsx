@@ -24,6 +24,7 @@ export default function ResultPage() {
         setStatus("composing");
         const dataUrl = await composeToDataUrl({
           photos: photos.map((p) => p.dataUrl),
+          focuses: photos.map((p) => p.focus),
           layout: getLayout(design.layoutId),
           frame: getFrame(design.frameId),
           stickers: design.stickers,

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // postinstall로 복사되는 MediaPipe 벤더 WASM 로더
+    "public/mediapipe/**",
   ]),
 ]);
 
