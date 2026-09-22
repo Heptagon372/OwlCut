@@ -9,11 +9,23 @@ interface Props {
   flash: boolean;
   shotIndex: number; // 지금까지 찍은 장수
   total: number;
-  overlay?: ReactNode; // 자동 프레이밍 가이드 등
+  filterLayer?: ReactNode;  // 실시간 필터 캔버스 (비디오 바로 위)
+  videoFilterCss?: string;  // WebGL이 없을 때 비디오에 직접 거는 CSS 필터
+  overlay?: ReactNode;      // 자동 프레이밍 가이드 등
 }
 
-// 라이브 프리뷰 + 진행 표시 + 카운트다운 + 플래시 오버레이.
-export function CameraView({ videoRef, mirror, count, flash, shotIndex, total, overlay }: Props) {
+// 라이브 프리뷰 + 필터 + 진행 표시 + 카운트다운 + 플래시 오버레이.
+export function CameraView({
+  videoRef,
+  mirror,
+  count,
+  flash,
+  shotIndex,
+  total,
+  filterLayer,
+  videoFilterCss,
+  overlay,
+}: Props) {
   return (
     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border bg-black">
       <video
@@ -21,8 +33,10 @@ export function CameraView({ videoRef, mirror, count, flash, shotIndex, total, o
         playsInline
         muted
         className="h-full w-full object-cover"
-        style={mirror ? { transform: "scaleX(-1)" } : undefined}
+        style={{ transform: mirror ? "scaleX(-1)" : undefined, filter: videoFilterCss }}
       />
+
+      {filterLayer}
 
       {overlay}
 

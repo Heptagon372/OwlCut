@@ -7,7 +7,7 @@ export const MAX_STICKERS = 4;
 export const MAX_CAPTION_LENGTH = 24;
 
 const frameCatalog = FRAMES.map((f) => `- ${f.id}: ${f.label} — ${f.description ?? ""}`).join("\n");
-const filterCatalog = FILTERS.map((f) => `- ${f.id}: ${f.label}`).join("\n");
+const filterCatalog = FILTERS.map((f) => `- ${f.id}: ${f.label}${f.description ? ` — ${f.description}` : ""}`).join("\n");
 const stickerCatalog = STICKERS.map((s) => `- ${s.id}: ${s.glyph} ${s.label}`).join("\n");
 
 export const SYSTEM_PROMPT = `당신은 네컷 포토부스 "S.OWL 아울네컷"의 디자인 담당입니다.

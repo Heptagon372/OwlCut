@@ -13,8 +13,8 @@ import type {
   TextLayer,
   Anchor,
 } from "@/types/design";
-import { getSticker } from "@/lib/data/registry";
-import { FILTER_CSS } from "./filters";
+import { getFilter, getSticker } from "@/lib/data/registry";
+import { drawFiltered } from "@/lib/filters/offline";
 import { cornerRadius, normalizeOrder, outputSize, spacedSlot } from "./layoutGeometry";
 import { readableTextOn } from "./color";
 
@@ -77,16 +77,6 @@ export function coverCrop(
   const sx = focus ? clamp(focus.x * imgW - sw / 2, 0, imgW - sw) : (imgW - sw) / 2;
   const sy = focus ? clamp(focus.y * imgH - sh * FOCUS_Y_IN_CROP, 0, imgH - sh) : (imgH - sh) / 2;
   return { sx, sy, sw, sh };
-}
-
-function drawCover(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  slot: PhotoSlot,
-  focus?: Focus | null,
-) {
-  const { sx, sy, sw, sh } = coverCrop(img.width, img.height, slot, focus);
-  ctx.drawImage(img, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
 }
 
 // 둥근 사각형 경로 (radius 0이면 일반 사각형)
@@ -186,7 +176,8 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement): Promi
 
   // 2) Photos (+filter) & slot borders — 자리 i 에는 photoOrder[i] 번 사진
   const order = normalizeOrder(input.photoOrder, layout.slots.length);
-  const filterCss = FILTER_CSS[filter] ?? "none";
+  const filterParams = getFilter(filter).params;
+  const intensity = input.filterIntensity ?? 1;
   const images = await Promise.all(order.map((p) => (photos[p] ? loadImage(photos[p]) : null)));
 
   for (let i = 0; i < layout.slots.length; i++) {
@@ -211,9 +202,9 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement): Promi
     ctx.clip();
     const img = images[i];
     if (img) {
-      ctx.filter = filterCss;
-      drawCover(ctx, img, slot, focuses?.[order[i]]);
-      ctx.filter = "none";
+      // 사진은 원본으로 저장돼 있고, 촬영 전에 고른 필터를 여기서 슬롯 크기로 적용 (미리보기와 같은 셰이더)
+      const crop = coverCrop(img.width, img.height, slot, focuses?.[order[i]]);
+      drawFiltered(ctx, img, crop, slot, filterParams, intensity, i * 17.3);
     } else {
       ctx.fillStyle = "rgba(0,0,0,0.08)"; // 사진 없는 자리
       ctx.fillRect(slot.x, slot.y, slot.w, slot.h);

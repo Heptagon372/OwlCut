@@ -12,6 +12,7 @@ export function buildComposeInput(photos: CapturedPhoto[], design: DesignState):
     stickers: design.stickers,
     textLayers: design.textLayers,
     filter: design.filter,
+    filterIntensity: design.filterIntensity,
     photoOrder: design.photoOrder,
     slotSpacing: design.slotSpacing,
     slotRounding: design.slotRounding,

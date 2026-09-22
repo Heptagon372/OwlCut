@@ -12,5 +12,9 @@ export function layoutOptions(design: unknown): Record<string, unknown> | null {
     slotSpacing: clampLevel(d.slotSpacing),
     slotRounding: clampLevel(d.slotRounding),
     backgroundColor: typeof d.backgroundColor === "string" && HEX.test(d.backgroundColor) ? d.backgroundColor : null,
+    filterIntensity:
+      typeof d.filterIntensity === "number" && Number.isFinite(d.filterIntensity)
+        ? Math.min(Math.max(d.filterIntensity, 0), 1)
+        : 1,
   };
 }

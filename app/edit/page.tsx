@@ -9,7 +9,8 @@ import { FrameSelector } from "@/components/editor/FrameSelector";
 import { StickerPanel } from "@/components/editor/StickerPanel";
 import { TextEditor } from "@/components/editor/TextEditor";
 import { Button } from "@/components/ui/Button";
-import { FILTERS, getFrame } from "@/lib/data/registry";
+import { FilterPicker } from "@/components/filters/FilterPicker";
+import { getFrame } from "@/lib/data/registry";
 import { makeSamplePhotos } from "@/lib/dev/samplePhotos";
 import { readableTextOn } from "@/lib/image/color";
 
@@ -87,18 +88,27 @@ export default function EditPage() {
             </section>
 
             <section>
-              <SectionTitle>필터</SectionTitle>
-              <div className="grid grid-cols-3 gap-2">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => setDesign({ filter: f.id })}
-                    className={`rounded-xl border px-3 py-2 text-sm ${design.filter === f.id ? "border-accent text-foreground" : "border-border text-muted hover:text-foreground"}`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+              <SectionTitle>필터 (촬영 전에 고른 필터를 바꿀 수 있어요)</SectionTitle>
+              <FilterPicker
+                value={design.filter}
+                onChange={(id) => setDesign({ filter: id })}
+                source={photos[design.photoOrder?.[0] ?? 0]?.dataUrl ?? photos[0].dataUrl}
+              />
+              <label className="mt-3 block">
+                <span className="mb-1 flex justify-between text-sm font-semibold text-muted">
+                  필터 강도
+                  <span className="font-normal tabular-nums">{Math.round(design.filterIntensity * 100)}%</span>
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(design.filterIntensity * 100)}
+                  onChange={(e) => setDesign({ filterIntensity: Number(e.target.value) / 100 })}
+                  className="w-full accent-[var(--accent)]"
+                  disabled={design.filter === "none"}
+                />
+              </label>
             </section>
 
             <section>

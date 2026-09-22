@@ -17,7 +17,8 @@ export const ANCHORS: Anchor[] = [
 export type TextAnchor = "top" | "center" | "bottom";
 
 // ---------- 필터 ----------
-export type FilterName = "none" | "warm" | "cool" | "bw" | "vivid" | "soft";
+// data/filters/index.json 의 프리셋 id (검증은 registry.isFilter). 파라미터 타입은 types/filter.ts
+export type FilterName = string;
 
 // ---------- 레이아웃 (data/layouts) ----------
 export interface PhotoSlot {
@@ -91,7 +92,8 @@ export interface DesignState {
   frameId: string;
   stickers: StickerInstance[];
   textLayers: TextLayer[];
-  filter: FilterName;
+  filter: FilterName;              // 촬영 전에 고른 필터 (사진은 원본 저장, 합성 때 적용)
+  filterIntensity: number;         // 필터 강도 0..1
   // ---- 화면 구성 (촬영 후 수정) ----
   photoOrder: number[];            // 자리 i 에 들어갈 사진 번호 (기본 [0,1,2,3])
   slotSpacing: number;             // 사진 간격 단계 0~10 (0 = 레이아웃 기본)
@@ -117,6 +119,7 @@ export interface ComposeInput {
   stickers: StickerInstance[];
   textLayers: TextLayer[];
   filter: FilterName;
+  filterIntensity?: number;
   photoOrder?: number[];
   slotSpacing?: number;
   slotRounding?: number;

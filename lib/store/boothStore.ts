@@ -18,6 +18,7 @@ const initialDesign: DesignState = {
   stickers: [],
   textLayers: [],
   filter: DEFAULT_FILTER,
+  filterIntensity: 1,
   photoOrder: [0, 1, 2, 3],
   slotSpacing: 0,
   slotRounding: 0,

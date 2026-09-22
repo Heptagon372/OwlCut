@@ -6,25 +6,36 @@ import { useFaceTracking } from "@/lib/tracking/useFaceTracking";
 import { framingHint } from "@/lib/tracking/framing";
 import { CameraView } from "@/components/camera/CameraView";
 import { TrackingOverlay } from "@/components/camera/TrackingOverlay";
+import { FilteredPreview } from "@/components/filters/FilteredPreview";
+import { FilterPicker } from "@/components/filters/FilterPicker";
+import { FilteredImage } from "@/components/filters/FilteredImage";
 import { Button } from "@/components/ui/Button";
 import { useBoothStore } from "@/lib/store/boothStore";
+import { getFilter } from "@/lib/data/registry";
+import { paramsToCss } from "@/lib/filters/cssFallback";
 import { createSession } from "@/lib/api";
 import type { CapturedPhoto } from "@/types/session";
 
 const TOTAL = 4;
+const SNAPSHOT_MS = 4000; // 필터 썸네일을 지금 카메라 화면으로 갱신하는 주기
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function CameraPage() {
   const router = useRouter();
   const { videoRef, videoElRef, ready, error, start, capture, mirror } = useCamera({ mirror: true });
-  const { sessionId, setSessionId, setPhotos } = useBoothStore();
+  const { sessionId, setSessionId, setPhotos, design, setDesign } = useBoothStore();
 
   const [phase, setPhase] = useState<"idle" | "running" | "review">("idle");
   const [count, setCount] = useState<number | null>(null);
   const [flash, setFlash] = useState(false);
   const [shots, setShots] = useState<CapturedPhoto[]>([]);
   const [trackingOn, setTrackingOn] = useState(true);
+  const [glSupported, setGlSupported] = useState(true);
+  const [snapshot, setSnapshot] = useState<HTMLCanvasElement | null>(null);
   const runningRef = useRef(false);
+
+  // 촬영 전에 고른 필터 — 사진은 원본으로 찍고, 미리보기·합성에서 같은 필터를 입힌다
+  const filterParams = getFilter(design.filter).params;
 
   // 사람 추적은 보조 기능: 실패해도 촬영은 그대로 진행
   const tracking = useFaceTracking(videoElRef, { enabled: trackingOn && ready, mirrored: mirror });
@@ -35,6 +46,26 @@ export default function CameraPage() {
     if (!sessionId) void createSession().then(setSessionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 대기 중에는 몇 초마다 카메라 화면을 잘라 필터 썸네일 원본으로 사용 (방문자 얼굴로 미리보기)
+  useEffect(() => {
+    if (!ready || phase !== "idle") return;
+    const take = () => {
+      const v = videoElRef.current;
+      if (!v || !v.videoWidth) return;
+      const side = Math.min(v.videoWidth, v.videoHeight);
+      const c = document.createElement("canvas");
+      c.width = c.height = 160;
+      c.getContext("2d")?.drawImage(v, (v.videoWidth - side) / 2, (v.videoHeight - side) / 2, side, side, 0, 0, 160, 160);
+      setSnapshot(c);
+    };
+    const first = setTimeout(take, 600);
+    const timer = setInterval(take, SNAPSHOT_MS);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
+  }, [ready, phase, videoElRef]);
 
   const runSequence = async () => {
     if (runningRef.current || !ready) return;
@@ -104,6 +135,18 @@ export default function CameraPage() {
             flash={flash}
             shotIndex={shots.length}
             total={TOTAL}
+            filterLayer={
+              glSupported ? (
+                <FilteredPreview
+                  videoElRef={videoElRef}
+                  params={filterParams}
+                  intensity={design.filterIntensity}
+                  mirror={mirror}
+                  onUnsupported={() => setGlSupported(false)}
+                />
+              ) : null
+            }
+            videoFilterCss={glSupported ? undefined : paramsToCss(filterParams, design.filterIntensity)}
             overlay={
               tracking.status === "ready" && !flash ? (
                 <TrackingOverlay
@@ -114,6 +157,14 @@ export default function CameraPage() {
                 />
               ) : null
             }
+          />
+          <FilterPicker
+            variant="row"
+            value={design.filter}
+            onChange={(id) => setDesign({ filter: id })}
+            source={snapshot}
+            mirror={mirror}
+            disabled={phase === "running"}
           />
           <Button onClick={runSequence} disabled={!ready || phase === "running"} className="w-full">
             {phase === "running"
@@ -136,10 +187,11 @@ export default function CameraPage() {
         <>
           <div className="grid grid-cols-2 gap-3">
             {shots.map((s, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <FilteredImage
                 key={i}
                 src={s.dataUrl}
+                filterId={design.filter}
+                intensity={design.filterIntensity}
                 alt={`컷 ${i + 1}`}
                 className="aspect-[4/3] w-full rounded-xl border border-border object-cover"
               />
