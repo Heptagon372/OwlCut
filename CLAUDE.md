@@ -82,6 +82,12 @@ npm run build      # 프로덕션 빌드
 - 효과를 켜면 자동 프레이밍을 꺼도 추적은 계속 (프레이밍 가이드만 숨김). `designs.layout_options.effect`로 저장.
 - **점검판 `/dev/ar`** (개발 모드 전용, production 404): 기본 얼굴 일러스트 또는 `?src=<CORS 허용 이미지>`의 실제 얼굴에 전 효과를 한 번에. `&zoom=3`(확대) `&rotate=25`(기울임) `&mirror=1`. 브라우저 창이 가려져 있으면 헤드리스 Chrome `--screenshot`으로 캡처(제목이 `AR LAB READY`가 되면 완료).
 
+## 최종본 업로드 신뢰성 (설계도 10)
+- 결과 화면: 합성 즉시 완성본 표시·저장 가능 → 업로드는 `uploadFinal`(`lib/api.ts`)이 **네트워크·5xx·408·429일 때만 최대 3회**(1초·3초 간격, `lib/retry.ts`). 미설정(503 `SUPABASE_NOT_CONFIGURED`)·4xx는 재시도 없이 로컬 저장 안내.
+- 3회 모두 실패하면 "인터넷 연결이 불안정해…" + 다시 시도 버튼, `online` 이벤트와 20초마다 자동 재업로드.
+- `/api/final`은 **멱등**: 파일은 덮어쓰기, designs는 세션당 1행 update-or-insert(`lib/storage/finalDesign.ts`) → 응답만 늦게 온 재시도가 완성 수를 부풀리지 않음. DB 오류는 삼키지 않고 500 (삼키면 QR은 뜨는데 다운로드 페이지엔 사진 없음).
+- 브라우저 시험: 헤드리스 Chrome CDP `Fetch.failRequest(InternetDisconnected)`로 처음 N번 끊고 이후 `fulfillRequest`.
+
 ## 출력 (Phase 7)
 - 부스: `POST /api/print`(큐 등록만) → `GET /api/print?session_id=` 폴링. 세션당 3회·1회 2매 제한.
 - 로컬 프린트 서버(`print-server/`, 의존성 없는 Node): `POST /api/print/claim` → 출력 → `PATCH /api/print/[id]`. 둘 다 `Authorization: Bearer PRINT_SERVER_TOKEN` 필수 (없으면 401).

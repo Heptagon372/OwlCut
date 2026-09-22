@@ -3,12 +3,14 @@ import { getSupabaseAdmin, isSupabaseConfigured, STORAGE_BUCKET } from "@/lib/su
 import { dataUrlToBuffer } from "@/lib/image/dataurl";
 import { layoutOptions } from "@/lib/image/layoutOptions";
 import { expiresAt, finalPath } from "@/lib/storage/photos";
+import { saveFinalDesign } from "@/lib/storage/finalDesign";
 import { isUuid } from "@/lib/ids";
 
 export const runtime = "nodejs";
 
 // POST /api/final — 최종 합성 이미지 업로드 + designs 저장 + 다운로드 페이지 주소 발급 (설계도 6)
 // 이미지는 비공개 버킷에 저장하고 DB에는 경로만 남긴다 (보여줄 때 서명 URL 발급).
+// 같은 세션으로 여러 번 불려도 결과가 같다 (파일 덮어쓰기 + 세션당 designs 1행) → 클라이언트 재시도 안전.
 export async function POST(req: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ error: "SUPABASE_NOT_CONFIGURED" }, { status: 503 });
@@ -28,12 +30,13 @@ export async function POST(req: Request) {
     if (up.error) throw up.error;
 
     // 오프라인 생성 세션도 FK 만족하도록 upsert. 보관기간은 사진이 완성된 시점부터.
+    // DB 저장이 실패하면 500 → 클라이언트가 재시도 (실패를 삼키면 QR은 뜨는데 다운로드 페이지엔 사진이 없다)
     const expires = expiresAt();
-    await supabase
+    const ses = await supabase
       .from("sessions")
       .upsert({ id: session_id, status: "composed", expires_at: expires }, { onConflict: "id" });
-    await supabase.from("designs").insert({
-      session_id,
+    if (ses.error) throw ses.error;
+    await saveFinalDesign(supabase, session_id, {
       mode: design?.mode ?? "manual",
       prompt: design?.prompt ?? null,
       ai_model: design?.mode === "ai" ? (design?.aiModel ?? null) : null,

@@ -4,6 +4,7 @@
 import type { DesignState } from "@/types/design";
 import type { AIDesignResult, ModelInfo } from "@/types/ai";
 import type { PrintStatus, PrintStatusResponse } from "@/types/print";
+import { withRetry } from "./retry";
 
 export async function createSession(): Promise<string> {
   try {
@@ -18,30 +19,58 @@ export async function createSession(): Promise<string> {
   return crypto.randomUUID(); // 오프라인/미설정 폴백
 }
 
-export interface FinalResult {
-  downloadUrl: string;
-  expiresAt: string | null; // 사진 보관 만료 시각
+// 최종 이미지 업로드 결과
+//   not_configured: 원격 저장 미설정 → 로컬 저장만 (재시도 무의미)
+//   rejected: 요청 자체가 거절(4xx) → 재시도 무의미
+//   failed: 네트워크·서버 오류 → 재시도 대상 (설계도 10: 3회, 이후 연결되면 자동 재업로드)
+export type UploadOutcome =
+  | { ok: true; downloadUrl: string; expiresAt: string | null }
+  | { ok: false; reason: "not_configured" | "rejected" | "failed" };
+
+const UPLOAD_TIMEOUT_MS = 45_000; // 최종본 PNG(수 MB)를 느린 행사장 와이파이로 올리는 시간 여유
+export const UPLOAD_ATTEMPTS = 3;
+const UPLOAD_RETRY_DELAYS_MS = [1000, 3000];
+
+/** 응답 상태·본문 → 결과 분류 (순수 함수) */
+export function classifyUpload(status: number, body: unknown): UploadOutcome {
+  const data = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  if (status >= 200 && status < 300) {
+    return typeof data.download_url === "string"
+      ? { ok: true, downloadUrl: data.download_url, expiresAt: typeof data.expires_at === "string" ? data.expires_at : null }
+      : { ok: false, reason: "failed" };
+  }
+  if (status === 503 && data.error === "SUPABASE_NOT_CONFIGURED") return { ok: false, reason: "not_configured" };
+  if (status >= 500 || status === 408 || status === 429) return { ok: false, reason: "failed" };
+  return { ok: false, reason: "rejected" };
 }
 
-// 최종 이미지 업로드. 성공 시 원격 URL, 실패/미설정 시 null(→ 로컬 다운로드만).
-export async function uploadFinal(
-  sessionId: string,
-  imageDataUrl: string,
-  design: DesignState,
-): Promise<FinalResult | null> {
+async function uploadFinalOnce(sessionId: string, imageDataUrl: string, design: DesignState): Promise<UploadOutcome> {
   try {
     const res = await fetch("/api/final", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId, image: imageDataUrl, design }),
+      signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data?.download_url) return null;
-    return { downloadUrl: data.download_url, expiresAt: data.expires_at ?? null };
+    return classifyUpload(res.status, await res.json().catch(() => null));
   } catch {
-    return null;
+    return { ok: false, reason: "failed" }; // 네트워크 끊김·시간 초과
   }
+}
+
+// 최종 이미지 업로드 — 네트워크·서버 오류면 최대 3번 (서버가 같은 세션 재업로드를 안전하게 처리)
+export function uploadFinal(
+  sessionId: string,
+  imageDataUrl: string,
+  design: DesignState,
+  onAttempt?: (attempt: number) => void,
+): Promise<UploadOutcome> {
+  return withRetry(() => uploadFinalOnce(sessionId, imageDataUrl, design), {
+    attempts: UPLOAD_ATTEMPTS,
+    delaysMs: UPLOAD_RETRY_DELAYS_MS,
+    shouldRetry: (r) => !r.ok && r.reason === "failed",
+    onAttempt,
+  });
 }
 
 // ---------- 출력 (Phase 7) ----------

@@ -1,27 +1,61 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { composeToDataUrl } from "@/lib/image/compose";
 import { buildComposeInput } from "@/lib/image/buildComposeInput";
-import { uploadFinal } from "@/lib/api";
+import { UPLOAD_ATTEMPTS, uploadFinal } from "@/lib/api";
 import { QRCodeView } from "@/components/result/QRCodeView";
 import { PrintButton } from "@/components/result/PrintButton";
 import { Button } from "@/components/ui/Button";
 import { Logo, OwlMark } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
-import { Download, House, Images, Smartphone } from "lucide-react";
+import { Download, House, Images, RotateCw, Smartphone, WifiOff } from "lucide-react";
 
-type Status = "composing" | "uploading" | "done" | "error";
+// done = QR 준비됨 · local = 원격 저장을 쓸 수 없음(미설정/거절) → 로컬 저장만
+// offline = 연결 문제로 3번 실패 → 연결되면(또는 20초마다) 자동으로 다시 올림 (설계도 10)
+type Status = "composing" | "uploading" | "done" | "local" | "offline" | "error";
+
+const AUTO_RETRY_MS = 20_000;
 
 export default function ResultPage() {
   const router = useRouter();
   const { photos, design, sessionId, setSessionId, finalDataUrl, setFinal, reset } = useBoothStore();
   const [status, setStatus] = useState<Status>("composing");
+  const [attempt, setAttempt] = useState(1);
+  const [localReason, setLocalReason] = useState<"not_configured" | "rejected">("not_configured");
   const [remote, setRemote] = useState<string | null>(null);
   const [uploadedSessionId, setUploadedSessionId] = useState<string | null>(null);
+  const sidRef = useRef<string | null>(null);
+  const uploadingRef = useRef(false);
+  const mountedRef = useRef(false);
+
+  const upload = useCallback(
+    async (dataUrl: string) => {
+      const sid = sidRef.current;
+      if (!sid || uploadingRef.current) return;
+      uploadingRef.current = true;
+      setStatus("uploading");
+      const res = await uploadFinal(sid, dataUrl, design, setAttempt);
+      uploadingRef.current = false;
+      if (!mountedRef.current) return;
+      if (res.ok) {
+        setFinal(dataUrl, res.downloadUrl);
+        setRemote(res.downloadUrl);
+        setUploadedSessionId(sid);
+        setStatus("done");
+      } else if (res.reason === "failed") {
+        setStatus("offline");
+      } else {
+        setLocalReason(res.reason);
+        setStatus("local");
+      }
+    },
+    [design, setFinal],
+  );
 
   useEffect(() => {
+    mountedRef.current = true;
     if (photos.length === 0) return;
     let active = true;
     (async () => {
@@ -29,24 +63,33 @@ export default function ResultPage() {
         setStatus("composing");
         const dataUrl = await composeToDataUrl(buildComposeInput(photos, design));
         if (!active) return;
-        setStatus("uploading");
+        setFinal(dataUrl, null); // 올리는 동안에도 완성본을 보여 주고 바로 저장할 수 있게
         const sid = sessionId ?? crypto.randomUUID();
         if (!sessionId) setSessionId(sid);
-        const result = await uploadFinal(sid, dataUrl, design);
-        if (!active) return;
-        setFinal(dataUrl, result?.downloadUrl ?? null);
-        setRemote(result?.downloadUrl ?? null);
-        setUploadedSessionId(result ? sid : null);
-        setStatus("done");
+        sidRef.current = sid;
+        await upload(dataUrl);
       } catch {
         if (active) setStatus("error");
       }
     })();
     return () => {
       active = false;
+      mountedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 연결 문제로 실패했으면: 온라인 복귀 이벤트 + 주기적으로 다시 올림 (와이파이는 붙어 있는데 인터넷만 끊긴 경우 대비)
+  useEffect(() => {
+    if (status !== "offline" || !finalDataUrl) return;
+    const retry = () => void upload(finalDataUrl);
+    window.addEventListener("online", retry);
+    const timer = setInterval(retry, AUTO_RETRY_MS);
+    return () => {
+      window.removeEventListener("online", retry);
+      clearInterval(timer);
+    };
+  }, [status, finalDataUrl, upload]);
 
   const goHome = () => {
     reset();
@@ -78,7 +121,15 @@ export default function ResultPage() {
   };
 
   const statusText =
-    status === "composing" ? "합성 중…" : status === "uploading" ? "저장 중…" : status === "error" ? "합성에 실패했어요" : null;
+    status === "composing"
+      ? "합성 중…"
+      : status === "uploading"
+        ? attempt > 1
+          ? `저장 중… 다시 시도 ${attempt}/${UPLOAD_ATTEMPTS}`
+          : "저장 중…"
+        : status === "error"
+          ? "합성에 실패했어요"
+          : null;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
@@ -146,8 +197,24 @@ export default function ResultPage() {
                   </div>
                 </div>
               )}
-              {status === "done" && !remote && (
-                <p className="text-sm text-ink-muted">원격 저장이 설정되지 않아 QR은 꺼져 있어요. 아래에서 바로 저장하세요.</p>
+              {status === "local" && (
+                <p className="text-sm text-ink-muted">
+                  {localReason === "not_configured"
+                    ? "원격 저장이 설정되지 않아 QR은 꺼져 있어요. 아래에서 바로 저장하세요."
+                    : "사진을 서버에 저장하지 못했어요. 아래 '이미지 저장'을 이용해 주세요."}
+                </p>
+              )}
+              {status === "offline" && (
+                <div className="space-y-3">
+                  <p className="flex items-start gap-2 text-sm text-ink-muted">
+                    <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    인터넷 연결이 불안정해 QR을 아직 만들지 못했어요. 연결되면 자동으로 다시 시도해요.
+                  </p>
+                  <Button variant="light" size="sm" onClick={() => finalDataUrl && void upload(finalDataUrl)}>
+                    <RotateCw className="h-4 w-4" aria-hidden />
+                    다시 시도
+                  </Button>
+                </div>
               )}
             </div>
           </div>
