@@ -14,6 +14,7 @@ import { TextEditor } from "@/components/editor/TextEditor";
 import { Section, TOOLS, ToolBar, ToolPanel, type ToolId } from "@/components/editor/EditorTools";
 import { FilterPicker } from "@/components/filters/FilterPicker";
 import { EffectPicker } from "@/components/filters/EffectPicker";
+import { RetouchPanel } from "@/components/filters/RetouchPanel";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
@@ -117,6 +118,13 @@ export default function EditPage() {
               value={design.filter}
               onChange={(id) => setDesign({ filter: id })}
               source={first?.dataUrl ?? photos[0].dataUrl}
+            />
+          </Section>
+          <Section title={t("retouch.title")}>
+            <RetouchPanel
+              value={design.retouch}
+              onChange={(retouch) => setDesign({ retouch })}
+              faceFound={Boolean(facePhoto)}
             />
           </Section>
           <Section title={t("edit.intensity")} aside={`${Math.round(design.filterIntensity * 100)}%`}>

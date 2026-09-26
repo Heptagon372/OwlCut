@@ -12,6 +12,7 @@ import { FilteredPreview } from "@/components/filters/FilteredPreview";
 import { FilterPicker } from "@/components/filters/FilterPicker";
 import { EffectPicker } from "@/components/filters/EffectPicker";
 import { FilteredImage } from "@/components/filters/FilteredImage";
+import { RetouchPanel } from "@/components/filters/RetouchPanel";
 import { Button, IconButton } from "@/components/ui/Button";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Segmented } from "@/components/ui/Segmented";
@@ -55,7 +56,7 @@ export default function CameraPage() {
   const [trackingOn, setTrackingOn] = useState(true);
   const [glSupported, setGlSupported] = useState(true);
   const [snapshot, setSnapshot] = useState<{ canvas: HTMLCanvasElement; faces: FaceGeometry[] } | null>(null);
-  const [pickerTab, setPickerTab] = useState<"filter" | "effect">("filter");
+  const [pickerTab, setPickerTab] = useState<"filter" | "effect" | "retouch">("filter");
   const runningRef = useRef(false);
 
   // 촬영 매수 = 고른 레이아웃의 사진 수 (매수가 여러 가지면 아래에서 먼저 고름)
@@ -209,6 +210,7 @@ export default function CameraPage() {
                     intensity={design.filterIntensity}
                     mirror={mirror}
                     effectId={design.effect}
+                    retouch={design.retouch}
                     facesRef={facesRef}
                     onUnsupported={() => setGlSupported(false)}
                   />
@@ -240,6 +242,7 @@ export default function CameraPage() {
                     intensity={design.filterIntensity}
                     effectId={design.effect}
                     faces={s.faces}
+                    retouch={design.retouch}
                     alt={t("camera.cut", { n: i + 1 })}
                     className="aspect-[4/3] w-full rounded-[18px] object-cover"
                   />
@@ -287,12 +290,20 @@ export default function CameraPage() {
                   items={[
                     { id: "filter", label: t("camera.filter") },
                     { id: "effect", label: t("camera.effect") },
+                    { id: "retouch", label: t("retouch.tab") },
                   ]}
                   value={pickerTab}
                   onChange={setPickerTab}
                   className="mb-3"
                 />
-                {pickerTab === "filter" ? (
+                {pickerTab === "retouch" ? (
+                  <RetouchPanel
+                    value={design.retouch}
+                    onChange={(retouch) => setDesign({ retouch })}
+                    faceFound={trackingStatus === "ready"}
+                    disabled={phase === "running"}
+                  />
+                ) : pickerTab === "filter" ? (
                   <FilterPicker
                     variant="row"
                     value={design.filter}

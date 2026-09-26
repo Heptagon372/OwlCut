@@ -1,6 +1,6 @@
 // AR 배치 계산 — 순수 함수. 얼굴마다 "얼굴 좌표계"(x: 두 눈을 잇는 방향, y: 아래, 단위: 얼굴 폭)를 만들고
 // 스티커를 그 좌표계에 놓는다 → 얼굴이 가까워지면 커지고, 기울면 같이 돈다.
-import type { AnchorName, ArEffect, FaceGeometry, MosaicRegion, Placement, Pt, Warp } from "@/types/ar";
+import type { AnchorName, ArEffect, FaceGeometry, MosaicRegion, Placement, Pt, Warp, WarpSpec } from "@/types/ar";
 
 export const MAX_WARPS = 8;
 export const MAX_MOSAICS = 4;
@@ -85,13 +85,21 @@ export function placements(effect: ArEffect, faces: FaceGeometry[], W: number, H
   return out;
 }
 
-/** 얼굴 왜곡(왕눈이 등) — 셰이더용. 좌표는 이미지 정규화, 반경은 px */
-export function effectWarps(effect: ArEffect | null, faces: FaceGeometry[], W: number, H: number): Warp[] {
-  if (!effect?.warps?.length) return [];
+/** 얼굴 왜곡(왕눈이 등) — 셰이더용. 좌표는 이미지 정규화, 반경은 px.
+ *  extra 는 효과와 별개로 얹는 왜곡 (카메라 보정의 '갸름하게') */
+export function effectWarps(
+  effect: ArEffect | null,
+  faces: FaceGeometry[],
+  W: number,
+  H: number,
+  extra: WarpSpec[] = [],
+): Warp[] {
+  const specs = [...(effect?.warps ?? []), ...extra];
+  if (!specs.length) return [];
   const out: Warp[] = [];
   for (const g of faces) {
     const f = faceFrame(g, W, H);
-    for (const w of effect.warps) {
+    for (const w of specs) {
       if (out.length >= MAX_WARPS) return out;
       const p = f.anchors[w.at];
       out.push({ x: p.x / W, y: p.y / H, r: w.radius * f.width, s: w.strength });

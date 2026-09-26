@@ -3,7 +3,9 @@
 // faces 는 src 이미지 기준 0~1 좌표. 스티커 그림은 미리 ensureAssets 로 불러둘 것.
 import type { ArEffect, FaceGeometry } from "@/types/ar";
 import type { FilterParams } from "@/types/filter";
+import type { Retouch } from "@/types/design";
 import { drawFiltered, sizeOf, type Drawable } from "@/lib/filters/offline";
+import { retouchWarps, withRetouch } from "@/lib/filters/retouch";
 import { effectWarps, mosaicRegions, placements, toSlot } from "./geometry";
 import { drawPlacements } from "./render";
 
@@ -17,13 +19,16 @@ export function drawWithEffect(
   effect: ArEffect | null,
   faces: FaceGeometry[] | null | undefined,
   seed = 0,
+  retouch?: Retouch | null,
 ) {
   const { w, h } = sizeOf(src);
-  const list = effect && faces?.length ? faces : [];
+  // 보정의 '갸름하게' 는 효과가 없어도 얼굴만 있으면 적용된다
+  const extra = retouchWarps(retouch);
+  const list = (effect || extra.length) && faces?.length ? faces : [];
   const fx = list.length
-    ? { warps: effectWarps(effect, list, w, h), mosaics: mosaicRegions(effect, list, w, h) }
+    ? { warps: effectWarps(effect, list, w, h, extra), mosaics: mosaicRegions(effect, list, w, h) }
     : undefined;
-  drawFiltered(ctx, src, crop, dest, params, intensity, seed, fx);
+  drawFiltered(ctx, src, crop, dest, withRetouch(params, retouch), intensity, seed, fx);
   if (effect?.parts.length && list.length) {
     drawPlacements(ctx, placements(effect, list, w, h).map((p) => toSlot(p, crop, dest)));
   }
@@ -39,6 +44,7 @@ export function effectSnapshot(
     intensity?: number;
     effect: ArEffect | null;
     faces: FaceGeometry[] | null | undefined;
+    retouch?: Retouch | null;
     quality?: number;
   },
 ): string {
@@ -59,6 +65,8 @@ export function effectSnapshot(
     opts.intensity ?? 1,
     opts.effect,
     opts.faces,
+    0,
+    opts.retouch,
   );
   return canvas.toDataURL("image/jpeg", opts.quality ?? 0.85);
 }

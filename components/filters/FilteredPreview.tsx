@@ -7,8 +7,10 @@ import { FilterEngine } from "@/lib/filters/engine";
 import { isNeutral } from "@/lib/filters/offline";
 import { getEffect, needsShader } from "@/lib/ar/effects";
 import { effectWarps, mosaicRegions } from "@/lib/ar/geometry";
+import { isRetouchOn, retouchWarps, withRetouch } from "@/lib/filters/retouch";
 import type { FacesFrame } from "@/lib/tracking/useFaceTracking";
 import type { FilterParams } from "@/types/filter";
+import type { Retouch } from "@/types/design";
 
 const MAX_PREVIEW_WIDTH = 960; // 미리보기 해상도 상한 (촬영 원본과 무관)
 
@@ -18,6 +20,7 @@ export function FilteredPreview({
   intensity,
   mirror,
   effectId,
+  retouch,
   facesRef,
   onUnsupported,
 }: {
@@ -26,16 +29,19 @@ export function FilteredPreview({
   intensity: number;
   mirror: boolean;
   effectId?: string;
+  retouch?: Retouch | null;
   facesRef?: React.RefObject<FacesFrame | null>;
   onUnsupported: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const latest = useRef({ params, intensity, effectId, dirty: true });
-  const hidden = isNeutral(params, intensity) && !needsShader(getEffect(effectId));
+  const latest = useRef({ params, intensity, effectId, retouch, dirty: true });
+  // 보정을 얹으면 더 이상 '원본'이 아니므로 캔버스를 보여 준다
+  const hidden =
+    isNeutral(withRetouch(params, retouch), intensity) && !needsShader(getEffect(effectId)) && !isRetouchOn(retouch);
 
   useEffect(() => {
-    latest.current = { params, intensity, effectId, dirty: true };
-  }, [params, intensity, effectId]);
+    latest.current = { params, intensity, effectId, retouch, dirty: true };
+  }, [params, intensity, effectId, retouch]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -55,20 +61,22 @@ export function FilteredPreview({
       const v = videoElRef.current;
       const cur = latest.current;
       const effect = getEffect(cur.effectId);
-      const shaderFx = needsShader(effect);
-      if (!v || v.readyState < 2 || !v.videoWidth || (isNeutral(cur.params, cur.intensity) && !shaderFx)) return;
+      const extra = retouchWarps(cur.retouch);
+      const shaderFx = needsShader(effect) || extra.length > 0;
+      const params = withRetouch(cur.params, cur.retouch);
+      if (!v || v.readyState < 2 || !v.videoWidth || (isNeutral(params, cur.intensity) && !shaderFx)) return;
       if (v.currentTime === lastTime && !cur.dirty) return; // 새 프레임이 없으면 다시 그리지 않음
       lastTime = v.currentTime;
       cur.dirty = false;
       // 얼굴 좌표는 비디오 원본 기준(반전 전) — 캔버스도 원본으로 그린 뒤 CSS로 반전하므로 그대로 사용
       const faces = shaderFx ? (facesRef?.current?.faces ?? []) : [];
       const scale = Math.min(1, MAX_PREVIEW_WIDTH / v.videoWidth);
-      const ok = engine.render(v, v.videoWidth, v.videoHeight, cur.params, {
+      const ok = engine.render(v, v.videoWidth, v.videoHeight, params, {
         width: v.videoWidth * scale,
         height: v.videoHeight * scale,
         intensity: cur.intensity,
         seed: (frame++ % 97) * 1.37, // 그레인이 필름처럼 살짝 움직이게
-        warps: effectWarps(effect, faces, v.videoWidth, v.videoHeight),
+        warps: effectWarps(effect, faces, v.videoWidth, v.videoHeight, extra),
         mosaics: mosaicRegions(effect, faces, v.videoWidth, v.videoHeight),
       });
       if (!ok && engine.isLost) {

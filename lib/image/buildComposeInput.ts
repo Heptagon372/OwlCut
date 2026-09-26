@@ -14,6 +14,7 @@ export function buildComposeInput(photos: CapturedPhoto[], design: DesignState):
     filter: design.filter,
     filterIntensity: design.filterIntensity,
     effect: design.effect,
+    retouch: design.retouch,
     photoFaces: photos.map((p) => p.faces),
     photoOrder: design.photoOrder,
     photoAdjust: design.photoAdjust,

@@ -131,6 +131,13 @@ export interface TextLayer {
   font?: FrameFont;  // 글꼴 (없으면 sans)
 }
 
+// 카메라 보정 (0~1). 필터와 별개로 위에 얹힌다 — lib/filters/retouch.ts
+export interface Retouch {
+  skin: number;    // 피부 보정
+  bright: number;  // 밝기
+  slim: number;    // 갸름하게 (얼굴을 찾았을 때만)
+}
+
 // 칸마다 사진을 얼마나 키우고 어디를 보여 줄지 (편집 화면에서 조절, lib/image/photoAdjust.ts)
 export interface PhotoAdjust {
   zoom: number;  // 1 = 기본(칸을 가득), 최대 3
@@ -150,6 +157,7 @@ export interface DesignState {
   filter: FilterName;              // 촬영 전에 고른 필터 (사진은 원본 저장, 합성 때 적용)
   filterIntensity: number;         // 필터 강도 0..1
   effect: string;                  // AR 얼굴 효과 id (lib/ar/effects.ts, "none" = 없음). 필터처럼 합성 때 적용
+  retouch: Retouch;                // 카메라 보정 (필터 위에 얹힘, 비파괴)
   // ---- 화면 구성 (촬영 후 수정) ----
   photoOrder: number[];            // 자리 i 에 들어갈 사진 번호 (기본 [0,1,2,3])
   slotSpacing: number;             // 사진 간격 단계 0~10 (0 = 레이아웃 기본)
@@ -178,6 +186,7 @@ export interface ComposeInput {
   filter: FilterName;
   filterIntensity?: number;
   effect?: string;                 // AR 얼굴 효과 id
+  retouch?: Retouch;               // 카메라 보정
   photoFaces?: (FaceGeometry[] | null | undefined)[]; // 사진별 얼굴 기준점 (사진 정규화 좌표)
   photoOrder?: number[];
   photoAdjust?: (PhotoAdjust | null)[];  // 사진 번호별 확대·위치

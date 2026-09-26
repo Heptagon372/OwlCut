@@ -149,7 +149,7 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement, scale 
       // 사진은 원본으로 저장돼 있고, 촬영 전에 고른 필터를 여기서 슬롯 크기로 적용 (미리보기와 같은 셰이더)
       // AR 스티커도 슬롯 클립 안에서 그려 사진 밖으로 삐져나가지 않게
       const crop = coverCrop(img.width, img.height, slot, focuses?.[order[i]], input.photoAdjust?.[order[i]]);
-      drawWithEffect(ctx, img, crop, slot, filterParams, intensity, effect, input.photoFaces?.[order[i]], i * 17.3);
+      drawWithEffect(ctx, img, crop, slot, filterParams, intensity, effect, input.photoFaces?.[order[i]], i * 17.3, input.retouch);
     } else {
       ctx.fillStyle = "rgba(0,0,0,0.08)"; // 사진 없는 자리
       ctx.fillRect(slot.x, slot.y, slot.w, slot.h);

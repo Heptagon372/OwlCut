@@ -11,6 +11,7 @@ import {
   DEFAULT_LAYOUT_ID,
 } from "@/lib/data/registry";
 import { NO_EFFECT } from "@/lib/ar/effects";
+import { DEFAULT_RETOUCH } from "@/lib/filters/retouch";
 
 const initialDesign: DesignState = {
   mode: "manual",
@@ -21,6 +22,7 @@ const initialDesign: DesignState = {
   filter: DEFAULT_FILTER,
   filterIntensity: 1,
   effect: NO_EFFECT,
+  retouch: DEFAULT_RETOUCH,
   photoOrder: [0, 1, 2, 3],
   slotSpacing: 0,
   slotRounding: 0,

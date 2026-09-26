@@ -6,7 +6,9 @@ import { isNeutral, loadImage } from "@/lib/filters/offline";
 import { effectAssets, getEffect } from "@/lib/ar/effects";
 import { ensureAssets } from "@/lib/ar/assets";
 import { effectSnapshot } from "@/lib/ar/draw";
+import { isRetouchOn } from "@/lib/filters/retouch";
 import type { FaceGeometry } from "@/types/ar";
+import type { Retouch } from "@/types/design";
 
 const MAX = 480;
 
@@ -16,6 +18,7 @@ export function FilteredImage({
   intensity = 1,
   effectId,
   faces,
+  retouch,
   alt,
   className,
 }: {
@@ -24,14 +27,15 @@ export function FilteredImage({
   intensity?: number;
   effectId?: string;
   faces?: FaceGeometry[] | null;
+  retouch?: Retouch | null;
   alt: string;
   className?: string;
 }) {
   const [filtered, setFiltered] = useState<{ key: string; url: string } | null>(null);
   const params = getFilter(filterId).params;
   const effect = faces?.length ? getEffect(effectId) : null;
-  const plain = isNeutral(params, intensity) && !effect;
-  const key = `${src.length}:${src.slice(-32)}|${filterId}|${intensity}|${effect?.id ?? ""}`;
+  const plain = isNeutral(params, intensity) && !effect && !isRetouchOn(retouch);
+  const key = `${src.length}:${src.slice(-32)}|${filterId}|${intensity}|${effect?.id ?? ""}|${retouch ? `${retouch.skin},${retouch.bright},${retouch.slim}` : ""}`;
 
   useEffect(() => {
     if (plain) return;
@@ -47,6 +51,7 @@ export function FilteredImage({
           intensity,
           effect,
           faces,
+          retouch,
           quality: 0.82,
         });
         setFiltered({ key, url });
