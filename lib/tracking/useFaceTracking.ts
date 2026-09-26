@@ -9,6 +9,7 @@ import type { Focus } from "@/types/design";
 import type { FaceGeometry } from "@/types/ar";
 import { focusFromBox, largestFaceHeight, unionBox, type Box } from "./framing";
 import { FaceSmoother, faceGeometryFromLandmarks, landmarkBox, mirrorFace } from "./landmarks";
+import { silenceMediapipeLogs } from "./quietMediapipe";
 
 // WASM은 postinstall 스크립트가 public/mediapipe/wasm 으로 복사 (scripts/copy-mediapipe-wasm.mjs)
 export const WASM_PATH = "/mediapipe/wasm";
@@ -64,6 +65,8 @@ export function useFaceTracking(
 
   useEffect(() => {
     if (!enabled) return;
+    // MediaPipe 가 정보 로그를 console.error 로 내보내 개발 오버레이가 오류처럼 띄우는 것만 걸러 낸다
+    const unsilence = silenceMediapipeLogs();
     let cancelled = false;
     let landmarker: FaceLandmarker | null = null;
     let raf = 0;
@@ -136,6 +139,7 @@ export function useFaceTracking(
 
     return () => {
       cancelled = true;
+      unsilence();
       cancelAnimationFrame(raf);
       landmarker?.close();
       latestRef.current = EMPTY;

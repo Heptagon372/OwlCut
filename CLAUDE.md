@@ -100,6 +100,7 @@ npm run build      # 프로덕션 빌드
 - 촬영 화면: 인물 박스 + 이동 안내(`lib/tracking/framing.ts`, 순수 함수). 셔터 순간의 인물 중심을 사진별 `focus`로 저장 → `compose`의 `coverCrop`이 가운데 대신 인물 중심으로 크롭.
 - WASM(34MB)은 `postinstall`이 `public/mediapipe/wasm`으로 복사 (git·eslint 제외). 모델(3.7MB)은 Google Storage (`NEXT_PUBLIC_FACE_MODEL_URL`로 교체 가능 — Face Landmarker `.task` 모델이어야 함).
 - 보조 기능: 로드 실패 시 "사용 불가" 표시만 하고 촬영은 정상 진행.
+- MediaPipe 는 정보 로그("INFO: Created TensorFlow Lite XNNPACK delegate…")를 `console.error` 로 내보낸다 → 개발 오버레이가 오류로 띄우므로 `lib/tracking/quietMediapipe.ts` 가 **그 문장들만** 걸러 낸다(추적이 켜진 동안만, 나머지 메시지는 그대로).
 - 얼굴이 화면 폭의 ~5% 미만(멀리 선 단체)이면 근거리 모델 특성상 못 찾음. 부스 거리(1~2m)에서는 문제없음.
 
 ## AR 얼굴 효과 (스티커·왜곡·모자이크)
