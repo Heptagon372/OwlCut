@@ -5,23 +5,32 @@ import type { DesignState } from "@/types/design";
 import type { AIDesignResult, ModelInfo } from "@/types/ai";
 import type { PrintStatus, PrintStatusResponse } from "@/types/print";
 import { withRetry } from "./retry";
+import { newUuid } from "./ids";
 
 export interface BoothSession {
   id: string;
   token: string; // 업로드 토큰 — 이 세션에 사진을 올리고 출력할 수 있는 비밀값 (주소에 넣지 말 것)
 }
 
+// AbortSignal.timeout 은 Safari 16+ 이므로 구형 아이폰에서도 되게 직접 만든다
+function timeoutSignal(ms: number): AbortSignal {
+  if (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal) return AbortSignal.timeout(ms);
+  const c = new AbortController();
+  setTimeout(() => c.abort(), ms);
+  return c.signal;
+}
+
 /** 오프라인 폴백: 부스가 직접 id·토큰을 만든다 (나중에 업로드할 때 서버가 이 토큰으로 세션을 등록) */
 export function localSession(): BoothSession {
   const bytes = crypto.getRandomValues(new Uint8Array(24));
   const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  return { id: crypto.randomUUID(), token };
+  return { id: newUuid(), token };
 }
 
 export async function createSession(): Promise<BoothSession> {
   try {
     // 서버·DB 가 느리게 멈춰도 '촬영 시작' 버튼이 몇 분씩 멈춰 있지 않게 3초 뒤엔 로컬 세션으로 진행
-    const res = await fetch("/api/session", { method: "POST", signal: AbortSignal.timeout(3000) });
+    const res = await fetch("/api/session", { method: "POST", signal: timeoutSignal(3000) });
     if (res.ok) {
       const data = await res.json();
       if (typeof data?.id === "string" && typeof data?.token === "string") return { id: data.id, token: data.token };
@@ -63,7 +72,7 @@ async function uploadFinalOnce(session: BoothSession, imageDataUrl: string, desi
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: session.id, token: session.token, image: imageDataUrl, design }),
-      signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
+      signal: timeoutSignal(UPLOAD_TIMEOUT_MS),
     });
     return classifyUpload(res.status, await res.json().catch(() => null));
   } catch {

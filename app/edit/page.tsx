@@ -190,7 +190,7 @@ export default function EditPage() {
   const current = panel[tools.some((t) => t.id === tool) ? tool : "layout"];
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:h-dvh lg:py-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:screen-tall lg:py-6">
       <IdleGuard seconds={120} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
@@ -215,7 +215,7 @@ export default function EditPage() {
           <PhotoCanvas
             photos={photos}
             design={design}
-            className="max-h-[48vh] rounded-md shadow-[0_24px_48px_-24px_rgba(0,0,0,0.45)] lg:max-h-[calc(100dvh-9.5rem)]"
+            className="max-h-[48vh] rounded-md shadow-[0_24px_48px_-24px_rgba(0,0,0,0.45)] lg:preview-tall"
             overlay={
               <StickerLayer
                 layout={layout}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
 import localFont from "next/font/local";
 import { Black_Han_Sans, Caveat, DM_Serif_Display, Gaegu, Manrope, Space_Mono } from "next/font/google";
@@ -29,6 +29,14 @@ const dmSerif = DM_Serif_Display({ subsets: ["latin"], weight: "400", variable: 
 const spaceMono = Space_Mono({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-mono", display: "swap", preload: false });
 const blackHan = Black_Han_Sans({ subsets: ["latin"], weight: "400", variable: "--font-hangul-display", display: "swap", preload: false });
 const decoFonts = [caveat, gaegu, dmSerif, spaceMono, blackHan].map((f) => f.variable).join(" ");
+
+// viewport-fit=cover + 아래 body 의 safe-area 여백 → 노치 있는 아이폰에서도 버튼이 가려지지 않음
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#e4e4e8",
+};
 
 // 탭 제목도 설정 언어로 (부스 쿠키 → 없으면 브라우저 언어)
 export async function generateMetadata(): Promise<Metadata> {

@@ -3,20 +3,12 @@
 // SVG 그림 안에서는 웹폰트를 못 쓰기 때문에 글자만 따로 그린다. 편집 화면과 합성이 같은 PNG 를 쓴다.
 import type { WordStyle } from "@/types/design";
 import { FONT_WEIGHT, canvasFont, ensureFonts } from "@/lib/fonts";
+import { roundRectPath } from "@/lib/image/canvasPath";
 
 const PX = 110; // 기준 글자 크기 (스티커는 결과 이미지를 원하는 크기로 확대·축소)
 const INK = "#1b1b1f";
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
-}
+const roundRect = roundRectPath;
 
 /** 필름 카메라 날짜 도장 형식: '26 09 23 */
 export function stampDate(d = new Date()): string {

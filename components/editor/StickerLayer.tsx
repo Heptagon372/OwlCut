@@ -131,10 +131,10 @@ export function StickerLayer({
     >
       {tiles.map((tile, ti) => (
         // 타일(스트립 한 장)마다 잘라서 보여 준다 — 합성도 타일 단위로 그려 이음매에서 잘리므로 미리보기와 같게.
-        // overflow-clip: hidden 과 달리 스크롤 상자가 아니라서, 큰 스티커에 포커스가 가도 층이 밀리지 않음
+        // clip-box: hidden 과 달리 스크롤 상자가 아니라서, 큰 스티커에 포커스가 가도 층이 밀리지 않음
         <div
           key={ti}
-          className="pointer-events-none absolute overflow-clip"
+          className="pointer-events-none absolute clip-box"
           style={{ left: pct(tile.x, out.width), top: pct(tile.y, out.height), width: pct(tw, out.width), height: pct(th, out.height) }}
         >
         {stable.map((s) => {
@@ -157,7 +157,7 @@ export function StickerLayer({
               onPointerCancel={primary ? endDrag : undefined}
               onLostPointerCapture={primary ? endDrag : undefined}
               onKeyDown={primary ? (e) => onKey(e, s) : undefined}
-              className={`absolute select-none outline-none ${primary ? "pointer-events-auto cursor-grab touch-none active:cursor-grabbing" : ""}`}
+              className={`absolute outline-none ${primary ? "drag-surface pointer-events-auto cursor-grab active:cursor-grabbing" : "select-none"}`}
               style={{
                 left: `${s.x * 100}%`,
                 top: `${s.y * 100}%`,

@@ -37,6 +37,11 @@ const ko = {
 
   // ---------- 촬영 ----------
   "camera.failTitle": "카메라를 시작할 수 없어요",
+  "camera.errDenied": "카메라 사용을 허용해 주세요. 주소창의 카메라 아이콘에서 바꿀 수 있어요.",
+  "camera.errNotFound": "연결된 카메라를 찾지 못했어요. 직원에게 문의해 주세요.",
+  "camera.errBusy": "다른 앱이 카메라를 쓰고 있어요. 그 앱을 닫고 다시 시도해 주세요.",
+  "camera.errUnsupported": "이 브라우저에서는 카메라를 쓸 수 없어요. (https 주소로 열어 주세요)",
+  "camera.errOther": "카메라를 시작하지 못했어요. 다시 시도해 주세요.",
   "camera.start": "촬영 시작",
   "camera.preparing": "카메라 준비 중…",
   "camera.running": "촬영 중 · {done}/{total}",
@@ -267,6 +272,11 @@ const en: Record<MessageKey, string> = {
   "home.step3Desc": "Save to your phone by QR, or print",
 
   "camera.failTitle": "Can’t start the camera",
+  "camera.errDenied": "Please allow camera access — use the camera icon in the address bar.",
+  "camera.errNotFound": "No camera was found. Please ask a staff member.",
+  "camera.errBusy": "Another app is using the camera. Close it and try again.",
+  "camera.errUnsupported": "This browser can’t use the camera. (Open the https address.)",
+  "camera.errOther": "Couldn’t start the camera. Please try again.",
   "camera.start": "Start shooting",
   "camera.preparing": "Starting camera…",
   "camera.running": "Shooting · {done}/{total}",

@@ -166,6 +166,14 @@ Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT
 ## Supabase 셋업
 `supabase/schema.sql` 을 Supabase SQL Editor에서 실행 (테이블 + `photos` 버킷 + RLS). 멱등(`if not exists`)이라 스키마가 바뀌면 다시 실행하면 됨.
 
+## 브라우저 호환 (애플 · Edge)
+- 기준 **iOS 15 / Safari 15**. Edge·Chrome 은 같은 크로미움이라 별도 대응 없음.
+- 구형 사파리에 없는 것들은 대체 경로가 있다 — `ctx.roundRect` → `lib/image/canvasPath.ts`(필름 구멍·말풍선·칸 모서리), `AbortSignal.timeout` → `lib/api.ts`의 `timeoutSignal`, `crypto.randomUUID` → `lib/ids.ts`의 `newUuid`(비보안 http 접속 포함).
+- CSS 는 대체가 든 유틸리티로: `screen-tall`·`preview-tall`(dvh→vh), `clip-box`(overflow:clip→contain:paint), `drag-surface`(길게 누르기 메뉴·선택 확대 방지). **`h-dvh`·`overflow-clip` 을 직접 쓰지 말 것** — `tests/browser-compat.test.ts` 가 막는다.
+- 노치 대응: `viewport-fit=cover` + body 에 `env(safe-area-inset-*)` 여백.
+- WebGL 컨텍스트는 최대 2개(실시간 미리보기 + 공용 오프라인)로 유지 — iOS 는 컨텍스트 수 제한이 빡빡하다. 잃으면 다시 만든다.
+- 점검: Playwright **WebKit** 으로 전체 흐름(합성·필름 프레임·셰이더 필터·스티커 끌기·사진 확대·결과) + 구형 API 를 지운 흉내 실행까지 확인.
+
 ## 검증 방법
 - `npm test` (Vitest, `tests/*.test.ts`). CI 순서: lint → typecheck → test → build (Node 22 — Vitest 5 요구).
 - 브라우저 QA(헤드리스 Chrome + CDP, 가짜 웹캠): 전체 흐름·다시 찍기·뒤로 가기·다음 방문자 초기화·6컷·자리 비움·직접 접속, 터치 끌기, 긴 작업(50ms+) 측정. 썸네일 수십 장 만들기처럼 긴 반복은 `forEachChunked`(`lib/yieldToMain.ts`)로 나눠 실시간 미리보기가 멈칫하지 않게.

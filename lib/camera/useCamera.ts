@@ -10,35 +10,44 @@ export interface UseCameraOptions {
   mirror?: boolean; // 셀피처럼 좌우 반전 (기본 true)
 }
 
+// 오류는 코드로 돌려주고 문구는 화면에서 (언어 설정에 맞춰야 하므로)
+export type CameraErrorCode = "denied" | "notFound" | "busy" | "unsupported" | "other";
+export interface CameraError {
+  code: CameraErrorCode;
+  detail?: string; // 직원 안내용 (DOMException 이름 등)
+}
+
 export interface UseCameraResult {
   // <video ref={videoRef}> 용 콜백 ref: 요소가 (재)마운트될 때마다 스트림을 다시 연결한다.
   videoRef: (el: HTMLVideoElement | null) => void;
   // 현재 마운트된 video 요소 (캡처/얼굴 추적에서 읽기용)
   videoElRef: React.RefObject<HTMLVideoElement | null>;
   ready: boolean;
-  error: string | null;
+  error: CameraError | null;
   start: () => Promise<void>;
   stop: () => void;
   capture: () => string | null;
   mirror: boolean;
 }
 
-function toFriendlyError(err: unknown): string {
+function toCameraError(err: unknown): CameraError {
   if (err instanceof DOMException) {
     switch (err.name) {
       case "NotAllowedError":
       case "SecurityError":
-        return "카메라 권한이 거부되었습니다. 브라우저 주소창의 카메라 아이콘에서 허용해 주세요.";
+        return { code: "denied" };
       case "NotFoundError":
       case "DevicesNotFoundError":
-        return "연결된 카메라를 찾을 수 없습니다. 장치를 확인해 주세요.";
+      case "OverconstrainedError": // 요청한 해상도의 카메라가 없음
+        return { code: "notFound", detail: err.name };
       case "NotReadableError":
-        return "다른 앱이 카메라를 사용 중입니다. 해당 앱을 닫고 다시 시도해 주세요.";
+      case "TrackStartError":
+        return { code: "busy", detail: err.name };
       default:
-        return `카메라 오류: ${err.name}`;
+        return { code: "other", detail: err.name };
     }
   }
-  return "카메라를 시작할 수 없습니다. 다시 시도해 주세요.";
+  return { code: "other" };
 }
 
 export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
@@ -48,7 +57,7 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
   const alive = useRef(true);
   const request = useRef(0); // 가장 최근 start 호출 번호
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<CameraError | null>(null);
 
   const attach = (video: HTMLVideoElement, stream: MediaStream) => {
     if (video.srcObject !== stream) video.srcObject = stream;
@@ -71,7 +80,7 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
     const my = ++request.current;
     setError(null);
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setError("이 브라우저는 카메라를 지원하지 않습니다. (HTTPS 또는 localhost 필요)");
+      setError({ code: "unsupported" });
       return;
     }
     try {
@@ -91,7 +100,7 @@ export function useCamera(options: UseCameraOptions = {}): UseCameraResult {
       setReady(true);
     } catch (err) {
       if (!alive.current || my !== request.current) return;
-      setError(toFriendlyError(err));
+      setError(toCameraError(err));
       setReady(false);
     }
   }, []);

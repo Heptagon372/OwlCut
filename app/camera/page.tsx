@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCamera } from "@/lib/camera/useCamera";
+import { useCamera, type CameraErrorCode } from "@/lib/camera/useCamera";
 import { useFaceTracking } from "@/lib/tracking/useFaceTracking";
 import { framingHint } from "@/lib/tracking/framing";
 import { transformFace } from "@/lib/tracking/landmarks";
@@ -21,6 +21,7 @@ import { SettingsSheet } from "@/components/settings/SettingsSheet";
 import { ArrowRight, Camera as CameraIcon, CameraOff, RotateCcw, ScanFace, X } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
 import { useSettings } from "@/lib/i18n/context";
+import type { MessageKey } from "@/lib/i18n/messages";
 import { SHOT_COUNTS, defaultLayoutFor, getFilter, getLayout } from "@/lib/data/registry";
 import { identityOrder } from "@/lib/image/layoutGeometry";
 import { getEffect, NO_EFFECT } from "@/lib/ar/effects";
@@ -28,6 +29,15 @@ import { paramsToCss } from "@/lib/filters/cssFallback";
 import { createSession } from "@/lib/api";
 import type { CapturedPhoto } from "@/types/session";
 import type { FaceGeometry } from "@/types/ar";
+
+// 카메라 오류 코드 → 문구
+const CAMERA_ERROR: Record<CameraErrorCode, MessageKey> = {
+  denied: "camera.errDenied",
+  notFound: "camera.errNotFound",
+  busy: "camera.errBusy",
+  unsupported: "camera.errUnsupported",
+  other: "camera.errOther",
+};
 
 const SNAPSHOT_MS = 4000; // 필터 썸네일을 지금 카메라 화면으로 갱신하는 주기
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -143,7 +153,8 @@ export default function CameraPage() {
             <CameraOff className="h-6 w-6" aria-hidden />
           </span>
           <p className="mt-4 text-xl font-semibold">{t("camera.failTitle")}</p>
-          <p className="mt-2 text-sm text-muted">{error}</p>
+          <p className="mt-2 text-sm text-muted">{t(CAMERA_ERROR[error.code])}</p>
+          {error.detail && <p className="mt-1 text-xs text-muted/70">{error.detail}</p>}
           <div className="mt-6 flex justify-center gap-2">
             <Button variant="secondary" onClick={() => router.push("/")}>{t("common.home")}</Button>
             <Button onClick={() => void start()}>{t("common.retry")}</Button>

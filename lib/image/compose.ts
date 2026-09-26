@@ -15,6 +15,7 @@ import { stickerBox } from "@/lib/stickers/geometry";
 import { canvasFont, ensureFonts } from "@/lib/fonts";
 import { cornerRadius, normalizeOrder, outputSize, spacedSlot } from "./layoutGeometry";
 import { DEFAULT_ADJUST, clampAdjust } from "./photoAdjust";
+import { roundRectPath } from "./canvasPath";
 import { readableTextOn } from "./color";
 import { drawDecorations, frameAssets, paintBackground } from "./frameArt";
 
@@ -55,17 +56,9 @@ export function coverCrop(
   return { sx, sy, sw, sh };
 }
 
-// 둥근 사각형 경로 (radius 0이면 일반 사각형)
-function roundRectPath(ctx: CanvasRenderingContext2D, s: PhotoSlot, radius: number) {
-  const r = Math.max(0, Math.min(radius, s.w / 2, s.h / 2));
-  ctx.beginPath();
-  ctx.moveTo(s.x + r, s.y);
-  ctx.arcTo(s.x + s.w, s.y, s.x + s.w, s.y + s.h, r);
-  ctx.arcTo(s.x + s.w, s.y + s.h, s.x, s.y + s.h, r);
-  ctx.arcTo(s.x, s.y + s.h, s.x, s.y, r);
-  ctx.arcTo(s.x, s.y, s.x + s.w, s.y, r);
-  ctx.closePath();
-}
+// 칸(둥근 사각형) 경로 — 경로 계산은 공용 (Safari 구버전엔 ctx.roundRect 가 없음)
+const slotPath = (ctx: CanvasRenderingContext2D, s: PhotoSlot, radius: number) =>
+  roundRectPath(ctx, s.x, s.y, s.w, s.h, radius);
 
 // 스티커: 편집 화면(끌어서 옮기기)과 같은 이미지·같은 좌표 규칙 (lib/stickers/geometry)
 function drawStickers(ctx: CanvasRenderingContext2D, stickers: StickerInstance[], w: number, h: number) {
@@ -143,13 +136,13 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement, scale 
       ctx.shadowBlur = 14;
       ctx.shadowOffsetY = 4;
       ctx.fillStyle = color;
-      roundRectPath(ctx, { x: slot.x - p, y: slot.y - p, w: slot.w + p * 2, h: slot.h + p + bp }, radius ? radius + p / 2 : 4);
+      slotPath(ctx, { x: slot.x - p, y: slot.y - p, w: slot.w + p * 2, h: slot.h + p + bp }, radius ? radius + p / 2 : 4);
       ctx.fill();
       ctx.restore();
     }
 
     ctx.save();
-    roundRectPath(ctx, slot, radius);
+    slotPath(ctx, slot, radius);
     ctx.clip();
     const img = images[i];
     if (img) {
@@ -166,7 +159,7 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement, scale 
     if (frame.slotBorderWidth && frame.slotBorderWidth > 0) {
       ctx.lineWidth = frame.slotBorderWidth;
       ctx.strokeStyle = frame.accent;
-      roundRectPath(ctx, slot, radius);
+      slotPath(ctx, slot, radius);
       ctx.stroke();
     }
   }

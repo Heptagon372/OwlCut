@@ -108,7 +108,7 @@ export function PhotoAdjustEditor({
           onPointerUp={onUp}
           onPointerCancel={onUp}
           onLostPointerCapture={onUp}
-          className="relative touch-none overflow-clip rounded-2xl bg-black/10 shadow-inner"
+          className="drag-surface relative overflow-hidden rounded-2xl bg-black/10 shadow-inner"
           style={{ width: boxW, height: boxH, cursor: "grab" }}
         >
           {crop && size && (

@@ -94,9 +94,37 @@ body {
 
 body {
   color: var(--foreground);
+  /* 노치·홈 인디케이터 영역 피하기 (iOS). 다른 기기에서는 0 */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
+}
+
+/* 화면 높이에 딱 맞추기 — dvh 를 모르는 구형 사파리(iOS 15 이하)는 vh 로 (주소창만큼 차이) */
+@utility screen-tall {
+  height: 100vh;
+  height: 100dvh;
+}
+@utility preview-tall {
+  max-height: calc(100vh - 9.5rem);
+  max-height: calc(100dvh - 9.5rem);
+}
+
+/* 넘치는 부분 자르기. overflow:clip 은 스크롤 상자를 만들지 않아 스티커 층이 밀리지 않는다.
+   iOS 15 이하에는 없으므로 contain:paint 로 같은 효과를 낸다(그리기 범위 제한). */
+@utility clip-box {
+  contain: paint;
+  overflow: clip;
+}
+
+/* 끌어서 옮기는 층: 길게 누르기 메뉴·선택 확대를 막는다 (iOS) */
+@utility drag-surface {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* 숫자는 폭을 고정해 값이 바뀌어도 흔들리지 않게 */

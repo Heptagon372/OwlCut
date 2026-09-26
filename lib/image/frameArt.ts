@@ -6,6 +6,7 @@ import { heartAt, sparklePath, starPath } from "@/lib/art/svg";
 import { canvasFont } from "@/lib/fonts";
 import { getStickerImage } from "@/lib/stickers/images";
 import { stampDate } from "@/lib/stickers/word";
+import { roundRectPath } from "./canvasPath";
 
 /** 시드 고정 난수 (mulberry32) */
 export function seeded(seed: number): () => number {
@@ -152,8 +153,7 @@ function drawFilmHoles(ctx: CanvasRenderingContext2D, layout: LayoutConfig, colo
   const step = hl * 1.9;
   ctx.fillStyle = color;
   const hole = (x: number, y: number, bw: number, bh: number) => {
-    ctx.beginPath();
-    ctx.roundRect(x, y, bw, bh, hw * 0.25);
+    roundRectPath(ctx, x, y, bw, bh, hw * 0.25);
     ctx.fill();
   };
   if (vertical) {
