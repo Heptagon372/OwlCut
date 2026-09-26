@@ -74,7 +74,7 @@ export function LayoutPicker({
             className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 p-2 transition ${active ? "border-ink bg-white text-foreground" : "border-transparent bg-white/45 text-muted hover:bg-white/80 hover:text-foreground"}`}
           >
             <LayoutThumb layout={l} />
-            <span className="text-center text-xs leading-tight">{label(l)}</span>
+            <span className="break-keep text-center text-xs leading-tight">{label(l)}</span>
           </button>
         );
       })}

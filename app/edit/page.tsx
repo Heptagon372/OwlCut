@@ -204,9 +204,15 @@ export default function EditPage() {
         <Logo />
         <div className="flex items-center gap-2">
           <SettingsSheet />
-          <Button variant="secondary" size="sm" onClick={() => router.push("/camera")}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => router.push("/camera")}
+            aria-label={t("edit.retake")}
+            className="max-sm:w-9 max-sm:px-0"
+          >
             <RotateCcw className="h-4 w-4" aria-hidden />
-            {t("edit.retake")}
+            <span className="max-sm:hidden">{t("edit.retake")}</span>
           </Button>
           <Button size="sm" onClick={() => router.push("/result")} className="pr-2">
             {t("edit.finish")}
