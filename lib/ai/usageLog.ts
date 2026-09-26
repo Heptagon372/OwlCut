@@ -1,5 +1,5 @@
 // AI 호출 기록 (관리자 대시보드 모델별 사용량). 서버 전용, best-effort — 실패해도 응답에 영향 없음.
-import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getStore, isStoreConfigured } from "@/lib/db";
 
 export async function logAIRequest(entry: {
   model: string | null;
@@ -7,9 +7,9 @@ export async function logAIRequest(entry: {
   error: string | null;
   latencyMs: number;
 }): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  if (!isStoreConfigured()) return;
   try {
-    await getSupabaseAdmin().from("ai_requests").insert({
+    await getStore().insertAiRequest({
       model: entry.model,
       ok: entry.ok,
       error: entry.error,

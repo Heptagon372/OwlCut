@@ -4,16 +4,13 @@
 // 대신 방문자가 직접 쓴 글(AI 프롬프트·문구)을 비우고, 대기 중 출력은 실패 처리, 세션은 status='expired'.
 // 남는 저장소 경로(finals/<uuid>.png 등)는 이미 지운 파일을 가리킬 뿐 개인정보가 없다.
 // 파일 삭제가 실패하면 행을 그대로 둔다 (다음 실행 때 재시도; 이미 지운 파일을 다시 지워도 오류 아님).
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { getSupabaseAdmin, STORAGE_BUCKET } from "@/lib/supabase/client";
+import { getStore, type BoothStore } from "@/lib/db";
 import { finalPath, photoFolder } from "./photos";
 
 const BATCH = 100;
 const MAX_BATCHES = 5; // 한 번 호출에 최대 500세션 (실행 시간 제한 안에서)
 
 export const EXPIRED_STATUS = "expired";
-// 방문자 입력을 지우는 패치 (designs). 프레임·필터·레이아웃 등 선택값은 통계용으로 남긴다.
-export const DESIGN_SCRUB = { prompt: null, text_layers: [] } as const;
 
 /** 만료 세션 id 들 + 각 세션의 원본 사진 파일명 → 지울 저장소 경로 (순수 함수) */
 export function storagePathsFor(sessionIds: string[], photoFiles: Record<string, string[]>): string[] {
@@ -31,53 +28,43 @@ export interface CleanupResult {
   errors: string[];
 }
 
-export async function cleanupExpired(now = new Date(), db: SupabaseClient = getSupabaseAdmin()): Promise<CleanupResult> {
-  const bucket = db.storage.from(STORAGE_BUCKET);
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+export async function cleanupExpired(now = new Date(), store: BoothStore = getStore()): Promise<CleanupResult> {
   const result: CleanupResult = { sessions: 0, files: 0, errors: [] };
   const nowIso = now.toISOString();
 
   for (let batch = 0; batch < MAX_BATCHES; batch++) {
-    const { data: expired, error } = await db
-      .from("sessions")
-      .select("id")
-      .lt("expires_at", nowIso)
-      .neq("status", EXPIRED_STATUS)
-      .limit(BATCH);
-    if (error) {
-      result.errors.push(error.message);
+    let ids: string[];
+    try {
+      ids = await store.listExpiredSessionIds(nowIso, BATCH);
+    } catch (e) {
+      result.errors.push(message(e));
       break;
     }
-    const ids = (expired ?? []).map((r) => r.id as string);
     if (ids.length === 0) break;
 
     const photoFiles: Record<string, string[]> = {};
     await Promise.all(
       ids.map(async (id) => {
-        const { data } = await bucket.list(photoFolder(id), { limit: 100 });
-        photoFiles[id] = (data ?? []).map((f) => f.name);
+        photoFiles[id] = await store.listFiles(photoFolder(id), 100).catch(() => []);
       }),
     );
 
-    const { data: removed, error: rmErr } = await bucket.remove(storagePathsFor(ids, photoFiles));
-    if (rmErr) {
-      result.errors.push(`storage: ${rmErr.message}`);
+    try {
+      result.files += await store.removeFiles(storagePathsFor(ids, photoFiles));
+    } catch (e) {
+      result.errors.push(`storage: ${message(e)}`);
       break; // 행은 남겨 두고 다음 실행에서 재시도
     }
-    result.files += removed?.length ?? 0;
 
     // 세션 상태는 마지막에 — 중간에 실패하면 다음 실행에서 이 세션들을 다시 처리한다
-    const steps = [
-      db.from("designs").update(DESIGN_SCRUB).in("session_id", ids),
-      db.from("prints").update({ status: "failed", error: EXPIRED_STATUS, updated_at: nowIso }).in("session_id", ids).eq("status", "waiting"),
-    ];
-    const failed = (await Promise.all(steps)).find((r) => r.error);
-    if (failed?.error) {
-      result.errors.push(`db: ${failed.error.message}`);
-      break;
-    }
-    const { error: stErr } = await db.from("sessions").update({ status: EXPIRED_STATUS }).in("id", ids);
-    if (stErr) {
-      result.errors.push(`db: ${stErr.message}`);
+    try {
+      await store.scrubDesigns(ids);
+      await store.failWaitingPrints(ids, EXPIRED_STATUS);
+      await store.markSessionsExpired(ids);
+    } catch (e) {
+      result.errors.push(`db: ${message(e)}`);
       break;
     }
     result.sessions += ids.length;

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin, isSupabaseConfigured, STORAGE_BUCKET } from "@/lib/supabase/client";
+import { getStore, isStoreConfigured, STORE_NOT_CONFIGURED } from "@/lib/db";
 import { decodeImage } from "@/lib/image/dataurl";
 import { layoutOptions } from "@/lib/image/layoutOptions";
 import { expiresAt, finalPath } from "@/lib/storage/photos";
-import { saveFinalDesign } from "@/lib/storage/finalDesign";
 import { authorizeSessionWrite, hashToken, insertSession } from "@/lib/storage/sessionAuth";
 import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 import { isUuid } from "@/lib/ids";
@@ -17,13 +16,14 @@ const RATE_PER_MINUTE = 30; // 부스 한 대는 분당 몇 번이면 충분 (�
 // 같은 세션으로 여러 번 불려도 결과가 같다 (파일 덮어쓰기 + 세션당 designs 1행) → 클라이언트 재시도 안전.
 // 쓰기는 세션을 만든 부스의 업로드 토큰이 있어야 함 (QR 로 id 를 본 사람이 사진을 바꿔치기하지 못하게).
 export async function POST(req: Request) {
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: "SUPABASE_NOT_CONFIGURED" }, { status: 503 });
+  if (!isStoreConfigured()) {
+    return NextResponse.json({ error: STORE_NOT_CONFIGURED }, { status: 503 });
   }
   if (!checkRateLimit(`final:${clientKey(req)}`, RATE_PER_MINUTE)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
   let body: { session_id?: unknown; image?: unknown; design?: Record<string, unknown>; token?: unknown };
+  const text = (v: unknown) => (typeof v === "string" ? v : null);
   try {
     body = await req.json();
   } catch {
@@ -35,13 +35,12 @@ export async function POST(req: Request) {
   if (!image) return NextResponse.json({ error: "bad_image" }, { status: 400 });
 
   try {
-    const supabase = getSupabaseAdmin();
-    const access = await authorizeSessionWrite(supabase, session_id, token);
+    const store = getStore();
+    const access = await authorizeSessionWrite(store, session_id, token);
     if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.httpStatus });
 
     const path = finalPath(session_id);
-    const up = await supabase.storage.from(STORAGE_BUCKET).upload(path, image.buffer, { contentType: image.contentType, upsert: true });
-    if (up.error) throw up.error;
+    await store.upload(path, image.buffer, image.contentType);
 
     // 보관기간은 처음 완성된 시점부터 — 다시 올려도(재시도·편집 후 재완성) 늘어나지 않음.
     // DB 저장이 실패하면 500 → 클라이언트가 재시도 (실패를 삼키면 QR은 뜨는데 다운로드 페이지엔 사진이 없다)
@@ -49,25 +48,24 @@ export async function POST(req: Request) {
     if (!access.exists) {
       // 오프라인에서 만든 세션 (세션 생성 요청이 실패했던 경우)
       expires = expiresAt();
-      await insertSession(supabase, { id: session_id, status: "composed", expires_at: expires }, token);
+      await insertSession(store, { id: session_id, status: "composed", expires_at: expires }, token);
     } else {
       const first = access.status !== "composed";
       expires = first || !access.expiresAt ? expiresAt() : access.expiresAt;
       const patch: Record<string, unknown> = { status: "composed", expires_at: expires };
       if (access.claim) patch.upload_token_hash = hashToken(token as string);
-      const upd = await supabase.from("sessions").update(patch).eq("id", session_id);
-      if (upd.error) throw upd.error;
+      await store.updateSession(session_id, patch);
     }
-    await saveFinalDesign(supabase, session_id, {
-      mode: design?.mode ?? "manual",
-      prompt: design?.prompt ?? null,
-      ai_model: design?.mode === "ai" ? (design?.aiModel ?? null) : null,
-      layout: design?.layoutId ?? null,
+    await store.saveFinalDesign(session_id, {
+      mode: text(design?.mode) ?? "manual",
+      prompt: text(design?.prompt),
+      ai_model: design?.mode === "ai" ? text(design?.aiModel) : null,
+      layout: text(design?.layoutId),
       layout_options: layoutOptions(design),
-      frame: design?.frameId ?? null,
+      frame: text(design?.frameId),
       stickers: design?.stickers ?? [],
       text_layers: design?.textLayers ?? [],
-      filter: design?.filter ?? null,
+      filter: text(design?.filter),
       final_image_path: path,
     });
 

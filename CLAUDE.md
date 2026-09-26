@@ -8,7 +8,7 @@
 - 상태: zustand (`lib/store/boothStore.ts`, 모듈 싱글턴)
 - 카메라: `getUserMedia` (`lib/camera/useCamera.ts`)
 - 합성: Canvas API (`lib/image/compose.ts`) — **핵심 모듈**
-- DB/Storage: Supabase (Postgres + Storage), 서버 라우트에서 service role로만 접근
+- DB/Storage: **Supabase 또는 Firebase** — 서버 전용 어댑터 `lib/db` (Postgres+Storage / Firestore+Cloud Storage)
 - QR: `qrcode`
 
 ## 실행
@@ -160,11 +160,23 @@ npm run build      # 프로덕션 빌드
 
 ## 환경변수
 `.env.local.example` 복사 → `.env.local`. 모든 외부 설정은 선택이며, 없으면 해당 기능만 비활성:
-Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT_SERVER_TOKEN` 없음 → 프린트 서버 / `ADMIN_PASSWORD` 없음 → `/admin`.
+저장소(Supabase/Firebase) 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT_SERVER_TOKEN` 없음 → 프린트 서버 / `ADMIN_PASSWORD` 없음 → `/admin`.
 촬영·편집·로컬 다운로드는 항상 동작.
+
+## 저장소 계층 (Supabase / Firebase)
+- 라우트·도메인 코드는 **`lib/db` 의 `BoothStore` 인터페이스**만 쓴다. 구현은 `supabaseStore.ts`(Postgres+Storage)와 `firebaseStore.ts`(Firestore+Cloud Storage) 둘.
+- 고르기: Supabase 설정이 있으면 Supabase, 없고 Firebase 설정이 있으면 Firebase, 둘 다 없으면 저장 기능만 꺼진다(`storeKind()`/`isStoreConfigured()`). 미설정 응답 코드는 예전처럼 `SUPABASE_NOT_CONFIGURED` (클라이언트 호환).
+- 새 저장 동작이 필요하면 **인터페이스에 뜻이 담긴 함수**를 추가한다 (쿼리 문법을 흘리지 말 것). 두 구현 + `tests/helpers/memoryStore.ts` 세 곳을 같이 고친다.
+- 시각은 어디서나 **ISO 문자열(UTC)** — 문자열 비교로 기간 조회가 되어 두 저장소가 같게 동작한다.
+- Firestore 는 한 쿼리에 범위 조건을 여러 개 못 쓰므로 완성본 여부를 `has_final`(참/거짓)로 따로 둔다. 복합 색인은 `firebase/firestore.indexes.json`.
+- 조건부 갱신(출력 claim·완료 보고)은 Supabase 는 `eq(status, …)` 조건부 update, Firebase 는 트랜잭션으로 같은 보장을 준다.
+- `firebase-admin` 은 쓸 때만 동적 import (Supabase 만 쓰는 배포는 로드하지 않음).
 
 ## Supabase 셋업
 `supabase/schema.sql` 을 Supabase SQL Editor에서 실행 (테이블 + `photos` 버킷 + RLS). 멱등(`if not exists`)이라 스키마가 바뀌면 다시 실행하면 됨.
+
+## Firebase 셋업
+`firebase/README.md` 참고 — 서비스 계정 키(`FIREBASE_SERVICE_ACCOUNT`) + 버킷(`FIREBASE_STORAGE_BUCKET`) 설정, 규칙·색인 배포(`firebase deploy --only firestore,storage`). 규칙은 **전부 차단**(모든 접근은 서버 Admin SDK), 방문자에게는 서명 URL 만.
 
 ## 브라우저 호환 (애플 · Edge)
 - 기준 **iOS 15 / Safari 15**. Edge·Chrome 은 같은 크로미움이라 별도 대응 없음.
@@ -178,6 +190,7 @@ Supabase 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT
 - `npm test` (Vitest, `tests/*.test.ts`). CI 순서: lint → typecheck → test → build (Node 22 — Vitest 5 요구).
 - 브라우저 QA(헤드리스 Chrome + CDP, 가짜 웹캠): 전체 흐름·다시 찍기·뒤로 가기·다음 방문자 초기화·6컷·자리 비움·직접 접속, 터치 끌기, 긴 작업(50ms+) 측정. 썸네일 수십 장 만들기처럼 긴 반복은 `forEachChunked`(`lib/yieldToMain.ts`)로 나눠 실시간 미리보기가 멈칫하지 않게.
 - 편집 미리보기(`PhotoCanvas`)는 화면 밖 캔버스에 그리고 가장 최근 합성만 옮긴다 (빠른 연속 변경 시 옛 합성이 덧그려지는 잔상 방지). 스티커 층은 DOM 순서를 uid 로 고정하고 앞뒤는 z-index 로만 (요소가 옮겨지면 포인터 캡처가 풀림).
+- 저장소가 필요한 테스트는 `tests/helpers/memoryStore.ts`(메모리 BoothStore)를 `setStoreForTest()` 로 끼운다 — 가짜 Supabase 체인을 만들지 말 것.
 - 테스트 대상: AI 응답 보정, 세션 업로드 토큰·이미지 검사, 얼굴 프레이밍·크롭, 랜드마크 기준점·떨림 보정, AR 배치 기하·셰이더 uniform·효과/SVG 유효성, 스티커 목록·그림·끌기/손잡이 계산, 프레임 데이터·장식, 레이아웃 데이터·기하, 톤 커브·CSS 폴백, 필터 프리셋 유효성, 관리자 인증·통계, 대비 색, **프린트 서버 전체 루프**(가짜 API + 실제 `print-server/index.mjs` 실행).
 - 브라우저 전용 렌더링(WebGL 셰이더·canvas 합성)은 Node 테스트 불가 → 개발 모드 `window.__owlcutFilters`, AR은 `/dev/ar`로 수동 점검.
 - 로컬 `.next`가 남아 있으면 CI에서만 나는 타입 오류를 놓칠 수 있음 → 의심되면 깨끗한 clone에서 `npm ci && npm run typecheck`.

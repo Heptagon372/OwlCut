@@ -3,46 +3,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { isUuid } from "@/lib/ids";
 import { expiresAt, finalPath, photoPath, retentionHours, signedTtlSeconds } from "@/lib/storage/photos";
-import { DESIGN_SCRUB, cleanupExpired, storagePathsFor } from "@/lib/storage/cleanup";
+import { cleanupExpired, storagePathsFor } from "@/lib/storage/cleanup";
+import { MemoryStore } from "./helpers/memoryStore";
 import { verifyBearer } from "@/lib/auth/bearer";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-// 체인형 쿼리를 흉내 내는 가짜 Supabase — 어떤 테이블에 무슨 요청이 갔는지 기록
-function fakeDb(opts: { sessions: string[]; files?: Record<string, string[]>; failRemove?: boolean; failUpdate?: string }) {
-  const calls: { table: string; kind: "select" | "update" | "delete"; patch?: unknown; filters: string[] }[] = [];
-  const removed: string[][] = [];
-  const from = (table: string) => {
-    const call = { table, kind: "select" as "select" | "update" | "delete", patch: undefined as unknown, filters: [] as string[] };
-    const q: Record<string, unknown> = {};
-    for (const m of ["select", "lt", "neq", "limit", "in", "eq"]) {
-      q[m] = (...args: unknown[]) => {
-        if (m !== "select") call.filters.push(`${m}:${args.map((a) => JSON.stringify(a)).join(",")}`);
-        return q;
-      };
-    }
-    q.update = (patch: unknown) => ((call.kind = "update"), (call.patch = patch), q);
-    q.delete = () => ((call.kind = "delete"), q);
-    q.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => {
-      calls.push(call);
-      const value =
-        call.kind === "select"
-          ? { data: opts.sessions.map((id) => ({ id })), error: null }
-          : { error: opts.failUpdate === table ? { message: "boom" } : null };
-      return Promise.resolve(value).then(res, rej);
-    };
-    return q;
-  };
-  const storage = {
-    from: () => ({
-      list: async (folder: string) => ({ data: (opts.files?.[folder] ?? []).map((name) => ({ name })) }),
-      remove: async (paths: string[]) => {
-        removed.push(paths);
-        return opts.failRemove ? { data: null, error: { message: "denied" } } : { data: paths.map((name) => ({ name })), error: null };
-      },
-    }),
-  };
-  return { db: { from, storage } as unknown as SupabaseClient, calls, removed };
-}
 
 const ID = "3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b";
 
@@ -103,48 +66,71 @@ describe("정리 대상 경로", () => {
   });
 });
 
-describe("보관기간 정리 (가짜 DB)", () => {
+describe("보관기간 정리 (메모리 저장소)", () => {
   const other = "11111111-2222-4333-8444-555555555555";
   const now = new Date("2026-09-22T12:00:00Z");
+  const past = "2026-09-22T10:00:00Z";
+
+  // 만료된 세션 둘 + 파일 + 방문자 입력이 있는 디자인 + 대기 중 출력
+  function seeded() {
+    const store = new MemoryStore();
+    for (const id of [ID, other]) {
+      store.sessions.set(id, { id, status: "composed", created_at: past, expires_at: past });
+      store.files.set(`finals/${id}.png`, { body: Buffer.from("x"), contentType: "image/png" });
+      store.designs.push({ id: `d-${id}`, session_id: id, created_at: past, prompt: "우주 느낌", text_layers: [{ content: "내 이름" }], filter: "bw", final_image_path: `finals/${id}.png` });
+    }
+    store.files.set(`photos/${ID}/0.jpg`, { body: Buffer.from("x"), contentType: "image/jpeg" });
+    store.files.set(`photos/${ID}/1.jpg`, { body: Buffer.from("x"), contentType: "image/jpeg" });
+    store.prints.push({ id: "p1", session_id: ID, image_path: `finals/${ID}.png`, copies: 1, status: "waiting", created_at: past, updated_at: past });
+    return store;
+  }
 
   it("파일을 지우고, 행은 남긴 채 방문자 입력만 비우고 만료 표시 (오늘 통계가 줄지 않게)", async () => {
-    const f = fakeDb({ sessions: [ID, other], files: { [`photos/${ID}`]: ["0.jpg", "1.jpg"] } });
-    const res = await cleanupExpired(now, f.db);
+    const store = seeded();
+    const res = await cleanupExpired(now, store);
     assert.deepEqual(res, { sessions: 2, files: 4, errors: [] });
-    assert.deepEqual(f.removed[0], [`finals/${ID}.png`, `photos/${ID}/0.jpg`, `photos/${ID}/1.jpg`, `finals/${other}.png`]);
-    assert.ok(!f.calls.some((c) => c.kind === "delete"), "행 삭제 없음");
+    assert.equal(store.files.size, 0);
+    // 행은 남는다 → 관리자 "오늘" 집계가 보관기간만큼만 남지 않는다
+    assert.equal(store.sessions.size, 2);
+    assert.equal(store.designs.length, 2);
+    assert.equal(await store.countFinalDesignsSince(past), 2);
+    // 방문자가 직접 쓴 값만 지워진다 (선택값은 통계로 남김)
+    for (const d of store.designs) {
+      assert.equal(d.prompt, null);
+      assert.deepEqual(d.text_layers, []);
+      assert.equal(d.filter, "bw");
+    }
+    assert.equal(store.prints[0].status, "failed");
+    assert.equal(store.prints[0].error, "expired");
+    for (const id of [ID, other]) assert.equal(store.sessions.get(id)?.status, "expired");
+  });
 
-    const select = f.calls[0];
-    assert.equal(select.table, "sessions");
-    assert.ok(select.filters.includes('neq:"status","expired"'), "이미 정리한 세션은 다시 안 봄");
-
-    const design = f.calls.find((c) => c.table === "designs")!;
-    assert.deepEqual(design.patch, DESIGN_SCRUB);
-    assert.deepEqual(DESIGN_SCRUB, { prompt: null, text_layers: [] });
-
-    const prints = f.calls.find((c) => c.table === "prints")!;
-    assert.deepEqual(prints.patch, { status: "failed", error: "expired", updated_at: now.toISOString() });
-    assert.ok(prints.filters.includes('eq:"status","waiting"'), "대기 중인 출력만 실패 처리");
-
-    const last = f.calls.at(-1)!;
-    assert.equal(last.table, "sessions");
-    assert.deepEqual(last.patch, { status: "expired" });
+  it("이미 정리한 세션은 다시 보지 않는다", async () => {
+    const store = seeded();
+    await cleanupExpired(now, store);
+    const again = await cleanupExpired(now, store);
+    assert.deepEqual(again, { sessions: 0, files: 0, errors: [] });
   });
 
   it("파일 삭제가 실패하면 행은 손대지 않음 (다음 실행에서 재시도)", async () => {
-    const f = fakeDb({ sessions: [ID], failRemove: true });
-    const res = await cleanupExpired(now, f.db);
+    const store = seeded();
+    store.fail.removeFiles = true;
+    const res = await cleanupExpired(now, store);
     assert.equal(res.sessions, 0);
     assert.match(res.errors[0], /storage/);
-    assert.ok(!f.calls.some((c) => c.kind !== "select"));
+    assert.equal(store.sessions.get(ID)?.status, "composed");
+    assert.equal(store.designs[0].prompt, "우주 느낌");
   });
 
   it("행 정리가 실패하면 만료 표시를 하지 않음 (다음 실행에서 재시도)", async () => {
-    const f = fakeDb({ sessions: [ID], failUpdate: "designs" });
-    const res = await cleanupExpired(now, f.db);
+    const store = seeded();
+    store.scrubDesigns = async () => {
+      throw new Error("boom");
+    };
+    const res = await cleanupExpired(now, store);
     assert.equal(res.sessions, 0);
     assert.match(res.errors[0], /db: boom/);
-    assert.ok(!f.calls.some((c) => c.table === "sessions" && c.kind === "update"));
+    assert.equal(store.sessions.get(ID)?.status, "composed");
   });
 });
 

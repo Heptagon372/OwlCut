@@ -65,7 +65,8 @@ function RankList({ title, items, total }: { title: string; items: AdminRankItem
   );
 }
 
-function ago(iso: string, now: number): string {
+function ago(iso: string | null, now: number): string {
+  if (!iso) return "–";
   const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
   if (s < 60) return `${s}초 전`;
   if (s < 3600) return `${Math.floor(s / 60)}분 전`;

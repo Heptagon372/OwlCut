@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/auth/bearer";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { isStoreConfigured, STORE_NOT_CONFIGURED } from "@/lib/db";
 import { cleanupExpired } from "@/lib/storage/cleanup";
 
 export const runtime = "nodejs";
@@ -13,8 +13,8 @@ async function handle(req: Request) {
   if (!verifyBearer(req, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: "SUPABASE_NOT_CONFIGURED" }, { status: 503 });
+  if (!isStoreConfigured()) {
+    return NextResponse.json({ error: STORE_NOT_CONFIGURED }, { status: 503 });
   }
   try {
     const result = await cleanupExpired();

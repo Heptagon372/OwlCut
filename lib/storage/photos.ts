@@ -1,5 +1,5 @@
 // 사진 저장소 규칙 (서버 전용). 버킷은 비공개 — DB에는 경로만 저장하고, 보여줄 때마다 만료되는 서명 URL 발급.
-import { getSupabaseAdmin, STORAGE_BUCKET } from "@/lib/supabase/client";
+import { getStore } from "@/lib/db";
 
 const DEFAULT_RETENTION_HOURS = 2; // 설계도 4: 세션 2시간 후 만료
 const MAX_RETENTION_HOURS = 24 * 30;
@@ -26,14 +26,7 @@ export function signedTtlSeconds(expires: string | null | undefined, cap: number
   return Math.max(0, Math.min(cap, left));
 }
 
-export async function createSignedUrl(
-  path: string,
-  seconds: number,
-  downloadName?: string,
-): Promise<string | null> {
+export async function createSignedUrl(path: string, seconds: number, downloadName?: string): Promise<string | null> {
   if (seconds <= 0) return null;
-  const { data, error } = await getSupabaseAdmin()
-    .storage.from(STORAGE_BUCKET)
-    .createSignedUrl(path, seconds, downloadName ? { download: downloadName } : undefined);
-  return error ? null : data.signedUrl;
+  return getStore().signedUrl(path, seconds, downloadName);
 }

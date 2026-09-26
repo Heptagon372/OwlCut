@@ -2,7 +2,8 @@
 import type { ProviderId } from "./ai";
 
 export interface AdminConfigStatus {
-  supabase: boolean;
+  supabase: boolean;          // 저장소 연결 여부 (Supabase 또는 Firebase)
+  storeKind?: "supabase" | "firebase" | null;
   aiProviders: ProviderId[];  // 키가 설정된 프로바이더
   printToken: boolean;
   appUrl: string | null;
@@ -28,7 +29,7 @@ export interface AdminPrintFailure {
   id: string;
   error: string | null;
   printer: string | null;
-  updatedAt: string;
+  updatedAt: string | null;
 }
 
 // 오늘 완성된 네컷에서 많이 쓴 항목 (상위 몇 개)

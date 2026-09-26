@@ -3,8 +3,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { withRetry } from "@/lib/retry";
 import { classifyUpload, type UploadOutcome } from "@/lib/api";
-import { saveFinalDesign } from "@/lib/storage/finalDesign";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { MemoryStore } from "./helpers/memoryStore";
 
 describe("재시도", () => {
   const FAIL: UploadOutcome = { ok: false, reason: "failed" };
@@ -62,48 +61,29 @@ describe("업로드 응답 분류", () => {
   });
 });
 
-// designs 테이블만 흉내 내는 가짜 DB
-function fakeDesigns(existingId: string | null, fail?: "select" | "write") {
-  const writes: { kind: "insert" | "update"; row: Record<string, unknown>; eq?: unknown[] }[] = [];
-  const from = () => {
-    const q: Record<string, unknown> = {};
-    let pendingWrite: (typeof writes)[number] | null = null;
-    for (const m of ["select", "not", "limit"]) q[m] = () => q;
-    q.eq = (...args: unknown[]) => {
-      if (pendingWrite) pendingWrite.eq = args;
-      return q;
-    };
-    q.maybeSingle = async () =>
-      fail === "select" ? { data: null, error: { message: "select boom" } } : { data: existingId ? { id: existingId } : null, error: null };
-    q.update = (row: Record<string, unknown>) => ((pendingWrite = { kind: "update", row }), q);
-    q.insert = (row: Record<string, unknown>) => ((pendingWrite = { kind: "insert", row }), q);
-    q.then = (res: (v: unknown) => unknown) => {
-      if (pendingWrite) writes.push(pendingWrite);
-      return Promise.resolve({ error: fail === "write" ? { message: "write boom" } : null }).then(res);
-    };
-    return q;
-  };
-  return { db: { from } as unknown as SupabaseClient, writes };
-}
-
 describe("완성 네컷 저장 (세션당 1행)", () => {
   const SID = "3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b";
   const row = { final_image_path: `finals/${SID}.png`, filter: "bw" };
 
-  it("처음이면 insert (session_id 포함)", async () => {
-    const f = fakeDesigns(null);
-    assert.equal(await saveFinalDesign(f.db, SID, row), "inserted");
-    assert.deepEqual(f.writes, [{ kind: "insert", row: { ...row, session_id: SID } }]);
+  it("처음이면 새 행 (session_id 포함)", async () => {
+    const store = new MemoryStore();
+    assert.equal(await store.saveFinalDesign(SID, row), "inserted");
+    assert.equal(store.designs.length, 1);
+    assert.equal(store.designs[0].session_id, SID);
   });
 
-  it("재업로드면 기존 행 update → 완성 수가 부풀지 않음", async () => {
-    const f = fakeDesigns("row-1");
-    assert.equal(await saveFinalDesign(f.db, SID, row), "updated");
-    assert.deepEqual(f.writes, [{ kind: "update", row, eq: ["id", "row-1"] }]);
+  it("재업로드면 기존 행 수정 → 완성 수가 부풀지 않음", async () => {
+    const store = new MemoryStore();
+    await store.saveFinalDesign(SID, row);
+    assert.equal(await store.saveFinalDesign(SID, { ...row, filter: "sepia" }), "updated");
+    assert.equal(store.designs.length, 1);
+    assert.equal(store.designs[0].filter, "sepia");
+    assert.equal(await store.countFinalDesignsSince("2000-01-01T00:00:00Z"), 1);
   });
 
-  it("DB 오류는 throw → 500 → 클라이언트 재시도", async () => {
-    await assert.rejects(saveFinalDesign(fakeDesigns(null, "select").db, SID, row));
-    await assert.rejects(saveFinalDesign(fakeDesigns(null, "write").db, SID, row));
+  it("저장소 오류는 throw → 500 → 클라이언트 재시도", async () => {
+    const store = new MemoryStore();
+    store.fail.saveFinalDesign = true;
+    await assert.rejects(store.saveFinalDesign(SID, row));
   });
 });

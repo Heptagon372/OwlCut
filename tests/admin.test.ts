@@ -21,7 +21,8 @@ t("세션 토큰: 만료 / 서명 변조 / 형식 오류 → 거부", () => {
   assert.equal(auth.verifySessionToken(tok, now + 13 * 3600_000), false); // 12시간 후 만료
   const [exp, sig] = tok.split(".");
   assert.equal(auth.verifySessionToken(`${Number(exp) + 999999}.${sig}`), false); // 만료시각 연장 시도
-  assert.equal(auth.verifySessionToken(`${exp}.${sig.slice(0, -1)}0`), false);
+  // 마지막 글자를 반드시 다른 값으로 (원래가 "0" 이면 바꾼 게 아니라 같은 서명이 된다)
+  assert.equal(auth.verifySessionToken(`${exp}.${sig.slice(0, -1)}${sig.endsWith("0") ? "1" : "0"}`), false);
   assert.equal(auth.verifySessionToken("garbage"), false);
   assert.equal(auth.verifySessionToken(undefined), false);
 });

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { isStoreConfigured, STORE_NOT_CONFIGURED } from "@/lib/db";
 import { PRINTER_NAME, verifyPrintToken } from "@/lib/printer/auth";
 import { PrintQueueError, reportJobResult } from "@/lib/printer/printQueue";
 
@@ -10,8 +10,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!verifyPrintToken(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: "SUPABASE_NOT_CONFIGURED" }, { status: 503 });
+  if (!isStoreConfigured()) {
+    return NextResponse.json({ error: STORE_NOT_CONFIGURED }, { status: 503 });
   }
   const { id } = await params;
   let body: { printer?: unknown; status?: unknown; error?: unknown };

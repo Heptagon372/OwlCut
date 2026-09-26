@@ -1,0 +1,10 @@
+rules_version = '2';
+// 아울네컷: 모든 접근은 서버(Admin SDK)만. 브라우저에서 Firestore 를 직접 읽거나 쓰지 않는다.
+// Admin SDK 는 이 규칙을 우회하므로, 여기서는 전부 막아 두는 것이 맞다 (Supabase 의 RLS 와 같은 뜻).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
