@@ -2,6 +2,7 @@
 // 각 그림의 "중심"이 배치 기준점. 크기·위치 조정은 lib/ar/effects.ts 에서.
 import { getArt, heartPath, loadArt, mirrorRow, pixelSvg, sparklePath, starPath, svg, svgDataUrl } from "@/lib/art/svg";
 import { MORE_ASSETS } from "./assets-more";
+import { EXTRA_ASSETS } from "./assets-extra";
 
 // ---------- 도트 고양이 ----------
 const PIXEL_EAR = ["k.........", "kk........", "kpk.......", "kppk......", "kpppk.....", "kppppk....", "kpwwppk...", "kwwwwwwk..", "kkkkkkkkk."];
@@ -240,6 +241,7 @@ export const ASSETS: Record<string, string> = {
   ),
   afro: afroSvg(),
   ...MORE_ASSETS,
+  ...EXTRA_ASSETS,
 };
 
 // ---------- 브라우저에서 이미지로 로드 (캐시, lib/art/svg) ----------

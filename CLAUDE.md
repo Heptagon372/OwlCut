@@ -59,7 +59,7 @@ npm run build      # 프로덕션 빌드
 - 엔진: `lib/filters/engine.ts` (WebGL, 셰이더 `shaders.ts`). 미리보기(`FilteredPreview`)·썸네일·촬영 후 확인(`FilteredImage`)·최종 합성(`compose` → `drawFiltered`)이 **같은 셰이더** → 보이는 그대로 인화.
   - 파이프라인: 피부보정(YCbCr 피부 마스크 + bilateral) → 노출/화이트밸런스/대비 → 하이라이트·섀도 → 채도/바이브런스 → 톤 커브(단조 3차, `curves.ts`) → 흑백 채널믹스/세피아 → 스플릿 토닝 → 페이드 → 소프트 글로우(저해상도 가우시안) → 비네팅 → 빛샘 → 그레인 → 강도.
   - WebGL 없으면 `cssFallback.ts`로 근사 (밝기/대비/채도/흑백/세피아만).
-- 프리셋 43종: `data/filters/index.json` (카테고리 기본·뷰티·흑백·필름·톤·무드). 새 필터 = JSON 한 항목, 파라미터 설명은 `types/filter.ts`. AI 스키마 enum·썸네일·카테고리 탭 자동 반영.
+- 프리셋 65종: `data/filters/index.json` (카테고리 기본·뷰티·흑백·필름·톤·무드). 새 필터 = JSON 한 항목, 파라미터 설명은 `types/filter.ts`. AI 스키마 enum·썸네일·카테고리 탭 자동 반영.
 - 흑백 인물은 빨강 비중 높은 채널믹스([.5,.4,.1])가 피부를 밝게 보이게 함. 화이트밸런스는 ±1 = 강한 캐스트, 보통 0.05~0.3.
 - 개발 모드 전용 디버그: 브라우저 콘솔 `window.__owlcutFilters` (엔진 직접 렌더·프리셋 조회). production 빌드엔 없음.
 - 카메라 없는 환경에서 촬영 흐름 시험: 홈에서 `navigator.mediaDevices.getUserMedia`를 캔버스 `captureStream()`으로 바꾼 뒤 "촬영 시작"(앱 내 이동이라 패치 유지).
@@ -98,7 +98,7 @@ npm run build      # 프로덕션 빌드
 - 얼굴이 화면 폭의 ~5% 미만(멀리 선 단체)이면 근거리 모델 특성상 못 찾음. 부스 거리(1~2m)에서는 문제없음.
 
 ## AR 얼굴 효과 (스티커·왜곡·모자이크)
-- 효과 56종(`lib/ar/effects.ts`, 동물·러블리·펀·얼굴 효과) + 그림 58장은 **직접 그린 SVG**(`lib/ar/assets.ts`, 2차 `assets-more.ts`, 외부 저작물 없음). 새 효과 = 배열 한 항목, 새 그림 = SVG 문자열 하나. 한 효과에 스티커+왜곡을 함께 쓸 수 있음(햄스터·프리쿠라).
+- 효과 71종(`lib/ar/effects.ts`, 동물·러블리·펀·얼굴 효과) + 그림 69장은 **직접 그린 SVG**(`lib/ar/assets.ts`, 2차 `assets-more.ts`, 3차 `assets-extra.ts`, 외부 저작물 없음). 새 효과 = 배열 한 항목, 새 그림 = SVG 문자열 하나. 한 효과에 스티커+왜곡을 함께 쓸 수 있음(햄스터·프리쿠라).
 - 같은 모양의 색 바꿈(흰 강아지·노란 고양이·핑크 토끼·공룡 후드)은 원본과 SVG 좌표를 똑같이 맞춰 배치값을 공유한다.
 - 배치 단위는 **얼굴 좌표계**(x: 두 눈 방향, y: 아래, 단위: 얼굴 폭, `lib/ar/geometry.ts`) → 가까우면 커지고 고개를 기울이면 같이 돈다. `mirrorSecond`로 양쪽 귀·리본 대칭.
 - 왜곡(왕눈이·퍼니 페이스·볼빵빵·작은 얼굴)과 모자이크는 필터 셰이더 맨 앞에서 샘플 좌표를 옮김(`uWarp[8]`, `uMosaicA/B[4]`). 배율 곡선 `1-s(1-u²)²`(가장자리 연속, |s|<1이면 접힘 없음). WebGL 없으면 모자이크만 캔버스로 대체.
@@ -120,7 +120,7 @@ npm run build      # 프로덕션 빌드
 - AI는 여전히 9분할 위치만 고르고 `anchorToPosition`으로 좌표 변환.
 
 ## 프레임
-- 16종(`data/frames/index.json`). 배경 = 단색 · 그라데이션(`stops` 여러 색) · **패턴**(dots·checker·gingham·stripes·grid·hearts·stars·sparkles·confetti, 시드 고정 난수 → 미리보기=인화). 그리기는 `lib/image/frameArt.ts`.
+- 25종(`data/frames/index.json`). 배경 = 단색 · 그라데이션(`stops` 여러 색) · **패턴**(dots·checker·gingham·stripes·grid·hearts·stars·sparkles·confetti, 시드 고정 난수 → 미리보기=인화). 그리기는 `lib/image/frameArt.ts`.
 - 장식(`decorations`): 타일 기준 `sticker`/`text`(over 로 사진 위), `filmHoles`, `border`, 그리고 **사진 칸마다** `slotSticker`(모서리 테이프 등, 오른쪽 모서리는 회전 반대, `every`) · `slotLabel`(필름 번호 ▶ 1A / 날짜 도장) · `slotOutline`(손그림 sketch·점선·이중선). 사진 칸 장식은 간격 조정까지 반영한 실제 칸을 따라가므로 어떤 레이아웃에도 맞는다.
 - 방문자 문구(`TextLayer`)는 글꼴(`font`, 기본 sans)과 크기(20~140px)를 고를 수 있다 — 합성도 같은 글꼴로 그린다.
 - 문구·하단 브랜딩 폰트: `lib/fonts.ts`. **캔버스에 폰트 이름을 직접 쓰지 말 것** — next/font 는 family 이름을 해시로 만들어서(`__Caveat_1a2b`) `"Pretendard"`라고 쓰면 시스템 대체 폰트가 나온다. `canvasFont(font, px)`가 CSS 변수에서 실제 이름을 읽고, `ensureFonts`로 미리 받아 둔다. 추가 폰트(모두 OFL): Caveat·Gaegu(손글씨)·DM Serif Display(잡지)·Space Mono(필름)·Black Han Sans(굵은 한글).

@@ -209,6 +209,54 @@ export const EFFECTS: ArEffect[] = [
     category: "animal",
     parts: [{ asset: "sheep-towel", at: "forehead", offset: [0, -0.1], size: 1.5 }],
   },
+  {
+    id: "tiger",
+    label: "호랑이",
+    labelEn: "Tiger",
+    category: "animal",
+    parts: [
+      { asset: "tiger-ears", at: "headTop", offset: [0, -0.16], size: 1.2 },
+      { asset: "whiskers", at: "nose", offset: [0, 0.04], size: 1.1 },
+      { asset: "button-nose", at: "nose", size: 0.2 },
+    ],
+  },
+  {
+    id: "cow",
+    label: "젖소",
+    labelEn: "Cow",
+    category: "animal",
+    parts: [
+      { asset: "cow-ears", at: "headTop", offset: [0, -0.1], size: 1.45 },
+      { asset: "pink-nose", at: "nose", offset: [0, 0.02], size: 0.22 },
+    ],
+  },
+  {
+    id: "wolf",
+    label: "늑대",
+    labelEn: "Wolf",
+    category: "animal",
+    parts: [
+      { asset: "wolf-ears", at: "headTop", offset: [0, -0.24], size: 1.25 },
+      { asset: "dog-nose", at: "nose", offset: [0, 0.06], size: 0.36 },
+    ],
+  },
+  {
+    id: "penguin",
+    label: "펭귄 후드",
+    labelEn: "Penguin hood",
+    category: "animal",
+    parts: [{ asset: "penguin-hood", at: "faceCenter", offset: [0, -0.04], size: 1.95 }],
+  },
+  {
+    id: "duck",
+    label: "오리",
+    labelEn: "Duck",
+    category: "animal",
+    parts: [
+      { asset: "duck-bill", at: "nose", offset: [0, 0.16], size: 0.55 },
+      { asset: "blush", at: [...CHEEKS], size: 0.3 },
+    ],
+  },
 
   // ----- 러블리 -----
   {
@@ -325,6 +373,46 @@ export const EFFECTS: ArEffect[] = [
     category: "lovely",
     parts: [{ asset: "face-gems", at: "eyes", offset: [0, 0.15], size: 1.0 }],
   },
+  {
+    id: "heart-crown",
+    label: "하트 왕관",
+    labelEn: "Heart crown",
+    category: "lovely",
+    parts: [
+      { asset: "heart-crown", at: "headTop", offset: [0, -0.24], size: 1.15 },
+      { asset: "heart-blush", at: [...CHEEKS], size: 0.3 },
+    ],
+  },
+  {
+    id: "pearl-tiara",
+    label: "진주 머리띠",
+    labelEn: "Pearl tiara",
+    category: "lovely",
+    parts: [
+      { asset: "pearl-tiara", at: "headTop", offset: [0, -0.06], size: 1.3 },
+      { asset: "blush", at: [...CHEEKS], size: 0.28 },
+    ],
+  },
+  {
+    id: "star-eyes",
+    label: "별 눈",
+    labelEn: "Star eyes",
+    category: "lovely",
+    parts: [
+      { asset: "star-eye", at: ["eyeLeft", "eyeRight"], size: 0.3 },
+      { asset: "stars", at: "forehead", offset: [0, -0.3], size: 0.9 },
+    ],
+  },
+  {
+    id: "cherry-head",
+    label: "체리",
+    labelEn: "Cherry",
+    category: "lovely",
+    parts: [
+      { asset: "cherry-pair", at: "headTop", offset: [0.08, -0.26], size: 0.8 },
+      { asset: "blush", at: [...CHEEKS], size: 0.28 },
+    ],
+  },
 
   // ----- 펀 -----
   {
@@ -424,6 +512,38 @@ export const EFFECTS: ArEffect[] = [
     category: "funny",
     parts: [{ asset: "sticker-bomb", at: "faceCenter", size: 1.25 }],
   },
+  {
+    id: "tears",
+    label: "눈물 뚝뚝",
+    labelEn: "Big tears",
+    category: "funny",
+    parts: [{ asset: "teardrop", at: ["eyeLeft", "eyeRight"], offset: [0, 0.3], size: 0.16 }],
+  },
+  {
+    id: "bee",
+    label: "꿀벌",
+    labelEn: "Bee",
+    category: "funny",
+    parts: [
+      { asset: "bee-antennae", at: "headTop", offset: [0, -0.22], size: 1.1 },
+      { asset: "heart-blush", at: [...CHEEKS], size: 0.26 },
+    ],
+  },
+  {
+    id: "chipmunk",
+    label: "다람쥐 볼",
+    labelEn: "Chipmunk",
+    category: "funny",
+    parts: [
+      { asset: "mouse-ears", at: "headTop", offset: [0, -0.12], size: 1.1 },
+      { asset: "buck-teeth", at: "mouth", offset: [0, 0.03], size: 0.15 },
+      { asset: "blush", at: [...CHEEKS], size: 0.34 },
+    ],
+    warps: [
+      { at: "cheekLeft", radius: 0.42, strength: 0.34 },
+      { at: "cheekRight", radius: 0.42, strength: 0.34 },
+    ],
+  },
 
   // ----- 얼굴 효과 (셰이더) -----
   {
@@ -514,6 +634,35 @@ export const EFFECTS: ArEffect[] = [
     category: "fx",
     parts: [],
     mosaic: true,
+  },
+  {
+    id: "tiny-nose",
+    label: "작은 코",
+    labelEn: "Tiny nose",
+    category: "fx",
+    parts: [],
+    warps: [{ at: "nose", radius: 0.3, strength: -0.4 }],
+  },
+  {
+    id: "wide-smile",
+    label: "입 크게",
+    labelEn: "Wide smile",
+    category: "fx",
+    parts: [],
+    warps: [{ at: "mouth", radius: 0.34, strength: 0.42 }],
+  },
+  {
+    id: "doll-face",
+    label: "인형 얼굴",
+    labelEn: "Doll face",
+    category: "fx",
+    parts: [],
+    warps: [
+      { at: "eyeLeft", radius: 0.3, strength: 0.5 },
+      { at: "eyeRight", radius: 0.3, strength: 0.5 },
+      { at: "nose", radius: 0.28, strength: -0.3 },
+      { at: "chin", radius: 0.5, strength: -0.22 },
+    ],
   },
 ];
 
