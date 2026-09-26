@@ -22,6 +22,7 @@ interface Job {
   session_id: string;
   image_url: string;
   copies: number;
+  paper?: string | null;
 }
 
 let server: http.Server;
@@ -31,7 +32,7 @@ const reports: Record<string, unknown>[] = [];
 const claims: Record<string, unknown>[] = [];
 
 const jobs = (): Job[] => [
-  { id: "aaaaaaaa-0000-4000-8000-000000000001", session_id: "s1", image_url: `http://localhost:${port}/ok.png`, copies: 1 },
+  { id: "aaaaaaaa-0000-4000-8000-000000000001", session_id: "s1", image_url: `http://localhost:${port}/ok.png`, copies: 1, paper: "2x6" },
   { id: "aaaaaaaa-0000-4000-8000-000000000002", session_id: "s2", image_url: `http://localhost:${port}/missing.png`, copies: 2 },
 ];
 
@@ -105,6 +106,12 @@ describe("print-server", () => {
     assert.equal(reports[0].printer, "test-booth");
     assert.match(String(reports[1].error), /404/);
     assert.ok(existsSync(PRINTED) && readdirSync(PRINTED).some((f) => f.includes("000000000001")));
+  }, 15_000);
+
+  it("작업의 인화 용지를 그대로 받아 출력에 쓴다 (기록에 남음)", async () => {
+    queue = [{ id: "aaaaaaaa-0000-4000-8000-000000000003", session_id: "s3", image_url: `http://localhost:${port}/ok.png`, copies: 1, paper: "5x7" }];
+    const out = await runPrintServer(TOKEN, 2000);
+    assert.match(out, /5x7/);
   }, 15_000);
 
   it("큐가 비어도 계속 폴링하고, claim 에 장비 정보(heartbeat)를 싣는다", () => {

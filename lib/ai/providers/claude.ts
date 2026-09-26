@@ -22,14 +22,24 @@ export const claudeProvider: AIProvider = {
     return Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
   },
 
-  async generate({ model, system, prompt, schema }) {
+  async generate({ model, system, prompt, schema, image }) {
     const useFallbacks = SERVER_FALLBACK_MODELS.has(model);
     try {
       const response = await getClient().beta.messages.create({
         model,
         max_tokens: 16000,
         system,
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          {
+            role: "user",
+            content: image
+              ? [
+                  { type: "image" as const, source: { type: "base64" as const, media_type: image.mediaType, data: image.data } },
+                  { type: "text" as const, text: prompt },
+                ]
+              : prompt,
+          },
+        ],
         output_config: {
           effort: "low",
           format: { type: "json_schema", schema },

@@ -86,7 +86,7 @@ describe("데이터 이름 (영어 설정)", () => {
 
 describe("부스 설정", () => {
   it("쿠키로 저장하고 그대로 읽는다", () => {
-    const s = { lang: "en" as const, uiScale: "lg" as const, printSize: "2x6" as const };
+    const s = { lang: "en" as const, uiScale: "lg" as const, printSize: "2x6" as const, printMode: "direct" as const };
     assert.deepEqual(parseSettings(serializeSettings(s)), s);
   });
 

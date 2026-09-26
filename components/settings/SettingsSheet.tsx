@@ -5,11 +5,22 @@ import { useEffect, useState } from "react";
 import { Check, Settings as SettingsIcon, X } from "lucide-react";
 import { IconButton } from "@/components/ui/Button";
 import { useSettings } from "@/lib/i18n/context";
-import { LANGS, PRINT_SIZES, PRINT_SPEC, UI_SCALES, type Lang, type PrintSize, type UiScale } from "@/lib/settings/settings";
+import {
+  LANGS,
+  PRINT_MODES,
+  PRINT_SIZES,
+  PRINT_SPEC,
+  UI_SCALES,
+  type Lang,
+  type PrintMode,
+  type PrintSize,
+  type UiScale,
+} from "@/lib/settings/settings";
 import type { MessageKey } from "@/lib/i18n/messages";
 
 const LANG_LABEL: Record<Lang, string> = { ko: "한국어", en: "English" };
 const SCALE_KEY: Record<UiScale, MessageKey> = { sm: "settings.scaleSm", md: "settings.scaleMd", lg: "settings.scaleLg" };
+const MODE_KEY: Record<PrintMode, MessageKey> = { auto: "settings.printAuto", direct: "settings.printDirect", off: "settings.printOff" };
 
 /** 한 줄짜리 선택 목록 — 고른 칸에 체크 */
 function Choice<T extends string>({
@@ -53,7 +64,7 @@ function Choice<T extends string>({
 }
 
 export function SettingsSheet() {
-  const { t, lang, uiScale, printSize, set } = useSettings();
+  const { t, lang, uiScale, printSize, printMode, set } = useSettings();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -100,6 +111,13 @@ export function SettingsSheet() {
                 items={UI_SCALES.map((s) => ({ id: s, label: t(SCALE_KEY[s]) }))}
                 value={uiScale}
                 onChange={(id) => set({ uiScale: id })}
+              />
+              <Choice
+                title={t("settings.printMode")}
+                hint={t("settings.printModeHint")}
+                items={PRINT_MODES.map((m) => ({ id: m, label: t(MODE_KEY[m]) }))}
+                value={printMode}
+                onChange={(id: PrintMode) => set({ printMode: id })}
               />
               <Choice
                 title={t("settings.printSize")}

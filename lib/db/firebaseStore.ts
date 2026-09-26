@@ -193,7 +193,7 @@ export class FirebaseStore implements BoothStore {
     return this.count((await this.col("prints")).where("session_id", "==", sessionId));
   }
 
-  async insertPrint(row: { session_id: string; image_path: string; copies: number }) {
+  async insertPrint(row: { session_id: string; image_path: string; copies: number; paper?: string | null }) {
     const ref = await (await this.col("prints")).add({
       ...row,
       status: "waiting",
@@ -243,6 +243,7 @@ export class FirebaseStore implements BoothStore {
         session_id: data.session_id,
         image_path: data.image_path ?? null,
         copies: data.copies,
+        paper: data.paper ?? null,
         status: "printing" as PrintStatus,
         printer,
       };

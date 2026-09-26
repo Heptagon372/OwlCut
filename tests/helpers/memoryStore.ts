@@ -103,7 +103,7 @@ export class MemoryStore implements BoothStore {
   async countPrints(sessionId: string) {
     return this.prints.filter((p) => p.session_id === sessionId).length;
   }
-  async insertPrint(row: { session_id: string; image_path: string; copies: number }) {
+  async insertPrint(row: { session_id: string; image_path: string; copies: number; paper?: string | null }) {
     const job: PrintRow = { id: nextId(), ...row, status: "waiting", printer: null, error: null, created_at: nowIso(), updated_at: nowIso() };
     this.prints.push(job);
     return { id: job.id, status: job.status };

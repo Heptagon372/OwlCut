@@ -235,8 +235,8 @@ export default function ResultPage() {
               <WandSparkles className="h-4 w-4" aria-hidden />
               {t("result.decorateMore")}
             </Button>
-            {/* 출력은 사진이 서버에 올라가야 가능 — 안 되는 상황이면 버튼을 아예 숨긴다 */}
-            {uploadedSession && <PrintButton session={uploadedSession} />}
+            {/* 부스 프린터(큐)가 안 되면 이 기기에 연결된 프린터로 바로 인쇄 */}
+            <PrintButton session={uploadedSession} imageUrl={finalDataUrl} />
           </div>
         </div>
       </section>

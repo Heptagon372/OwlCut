@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStore, isStoreConfigured, STORE_NOT_CONFIGURED } from "@/lib/db";
 import { PrintQueueError, enqueuePrint, getLatestPrintStatus } from "@/lib/printer/printQueue";
 import { authorizeSessionWrite } from "@/lib/storage/sessionAuth";
+import { PRINT_SIZES } from "@/lib/settings/settings";
 
 export const runtime = "nodejs";
 
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
   if (!isStoreConfigured()) {
     return NextResponse.json({ error: STORE_NOT_CONFIGURED, message: "출력 기능이 설정되지 않았어요." }, { status: 503 });
   }
-  let body: { session_id?: unknown; copies?: unknown; token?: unknown };
+  let body: { session_id?: unknown; copies?: unknown; token?: unknown; paper?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -27,7 +28,9 @@ export async function POST(req: Request) {
     const access = await authorizeSessionWrite(getStore(), sessionId, body.token);
     if (!access.ok) return NextResponse.json({ error: access.error, message: "이 사진은 출력할 수 없어요." }, { status: access.httpStatus });
     if (!access.exists) return NextResponse.json({ error: "not_found", message: "출력할 사진을 찾을 수 없어요." }, { status: 404 });
-    const job = await enqueuePrint(sessionId, typeof body.copies === "number" ? body.copies : 1);
+    // 용지 크기는 아는 값만 (부스 설정에서 옴)
+    const paper = PRINT_SIZES.includes(body.paper as (typeof PRINT_SIZES)[number]) ? (body.paper as string) : null;
+    const job = await enqueuePrint(sessionId, typeof body.copies === "number" ? body.copies : 1, paper);
     return NextResponse.json(job, { status: 201 });
   } catch (e) {
     if (e instanceof PrintQueueError) {

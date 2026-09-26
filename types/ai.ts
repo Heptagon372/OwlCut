@@ -14,9 +14,10 @@ export interface ModelInfo {
 // AI가 채워주는 디자인 필드 (레이아웃·사진 구성은 사용자 선택 유지)
 export type AIDesignResult = Pick<DesignState, "frameId" | "stickers" | "textLayers" | "filter" | "effect">;
 
-// POST /api/ai 응답
+// POST /api/ai 응답. designs = 추천 여러 개(1~3), design = 그중 첫 번째 (예전 호환)
 export interface AIDesignApiResponse {
   design: AIDesignResult;
+  designs?: AIDesignResult[];
   model: string | null;
   fallback: boolean;      // true면 파싱 실패 등으로 기본 디자인이 들어감
   warnings: string[];

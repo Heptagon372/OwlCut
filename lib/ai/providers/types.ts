@@ -2,11 +2,18 @@
 // 각 프로바이더는 raw text(JSON 문자열)만 돌려주고, 파싱/검증은 generateDesign이 담당한다.
 import type { ProviderId } from "@/types/ai";
 
+/** 사진 한 장 (base64 본문만, data URL 접두어 없음) — 모델이 실제 사진을 보고 고르게 할 때 */
+export interface GenerateImage {
+  data: string;
+  mediaType: "image/png" | "image/jpeg";
+}
+
 export interface GenerateRequest {
   model: string;
   system: string;
   prompt: string;
   schema: Record<string, unknown>; // 출력 JSON Schema (지원하는 프로바이더는 강제 적용)
+  image?: GenerateImage | null;   // 있으면 사진을 함께 보낸다 (세 프로바이더 모두 지원)
 }
 
 export interface AIProvider {

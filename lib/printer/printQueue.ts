@@ -18,7 +18,7 @@ export class PrintQueueError extends Error {
   }
 }
 
-export async function enqueuePrint(sessionId: string, copies: number): Promise<PrintStatusResponse> {
+export async function enqueuePrint(sessionId: string, copies: number, paper?: string | null): Promise<PrintStatusResponse> {
   const store = getStore();
 
   const design = await store.latestFinalDesign(sessionId);
@@ -32,6 +32,7 @@ export async function enqueuePrint(sessionId: string, copies: number): Promise<P
     session_id: sessionId,
     image_path: design.final_image_path, // 경로만 저장, claim 시점에 서명 URL 발급
     copies: Math.min(Math.max(1, Math.floor(copies) || 1), MAX_COPIES),
+    paper: paper ?? null,
   });
 }
 
@@ -62,7 +63,7 @@ export async function claimNextJob(printer: string): Promise<PrintJob | null> {
       await store.failPrint(claimed.id, "image_missing");
       continue;
     }
-    return { id: claimed.id, session_id: claimed.session_id, image_url: imageUrl, copies: claimed.copies };
+    return { id: claimed.id, session_id: claimed.session_id, image_url: imageUrl, copies: claimed.copies, paper: claimed.paper ?? null };
   }
   return null;
 }

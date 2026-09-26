@@ -24,7 +24,9 @@ const PRINTER_ID = (process.env.PRINTER_ID || `booth-${hostname()}`).replace(/[^
 const SYSTEM_PRINTER = process.env.SYSTEM_PRINTER || ""; // OS 프린터 이름 (비우면 기본 프린터)
 const POLL_MS = Number(process.env.POLL_INTERVAL_MS || 3000);
 const DRY_RUN = process.env.PRINT_DRY_RUN === "1";
-const PRINT_COMMAND = process.env.PRINT_COMMAND || ""; // 사용자 정의: {file} {printer} {copies}
+const PRINT_COMMAND = process.env.PRINT_COMMAND || ""; // 사용자 정의: {file} {printer} {copies} {paperW} {paperH} {paper}
+// 부스가 고른 인화 용지 (mm). 웹 설정의 인화 크기와 같은 값이어야 한다 (lib/settings/settings.ts)
+const PAPER_MM = { "4x6": [102, 152], "2x6": [51, 152], "5x7": [127, 178], a6: [105, 148] };
 const PRINT_TIMEOUT_MS = 120_000;
 
 const runFile = promisify(execFile);
@@ -53,7 +55,8 @@ async function download(job) {
   return file;
 }
 
-async function printFile(file, copies) {
+async function printFile(file, copies, paper) {
+  const mm = PAPER_MM[paper] ?? null;
   if (DRY_RUN) {
     const out = join(here, "printed");
     await mkdir(out, { recursive: true });
@@ -64,7 +67,10 @@ async function printFile(file, copies) {
   if (PRINT_COMMAND) {
     const cmd = PRINT_COMMAND.replaceAll("{file}", file)
       .replaceAll("{printer}", SYSTEM_PRINTER)
-      .replaceAll("{copies}", String(copies));
+      .replaceAll("{copies}", String(copies))
+      .replaceAll("{paper}", paper ?? "")
+      .replaceAll("{paperW}", String(mm?.[0] ?? ""))
+      .replaceAll("{paperH}", String(mm?.[1] ?? ""));
     await runShell(cmd, { timeout: PRINT_TIMEOUT_MS });
     return;
   }
@@ -72,11 +78,13 @@ async function printFile(file, copies) {
     const args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", join(here, "print-image.ps1"),
       "-Path", file, "-Copies", String(copies)];
     if (SYSTEM_PRINTER) args.push("-Printer", SYSTEM_PRINTER);
+    if (mm) args.push("-WidthMm", String(mm[0]), "-HeightMm", String(mm[1]));
     await runFile("powershell.exe", args, { timeout: PRINT_TIMEOUT_MS, windowsHide: true });
     return;
   }
-  // macOS / Linux (CUPS)
+  // macOS / Linux (CUPS). 용지 크기는 Custom.WxH (mm) 로 넘긴다
   const args = ["-n", String(copies), "-o", "fit-to-page", file];
+  if (mm) args.splice(2, 0, "-o", `media=Custom.${mm[0]}x${mm[1]}mm`);
   if (SYSTEM_PRINTER) args.unshift("-d", SYSTEM_PRINTER);
   await runFile("lp", args, { timeout: PRINT_TIMEOUT_MS });
 }
@@ -103,11 +111,11 @@ async function tick() {
   const { job } = await res.json();
   if (!job) return false;
 
-  log(`🖨  작업 ${job.id.slice(0, 8)} · ${job.copies}매`);
+  log(`🖨  작업 ${job.id.slice(0, 8)} · ${job.copies}매${job.paper ? ` · ${job.paper}` : ""}`);
   let file;
   try {
     file = await download(job);
-    await printFile(file, job.copies);
+    await printFile(file, job.copies, job.paper);
     await report(job.id, "completed");
     log("   ✅ 완료");
   } catch (e) {

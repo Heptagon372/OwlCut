@@ -37,6 +37,7 @@ export interface PrintRow {
   session_id: string;
   image_path: string | null;
   copies: number;
+  paper?: string | null;
   printer?: string | null;
   status: PrintStatus;
   error?: string | null;
@@ -94,7 +95,7 @@ export interface BoothStore {
 
   // ---------- 출력 큐 ----------
   countPrints(sessionId: string): Promise<number>;
-  insertPrint(row: { session_id: string; image_path: string; copies: number }): Promise<{ id: string; status: PrintStatus }>;
+  insertPrint(row: { session_id: string; image_path: string; copies: number; paper?: string | null }): Promise<{ id: string; status: PrintStatus }>;
   latestPrint(sessionId: string): Promise<{ id: string; status: PrintStatus; error: string | null } | null>;
   /** printing 상태로 멈춘 작업을 실패 처리 (프린트 서버가 죽은 경우) */
   failStuckPrints(beforeIso: string): Promise<void>;

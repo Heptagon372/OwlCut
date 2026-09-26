@@ -15,7 +15,7 @@ export const geminiProvider: AIProvider = {
     return Boolean(process.env.GEMINI_API_KEY);
   },
 
-  async generate({ model, system, prompt }) {
+  async generate({ model, system, prompt, image }) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
     let res: Response;
     try {
@@ -27,7 +27,14 @@ export const geminiProvider: AIProvider = {
         },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          contents: [
+            {
+              role: "user",
+              parts: image
+                ? [{ inlineData: { mimeType: image.mediaType, data: image.data } }, { text: prompt }]
+                : [{ text: prompt }],
+            },
+          ],
           generationConfig: { responseMimeType: "application/json" },
         }),
         signal: AbortSignal.timeout(30_000),

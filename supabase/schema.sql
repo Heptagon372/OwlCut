@@ -44,6 +44,9 @@ create table if not exists prints (
   updated_at timestamptz default now()
 );
 
+-- 인화 용지 (4x6 · 2x6 · 5x7 · a6). 프린트 서버가 이 크기로 출력한다.
+alter table prints add column if not exists paper text;
+
 -- Phase 7 이전에 만든 prints 테이블 호환
 alter table prints add column if not exists image_url text;
 alter table prints add column if not exists copies int not null default 1;

@@ -153,7 +153,7 @@ export class SupabaseStore implements BoothStore {
     return count ?? 0;
   }
 
-  async insertPrint(row: { session_id: string; image_path: string; copies: number }) {
+  async insertPrint(row: { session_id: string; image_path: string; copies: number; paper?: string | null }) {
     const { data, error } = await this.db
       .from("prints")
       .insert({ ...row, status: "waiting" })
@@ -199,7 +199,7 @@ export class SupabaseStore implements BoothStore {
       .update({ status: "printing", printer, updated_at: nowIso() })
       .eq("id", id)
       .eq("status", "waiting")
-      .select("id, session_id, image_path, copies")
+      .select("id, session_id, image_path, copies, paper")
       .maybeSingle();
     return data
       ? {
@@ -207,6 +207,7 @@ export class SupabaseStore implements BoothStore {
           session_id: data.session_id as string,
           image_path: (data.image_path as string) ?? null,
           copies: data.copies as number,
+          paper: (data.paper as string) ?? null,
           status: "printing",
           printer,
         }

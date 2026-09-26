@@ -18,13 +18,19 @@ export const PRINT_SPEC: Record<PrintSize, { label: string; labelEn: string; mm:
   a6: { label: "A6 엽서", labelEn: "A6 postcard", mm: [105, 148], dpi: 300 },
 };
 
+// 인쇄 방식: auto = 부스 프린터(출력 큐)가 되면 그걸로, 안 되면 이 기기에서 바로
+//           direct = 항상 이 기기에 연결된 프린터, off = 출력 버튼 숨김
+export const PRINT_MODES = ["auto", "direct", "off"] as const;
+export type PrintMode = (typeof PRINT_MODES)[number];
+
 export interface Settings {
   lang: Lang;
   uiScale: UiScale;
   printSize: PrintSize;
+  printMode: PrintMode;
 }
 
-export const DEFAULT_SETTINGS: Settings = { lang: "ko", uiScale: "md", printSize: "4x6" };
+export const DEFAULT_SETTINGS: Settings = { lang: "ko", uiScale: "md", printSize: "4x6", printMode: "auto" };
 export const SETTINGS_COOKIE = "owlcut_settings";
 export const SETTINGS_MAX_AGE = 60 * 60 * 24 * 365;
 
@@ -40,6 +46,7 @@ export function parseSettings(raw: string | undefined | null): Settings {
       lang: oneOf(LANGS, v.lang, DEFAULT_SETTINGS.lang),
       uiScale: oneOf(UI_SCALES, v.uiScale, DEFAULT_SETTINGS.uiScale),
       printSize: oneOf(PRINT_SIZES, v.printSize, DEFAULT_SETTINGS.printSize),
+      printMode: oneOf(PRINT_MODES, v.printMode, DEFAULT_SETTINGS.printMode),
     };
   } catch {
     return DEFAULT_SETTINGS;

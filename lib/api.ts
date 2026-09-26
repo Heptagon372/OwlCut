@@ -102,12 +102,12 @@ export type PrintOutcome =
   | { ok: true; status: PrintStatus }
   | { ok: false; error: string };
 
-export async function requestPrint(session: BoothSession): Promise<PrintOutcome> {
+export async function requestPrint(session: BoothSession, paper?: string): Promise<PrintOutcome> {
   try {
     const res = await fetch("/api/print", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: session.id, token: session.token, copies: 1 }),
+      body: JSON.stringify({ session_id: session.id, token: session.token, copies: 1, paper }),
     });
     const data = await res.json();
     if (res.ok) return { ok: true, status: data.status };
@@ -139,19 +139,26 @@ export async function fetchModels(): Promise<{ models: ModelInfo[]; defaultModel
 }
 
 export type AIDesignOutcome =
-  | { ok: true; design: AIDesignResult; model: string | null; fallback: boolean }
+  | { ok: true; design: AIDesignResult; designs: AIDesignResult[]; model: string | null; fallback: boolean }
   | { ok: false; error: string };
 
-export async function requestAIDesign(prompt: string, model: string | null): Promise<AIDesignOutcome> {
+// photo: 방금 찍은 사진을 작게 줄인 dataURL (선택) — 모델이 사진을 보고 고르게 한다
+// count: 추천 개수 (여러 개면 방문자가 고른다)
+export async function requestAIDesign(
+  prompt: string,
+  model: string | null,
+  opts: { photo?: string | null; count?: number } = {},
+): Promise<AIDesignOutcome> {
   try {
     const res = await fetch("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, model }),
+      body: JSON.stringify({ prompt, model, count: opts.count ?? 1, photo: opts.photo ?? undefined }),
     });
     const data = await res.json();
     if (res.ok && data?.design && !data.error) {
-      return { ok: true, design: data.design, model: data.model ?? null, fallback: Boolean(data.fallback) };
+      const designs = Array.isArray(data.designs) && data.designs.length ? data.designs : [data.design];
+      return { ok: true, design: data.design, designs, model: data.model ?? null, fallback: Boolean(data.fallback) };
     }
     return { ok: false, error: typeof data?.error === "string" ? data.error : "ai_failed" };
   } catch {

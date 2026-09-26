@@ -16,7 +16,7 @@ export const openaiProvider: AIProvider = {
     return Boolean(process.env.OPENAI_API_KEY);
   },
 
-  async generate({ model, system, prompt, schema }) {
+  async generate({ model, system, prompt, schema, image }) {
     let res: Response;
     try {
       res = await fetch(ENDPOINT, {
@@ -29,7 +29,15 @@ export const openaiProvider: AIProvider = {
           model,
           messages: [
             { role: "system", content: system },
-            { role: "user", content: prompt },
+            {
+              role: "user",
+              content: image
+                ? [
+                    { type: "image_url", image_url: { url: `data:${image.mediaType};base64,${image.data}`, detail: "low" } },
+                    { type: "text", text: prompt },
+                  ]
+                : prompt,
+            },
           ],
           response_format: {
             type: "json_schema",

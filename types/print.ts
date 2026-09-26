@@ -8,6 +8,8 @@ export interface PrintJob {
   session_id: string;
   image_url: string;
   copies: number;
+  /** 인화 용지 (4x6 · 2x6 · 5x7 · a6). 프린트 서버가 이 크기로 출력한다 */
+  paper?: string | null;
 }
 
 // 부스 화면이 보는 출력 상태
