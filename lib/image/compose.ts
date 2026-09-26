@@ -5,7 +5,7 @@
 // 수동 편집과 AI 편집이 이 동일한 엔진을 공유한다.
 // * 브라우저 전용 (canvas/Image 사용). 서버에서 import 후 호출하지 말 것.
 // ============================================================
-import type { ComposeInput, Focus, PhotoSlot, StickerInstance, TextLayer } from "@/types/design";
+import type { ComposeInput, Focus, PhotoAdjust, PhotoSlot, StickerInstance, TextLayer } from "@/types/design";
 import { getFilter } from "@/lib/data/registry";
 import { effectAssets, getEffect } from "@/lib/ar/effects";
 import { ensureAssets } from "@/lib/ar/assets";
@@ -14,6 +14,7 @@ import { ensureStickers, getStickerImage } from "@/lib/stickers/images";
 import { stickerBox } from "@/lib/stickers/geometry";
 import { canvasFont, ensureFonts } from "@/lib/fonts";
 import { cornerRadius, normalizeOrder, outputSize, spacedSlot } from "./layoutGeometry";
+import { DEFAULT_ADJUST, clampAdjust } from "./photoAdjust";
 import { readableTextOn } from "./color";
 import { drawDecorations, frameAssets, paintBackground } from "./frameArt";
 
@@ -32,19 +33,25 @@ const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min)
 // 얼굴 초점이 있을 때 크롭 창에서 얼굴 중심을 둘 세로 위치 (살짝 위 = 자연스러운 헤드룸)
 const FOCUS_Y_IN_CROP = 0.42;
 
-// cover 크롭 영역 계산 (순수 함수). focus가 있으면 인물 중심으로, 없으면 가운데.
+// cover 크롭 영역 계산 (순수 함수). focus 가 있으면 인물 중심, 없으면 가운데.
+// adjust 는 그 위에 얹는 방문자의 확대·이동 (편집 화면에서 끌어서 맞춘 값).
 export function coverCrop(
   imgW: number,
   imgH: number,
   slot: Pick<PhotoSlot, "w" | "h">,
   focus?: Focus | null,
+  adjust?: PhotoAdjust | null,
 ): { sx: number; sy: number; sw: number; sh: number } {
   const slotRatio = slot.w / slot.h;
   const imgRatio = imgW / imgH;
-  const sw = imgRatio > slotRatio ? imgH * slotRatio : imgW;
-  const sh = imgRatio > slotRatio ? imgH : imgW / slotRatio;
-  const sx = focus ? clamp(focus.x * imgW - sw / 2, 0, imgW - sw) : (imgW - sw) / 2;
-  const sy = focus ? clamp(focus.y * imgH - sh * FOCUS_Y_IN_CROP, 0, imgH - sh) : (imgH - sh) / 2;
+  const zoom = adjust ? clampAdjust(adjust).zoom : 1;
+  const sw = (imgRatio > slotRatio ? imgH * slotRatio : imgW) / zoom;
+  const sh = (imgRatio > slotRatio ? imgH : imgW / slotRatio) / zoom;
+  const baseX = focus ? focus.x * imgW - sw / 2 : (imgW - sw) / 2;
+  const baseY = focus ? focus.y * imgH - sh * FOCUS_Y_IN_CROP : (imgH - sh) / 2;
+  const pan = adjust ? clampAdjust(adjust) : DEFAULT_ADJUST;
+  const sx = clamp(baseX + (pan.x * (imgW - sw)) / 2, 0, imgW - sw);
+  const sy = clamp(baseY + (pan.y * (imgH - sh)) / 2, 0, imgH - sh);
   return { sx, sy, sw, sh };
 }
 
@@ -148,7 +155,7 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement, scale 
     if (img) {
       // 사진은 원본으로 저장돼 있고, 촬영 전에 고른 필터를 여기서 슬롯 크기로 적용 (미리보기와 같은 셰이더)
       // AR 스티커도 슬롯 클립 안에서 그려 사진 밖으로 삐져나가지 않게
-      const crop = coverCrop(img.width, img.height, slot, focuses?.[order[i]]);
+      const crop = coverCrop(img.width, img.height, slot, focuses?.[order[i]], input.photoAdjust?.[order[i]]);
       drawWithEffect(ctx, img, crop, slot, filterParams, intensity, effect, input.photoFaces?.[order[i]], i * 17.3);
     } else {
       ctx.fillStyle = "rgba(0,0,0,0.08)"; // 사진 없는 자리

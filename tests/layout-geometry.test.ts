@@ -99,10 +99,11 @@ t("모서리/단계 값 범위 제한", () => {
 t("DB 저장값 정리: 잘못된 색·범위·타입 걸러냄", () => {
   assert.deepEqual(
     layoutOptions({ photoOrder: [1, 0, 2, 3], slotSpacing: 3, slotRounding: 50, backgroundColor: "#FFD6E0", filterIntensity: 0.4, effect: "cat" }),
-    { photoOrder: [1, 0, 2, 3], slotSpacing: 3, slotRounding: 10, backgroundColor: "#FFD6E0", filterIntensity: 0.4, effect: "cat" },
+    { photoOrder: [1, 0, 2, 3], photoAdjust: null, slotSpacing: 3, slotRounding: 10, backgroundColor: "#FFD6E0", filterIntensity: 0.4, effect: "cat" },
   );
   assert.deepEqual(layoutOptions({ backgroundColor: "red; drop table", photoOrder: "x", effect: "<script>" }), {
     photoOrder: null,
+    photoAdjust: null,
     slotSpacing: 0,
     slotRounding: 0,
     backgroundColor: null,

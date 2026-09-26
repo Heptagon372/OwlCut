@@ -66,7 +66,8 @@ npm run build      # 프로덕션 빌드
 - 방문객 화면 문구는 운영 용어(원격 저장, API 키 등) 없이. 오류 표시는 상태색 대신 잉크 글자 + 아이콘.
 
 ## 화면 구성 (촬영 후 편집)
-- 레이아웃 도구 = 레이아웃 · 사진 자리 바꾸기 · 간격 · 모서리. 배경색은 프레임 도구 안.
+- 레이아웃 도구 = 레이아웃 · 사진 자리 바꾸기 · **사진 확대·위치** · 간격 · 모서리. 배경색은 프레임 도구 안.
+- 사진 확대·위치(`DesignState.photoAdjust`, 사진 번호별 `{zoom 1~3, x·y -1~1}`)는 `coverCrop` 이 얼굴 초점 위에 얹어 계산한다. 값은 여백 대비 비율이라 해상도와 무관. 편집 상자는 `coverCrop` 으로 그려 **보이는 그대로 인화**(`lib/image/photoAdjust.ts`, 순수 함수).
 - 레이아웃 9종(`data/layouts/index.json`, 4컷 7 + 6컷 2). `tile`로 스트립 반복(인생네컷 오리지널 = 1200x1800, 4x6), `cards`로 폴라로이드 카드. 썸네일은 슬롯 좌표로 자동 생성되므로 JSON 추가만으로 확장.
 - **촬영 매수는 레이아웃의 `photoCount`가 정한다** (`SHOT_COUNTS`·`layoutsFor`·`defaultLayoutFor` in `registry.ts`). 매수가 여러 가지면 촬영 화면에 "4컷/6컷" 선택이 생기고, 편집 화면 레이아웃 목록은 찍은 매수에 맞는 것만. 8컷도 JSON 추가만으로 된다(`slots.length === photoCount` 테스트).
 - `DesignState.photoOrder`(자리 i ← 사진 번호), `slotSpacing`/`slotRounding`(0~10 단계, 해상도 무관), `backgroundColor`(null=프레임 기본). 계산은 `lib/image/layoutGeometry.ts`(순수).

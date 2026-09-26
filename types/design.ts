@@ -131,6 +131,13 @@ export interface TextLayer {
   font?: FrameFont;  // 글꼴 (없으면 sans)
 }
 
+// 칸마다 사진을 얼마나 키우고 어디를 보여 줄지 (편집 화면에서 조절, lib/image/photoAdjust.ts)
+export interface PhotoAdjust {
+  zoom: number;  // 1 = 기본(칸을 가득), 최대 3
+  x: number;     // 남는 여백 대비 -1~1 (0 = 기본 위치)
+  y: number;
+}
+
 // ---------- 디자인 상태 (에디터 state = 저장/합성 입력) ----------
 export interface DesignState {
   mode: "manual" | "ai";
@@ -148,6 +155,7 @@ export interface DesignState {
   slotSpacing: number;             // 사진 간격 단계 0~10 (0 = 레이아웃 기본)
   slotRounding: number;            // 사진 모서리 둥글기 단계 0~10
   backgroundColor: string | null;  // 배경색 직접 지정 (null = 프레임 기본)
+  photoAdjust?: (PhotoAdjust | null)[]; // 사진 번호별 확대·위치 (자리를 바꿔도 사진을 따라간다)
 }
 
 export const SCREEN_LEVEL_MAX = 10;
@@ -172,6 +180,7 @@ export interface ComposeInput {
   effect?: string;                 // AR 얼굴 효과 id
   photoFaces?: (FaceGeometry[] | null | undefined)[]; // 사진별 얼굴 기준점 (사진 정규화 좌표)
   photoOrder?: number[];
+  photoAdjust?: (PhotoAdjust | null)[];  // 사진 번호별 확대·위치
   slotSpacing?: number;
   slotRounding?: number;
   backgroundColor?: string | null;

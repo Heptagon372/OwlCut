@@ -99,6 +99,10 @@ const ko = {
   "layout.swapHint": "바꿀 두 자리를 차례로 눌러 주세요",
   "layout.swapSelected": "자리 {n} 선택됨 — 바꿀 자리를 눌러 주세요",
   "layout.byShotOrder": "찍은 순서로",
+  "layout.photoAdjust": "사진 확대 · 위치",
+  "layout.photoZoom": "사진 확대",
+  "layout.photoZoomHint": "사진을 끌어서 보여 줄 부분을 맞춰요",
+  "layout.photoFit": "가득 채우기",
 
   // 색 이름
   "color.white": "흰색",
@@ -323,6 +327,10 @@ const en: Record<MessageKey, string> = {
   "layout.swapHint": "Tap two slots to swap them",
   "layout.swapSelected": "Slot {n} selected — tap the slot to swap with",
   "layout.byShotOrder": "Shot order",
+  "layout.photoAdjust": "Photo zoom · position",
+  "layout.photoZoom": "Zoom",
+  "layout.photoZoomHint": "Drag the photo to choose what shows",
+  "layout.photoFit": "Fill the slot",
 
   "color.white": "White",
   "color.black": "Black",

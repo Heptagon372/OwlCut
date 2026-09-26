@@ -6,9 +6,11 @@ import { useT } from "@/lib/i18n/context";
 import type { MessageKey } from "@/lib/i18n/messages";
 import { LayoutPicker } from "./LayoutPicker";
 import { PhotoOrderEditor } from "./PhotoOrderEditor";
+import { PhotoAdjustEditor } from "./PhotoAdjustEditor";
 import { Section } from "./EditorTools";
 import { getLayout } from "@/lib/data/registry";
 import { identityOrder, normalizeOrder } from "@/lib/image/layoutGeometry";
+import { isDefaultAdjust } from "@/lib/image/photoAdjust";
 import { SCREEN_LEVEL_MAX, type DesignState } from "@/types/design";
 import type { CapturedPhoto } from "@/types/session";
 
@@ -50,7 +52,11 @@ export function LayoutTool({
   const t = useT();
   const layout = getLayout(design.layoutId);
   const order = normalizeOrder(design.photoOrder, layout.slots.length);
-  const customized = order.some((v, i) => v !== i) || design.slotSpacing > 0 || design.slotRounding > 0;
+  const customized =
+    order.some((v, i) => v !== i) ||
+    design.slotSpacing > 0 ||
+    design.slotRounding > 0 ||
+    (design.photoAdjust?.some((a) => !isDefaultAdjust(a)) ?? false);
 
   return (
     <>
@@ -66,6 +72,16 @@ export function LayoutTool({
         <PhotoOrderEditor photos={photos} order={order} layout={layout} onChange={(o) => onChange({ photoOrder: o })} />
       </Section>
 
+      <Section title={t("layout.photoAdjust")}>
+        <PhotoAdjustEditor
+          photos={photos}
+          order={order}
+          layout={layout}
+          value={design.photoAdjust}
+          onChange={(photoAdjust) => onChange({ photoAdjust })}
+        />
+      </Section>
+
       <Section title={t("layout.spacingCorner")}>
         <div className="space-y-4">
           <LevelSlider label={t("layout.spacing")} left={t("layout.spacingLeft")} right={t("layout.spacingRight")} value={design.slotSpacing} onChange={(v) => onChange({ slotSpacing: v })} />
@@ -73,7 +89,7 @@ export function LayoutTool({
         </div>
         {customized && (
           <button
-            onClick={() => onChange({ photoOrder: identityOrder(layout.slots.length), slotSpacing: 0, slotRounding: 0 })}
+            onClick={() => onChange({ photoOrder: identityOrder(layout.slots.length), slotSpacing: 0, slotRounding: 0, photoAdjust: [] })}
             className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-white/70 px-4 text-xs font-semibold text-muted hover:bg-white hover:text-foreground"
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden />

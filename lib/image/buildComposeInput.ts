@@ -16,6 +16,7 @@ export function buildComposeInput(photos: CapturedPhoto[], design: DesignState):
     effect: design.effect,
     photoFaces: photos.map((p) => p.faces),
     photoOrder: design.photoOrder,
+    photoAdjust: design.photoAdjust,
     slotSpacing: design.slotSpacing,
     slotRounding: design.slotRounding,
     backgroundColor: design.backgroundColor,
