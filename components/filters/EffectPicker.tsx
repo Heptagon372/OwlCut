@@ -76,7 +76,7 @@ export function EffectPicker({
 
   return (
     <div className="space-y-2">
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("effect.kinds")}>
+      <div className="no-scrollbar edge-fade flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("effect.kinds")}>
         {[{ id: "all" as const, label: t("common.all"), labelEn: t("common.all") }, ...EFFECT_CATEGORIES].map((c) => (
           <button
             key={c.id}
@@ -93,7 +93,7 @@ export function EffectPicker({
       <div
         className={
           variant === "row"
-            ? "no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1"
+            ? "no-scrollbar edge-fade flex snap-x gap-2 overflow-x-auto pb-1"
             : "grid grid-cols-4 gap-2"
         }
       >

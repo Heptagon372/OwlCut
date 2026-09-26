@@ -7,9 +7,10 @@ type Size = "sm" | "md" | "lg";
 const VARIANTS: Record<Variant, string> = {
   // 검은 알약 (주요 동작)
   primary:
-    "bg-ink text-white shadow-[0_12px_26px_-14px_rgba(0,0,0,0.75)] hover:bg-ink-2 active:scale-[0.98]",
+    "bg-ink text-white shadow-[0_10px_22px_-14px_rgba(0,0,0,0.65),0_2px_6px_-3px_rgba(0,0,0,0.35)] hover:bg-ink-2 active:scale-[0.98]",
   // 흰 알약 (보조 동작)
   secondary: "glass-solid text-foreground hover:bg-white active:scale-[0.98]",
+  // 흰 카드 위 옅은 보조 버튼 (테두리 없이 면으로만)
   ghost: "text-muted hover:text-foreground",
   // 검은 카드 위의 흰 알약
   light: "bg-white text-ink hover:bg-white/90 active:scale-[0.98]",

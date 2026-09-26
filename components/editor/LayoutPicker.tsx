@@ -17,7 +17,7 @@ export function LayoutThumb({ layout, numbered = true }: { layout: LayoutConfig;
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full" aria-hidden>
-      <rect width={width} height={height} rx={Math.min(width, height) * 0.03} fill="currentColor" opacity={0.14} />
+      <rect width={width} height={height} rx={Math.min(width, height) * 0.03} fill="currentColor" opacity={0.07} />
       {tiles.map((t, ti) =>
         layout.slots.map((s, i) => (
           <g key={`${ti}-${i}`}>
@@ -28,7 +28,7 @@ export function LayoutThumb({ layout, numbered = true }: { layout: LayoutConfig;
               height={s.h}
               rx={Math.min(s.w, s.h) * 0.04}
               fill="currentColor"
-              opacity={0.55}
+              opacity={0.38}
             />
             {numbered && ti === 0 && (
               <text
@@ -38,7 +38,7 @@ export function LayoutThumb({ layout, numbered = true }: { layout: LayoutConfig;
                 dominantBaseline="central"
                 fontSize={Math.min(s.w, s.h) * 0.42}
                 fontWeight={700}
-                fill="var(--background)"
+                fill="#ffffff"
               >
                 {i + 1}
               </text>

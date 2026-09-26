@@ -103,13 +103,13 @@ export function AIDesignPanel({
   return (
     <div className="space-y-5">
       <section>
-        <h3 className="mb-2 text-xs font-semibold text-muted">{t("ai.mood")}</h3>
+        <h3 className="label-xs mb-2 block">{t("ai.mood")}</h3>
         <PromptInput value={prompt} onChange={setPrompt} onSubmit={submit} disabled={generating} />
       </section>
 
       {models.length > 1 && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold text-muted">{t("ai.model")}</h3>
+          <h3 className="label-xs mb-2 block">{t("ai.model")}</h3>
           <ModelSelector models={models} value={aiModelId} onChange={setAiModelId} disabled={generating} />
         </section>
       )}
@@ -122,7 +122,7 @@ export function AIDesignPanel({
       {/* 추천 3안 — 누르면 바로 적용 */}
       {options.length > 1 && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold text-muted">{t("ai.pick")}</h3>
+          <h3 className="label-xs mb-2 block">{t("ai.pick")}</h3>
           <div role="radiogroup" aria-label={t("ai.pick")} className="grid grid-cols-3 gap-2">
             {options.map((o, i) => (
               <button

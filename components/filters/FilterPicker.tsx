@@ -54,7 +54,7 @@ export function FilterPicker({
 
   return (
     <div className="space-y-2">
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("filter.kinds")}>
+      <div className="no-scrollbar edge-fade flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("filter.kinds")}>
         {[{ id: "all" as const, label: t("common.all"), labelEn: t("common.all") }, ...FILTER_CATEGORIES].map((c) => (
           <button
             key={c.id}
@@ -71,7 +71,7 @@ export function FilterPicker({
       <div
         className={
           variant === "row"
-            ? "no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1"
+            ? "no-scrollbar edge-fade flex snap-x gap-2 overflow-x-auto pb-1"
             : "grid grid-cols-4 gap-2"
         }
       >

@@ -287,6 +287,7 @@ export default function CameraPage() {
               <div className="glass rounded-card p-5">
                 <Segmented
                   label={t("camera.filterOrEffect")}
+                  tone="light"
                   items={[
                     { id: "filter", label: t("camera.filter") },
                     { id: "effect", label: t("camera.effect") },

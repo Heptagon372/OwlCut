@@ -46,7 +46,7 @@ export function StickerPanel({
 
   return (
     <div className="space-y-3">
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("sticker.kinds")}>
+      <div className="no-scrollbar edge-fade flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("sticker.kinds")}>
         {STICKER_CATEGORIES.map((c) => (
           <button
             key={c.id}

@@ -34,7 +34,10 @@ npm run build      # 프로덕션 빌드
 
 ## 디자인 시스템 (모노크롬 글래스모피즘)
 - 흑·백·회색만. 강조 = 잉크(검정). 상태색(good/warning/critical)은 관리자 상태 표시 전용(아이콘+문구 동반).
-- 토큰·유틸은 `app/globals.css`: `glass`(반투명 흰 카드) · `glass-solid`(거의 불투명) · `ink`(검은 카드) · `ink-glass`(반투명 검정), `rounded-card`(28px) · `rounded-tile`(20px), `.num`(Manrope 숫자, 폭 고정).
+- 토큰·유틸은 `app/globals.css`: `glass`(반투명 흰 카드) · `glass-solid`(거의 불투명) · `tile`(카드 안 한 겹 들어간 면) · `track`(알약 탭 바닥) · `ink`(검은 카드) · `ink-glass`(반투명 검정), `rounded-card`(28px) · `rounded-tile`(20px), `.num`(Manrope 숫자, 폭 고정), `label-xs`(카드 안 작은 제목), `edge-fade`(가로 스크롤 줄 오른쪽 끝 흐리게).
+- 그림자는 **세 겹**(1px 가까운 것 + 중간 + 아주 넓게 퍼지는 것)으로 종이가 떠 있는 느낌만. 테두리는 거의 흰색 실선 하나. 진한 테두리·강한 그림자를 새로 쓰지 말 것.
+- 강조는 **검은 알약**: 고른 탭·칩·주요 버튼만 검정, 나머지는 회색 글자. (흰 카드 위 = `Segmented tone="light"`, 검은 카드 위 = 기본 `dark`)
+- 키보드 초점은 `:focus-visible` 전역 테두리로 (마우스·터치에는 안 보임).
 - 배경은 고정된 흐린 흑백 리본(`.app-bg`, 정적 — 카메라·WebGL과 GPU를 나눠 쓰므로 애니메이션 없음). 글래스는 뒤에 형태가 비쳐야 살아난다.
 - 폰트: 한글 **Pretendard** 가변(`node_modules/pretendard`, `next/font/local`, OFL-1.1), 영문·숫자 **Manrope**(`next/font/google`, OFL-1.1). 큰 제목은 Pretendard 아주 가는 굵기(150~250).
 - 아이콘: `lucide-react` (선형). 이모지는 콘텐츠(스티커)에만.
