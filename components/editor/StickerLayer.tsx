@@ -5,6 +5,7 @@
 import { useEffect, useReducer, useRef } from "react";
 import { RotateCw, X } from "lucide-react";
 import { getSticker } from "@/lib/data/registry";
+import { useSettings } from "@/lib/i18n/context";
 import { ensureStickers, getStickerImage } from "@/lib/stickers/images";
 import { clampSticker, moveSticker, transformSticker } from "@/lib/stickers/geometry";
 import { outputSize } from "@/lib/image/layoutGeometry";
@@ -27,6 +28,7 @@ export function StickerLayer({
   onSelect: (uid: string | null) => void;
   onChange: (next: StickerInstance[]) => void;
 }) {
+  const { t, label } = useSettings();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<Drag | null>(null);
   const [, redraw] = useReducer((n: number) => n + 1, 0);
@@ -127,26 +129,27 @@ export function StickerLayer({
         if (e.target === e.currentTarget) onSelect(null); // 빈 곳을 누르면 선택 해제
       }}
     >
-      {tiles.map((t, ti) => (
+      {tiles.map((tile, ti) => (
         // 타일(스트립 한 장)마다 잘라서 보여 준다 — 합성도 타일 단위로 그려 이음매에서 잘리므로 미리보기와 같게.
         // overflow-clip: hidden 과 달리 스크롤 상자가 아니라서, 큰 스티커에 포커스가 가도 층이 밀리지 않음
         <div
           key={ti}
           className="pointer-events-none absolute overflow-clip"
-          style={{ left: pct(t.x, out.width), top: pct(t.y, out.height), width: pct(tw, out.width), height: pct(th, out.height) }}
+          style={{ left: pct(tile.x, out.width), top: pct(tile.y, out.height), width: pct(tw, out.width), height: pct(th, out.height) }}
         >
         {stable.map((s) => {
           const img = getStickerImage(s.id);
           if (!img) return null;
           const primary = ti === 0;
           const active = primary && selected === s.uid;
-          const label = getSticker(s.id)?.label ?? "스티커";
+          const def = getSticker(s.id);
+          const name = def ? label(def) : t("sticker.fallback");
           return (
             <div
               key={s.uid}
               role={primary ? "button" : undefined}
               tabIndex={primary ? 0 : -1}
-              aria-label={primary ? `${label} 스티커 — 끌어서 옮기기, 화살표로 이동, Delete로 삭제` : undefined}
+              aria-label={primary ? t("sticker.dragHint", { name }) : undefined}
               aria-pressed={primary ? active : undefined}
               onPointerDown={primary ? (e) => startMove(e, s) : undefined}
               onPointerMove={primary ? onMove : undefined}
@@ -170,7 +173,7 @@ export function StickerLayer({
                   <span className="pointer-events-none absolute -inset-1.5 rounded-lg border-2 border-dashed border-white shadow-[0_0_0_1px_rgba(0,0,0,0.35)]" />
                   <button
                     type="button"
-                    aria-label={`${label} 스티커 삭제`}
+                    aria-label={t("sticker.deleteOne", { name })}
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => remove(s.uid)}
                     className="absolute -right-5 -top-5 grid h-10 w-10 touch-none place-items-center rounded-full bg-ink text-white shadow-lg"
@@ -179,7 +182,7 @@ export function StickerLayer({
                   </button>
                   <span
                     role="presentation"
-                    title="끌어서 크기·회전"
+                    title={t("sticker.handle")}
                     onPointerDown={(e) => startTransform(e, s)}
                     onPointerMove={onMove}
                     onPointerUp={endDrag}

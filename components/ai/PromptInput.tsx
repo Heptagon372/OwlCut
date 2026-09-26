@@ -1,6 +1,8 @@
 "use client";
+import { useT } from "@/lib/i18n/context";
+import type { MessageKey } from "@/lib/i18n/messages";
 
-const EXAMPLES = ["보라색 사이버펑크 느낌", "따뜻한 가을 감성", "흑백 영화 포스터", "생일 파티 분위기"];
+const EXAMPLE_KEYS: MessageKey[] = ["ai.example1", "ai.example2", "ai.example3", "ai.example4"];
 const MAX_LENGTH = 200;
 
 export function PromptInput({
@@ -14,6 +16,8 @@ export function PromptInput({
   onSubmit: () => void;
   disabled?: boolean;
 }) {
+  const t = useT();
+  const examples = EXAMPLE_KEYS.map((k) => t(k));
   return (
     <div className="space-y-2">
       <textarea
@@ -28,11 +32,11 @@ export function PromptInput({
         disabled={disabled}
         maxLength={MAX_LENGTH}
         rows={2}
-        placeholder="예: 보라색 사이버펑크 느낌으로"
+        placeholder={t("ai.placeholder")}
         className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-sm outline-none ring-ink/20 focus:ring-2 disabled:opacity-50"
       />
       <div className="flex flex-wrap gap-1.5">
-        {EXAMPLES.map((ex) => (
+        {examples.map((ex) => (
           <button
             key={ex}
             disabled={disabled}

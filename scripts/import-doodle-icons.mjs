@@ -9,40 +9,40 @@ const BASE = "https://raw.githubusercontent.com/theJian/doodle-icons/main/icons"
 const INK = "#1b1b1f";
 const PEN = "#2f5bea"; // 볼펜 파랑 (낙서 화살표)
 
-// [원본 경로, 스티커 id, 이름, 색]
+// [원본 경로, 스티커 id, 이름, 영어 이름, 색]
 const PICKS = [
-  ["emojis/heart-eyes-emoji", "dd-heart-eyes", "하트 눈 얼굴", INK],
-  ["emojis/cool-emoji", "dd-cool", "선글라스 얼굴", INK],
-  ["emojis/laugh-emoji", "dd-laugh", "웃는 얼굴", INK],
-  ["emojis/wink-emoji", "dd-wink", "윙크 얼굴", INK],
-  ["emojis/grinning-squinting-emoji", "dd-grin", "신난 얼굴", INK],
-  ["emojis/shocked-emoji", "dd-shocked", "놀란 얼굴", INK],
-  ["emojis/crying-emoji", "dd-crying", "우는 얼굴", INK],
-  ["hand-gestures/v", "dd-v", "브이", INK],
-  ["hand-gestures/ok", "dd-ok", "오케이", INK],
-  ["hand-gestures/thumbs-up", "dd-thumbs-up", "최고 손", INK],
-  ["hand-gestures/clap", "dd-clap", "박수", INK],
-  ["objects/crown", "dd-crown", "낙서 왕관", INK],
-  ["objects/balloon", "dd-balloon", "풍선", INK],
-  ["objects/camera", "dd-camera", "카메라", INK],
-  ["food/cake", "dd-cake", "케이크", INK],
-  ["food/ice-cream", "dd-ice-cream", "아이스크림", INK],
-  ["food/candy", "dd-candy", "사탕", INK],
-  ["interface/heart", "dd-heart", "낙서 하트", "#ff4f8b"],
-  ["interface/star", "dd-star", "낙서 별", "#f5a300"],
-  ["interface/zap", "dd-zap", "번개", "#f5a300"],
-  ["interface/music-2", "dd-music", "음표", INK],
-  ["interface/magic-wand", "dd-magic", "요술봉", INK],
-  ["interface/gift", "dd-gift", "선물", INK],
-  ["weather/sunny", "dd-sun", "해", "#f5a300"],
-  ["weather/night", "dd-moon", "달", INK],
-  ["weather/cloudy-day", "dd-cloud-sun", "구름과 해", INK],
-  ["misc/rocket", "dd-rocket", "로켓", INK],
-  ["misc/fire", "dd-fire", "불꽃", "#ff5a1f"],
-  ["arrows/arrow-ne", "dd-arrow-ne", "화살표 ↗", PEN],
-  ["arrows/arrow-nw", "dd-arrow-nw", "화살표 ↖", PEN],
-  ["arrows/arrow-se", "dd-arrow-se", "화살표 ↘", PEN],
-  ["arrows/arrow-sw", "dd-arrow-sw", "화살표 ↙", PEN],
+  ["emojis/heart-eyes-emoji", "dd-heart-eyes", "하트 눈 얼굴", "Heart eyes", INK],
+  ["emojis/cool-emoji", "dd-cool", "선글라스 얼굴", "Sunglasses face", INK],
+  ["emojis/laugh-emoji", "dd-laugh", "웃는 얼굴", "Laughing face", INK],
+  ["emojis/wink-emoji", "dd-wink", "윙크 얼굴", "Winking face", INK],
+  ["emojis/grinning-squinting-emoji", "dd-grin", "신난 얼굴", "Excited face", INK],
+  ["emojis/shocked-emoji", "dd-shocked", "놀란 얼굴", "Shocked face", INK],
+  ["emojis/crying-emoji", "dd-crying", "우는 얼굴", "Crying face", INK],
+  ["hand-gestures/v", "dd-v", "브이", "Peace hand", INK],
+  ["hand-gestures/ok", "dd-ok", "오케이", "OK hand", INK],
+  ["hand-gestures/thumbs-up", "dd-thumbs-up", "최고 손", "Thumbs up", INK],
+  ["hand-gestures/clap", "dd-clap", "박수", "Clapping", INK],
+  ["objects/crown", "dd-crown", "낙서 왕관", "Doodle crown", INK],
+  ["objects/balloon", "dd-balloon", "풍선", "Balloon", INK],
+  ["objects/camera", "dd-camera", "카메라", "Camera", INK],
+  ["food/cake", "dd-cake", "케이크", "Cake", INK],
+  ["food/ice-cream", "dd-ice-cream", "아이스크림", "Ice cream", INK],
+  ["food/candy", "dd-candy", "사탕", "Candy", INK],
+  ["interface/heart", "dd-heart", "낙서 하트", "Doodle heart", "#ff4f8b"],
+  ["interface/star", "dd-star", "낙서 별", "Doodle star", "#f5a300"],
+  ["interface/zap", "dd-zap", "번개", "Lightning", "#f5a300"],
+  ["interface/music-2", "dd-music", "음표", "Music note", INK],
+  ["interface/magic-wand", "dd-magic", "요술봉", "Magic wand", INK],
+  ["interface/gift", "dd-gift", "선물", "Gift", INK],
+  ["weather/sunny", "dd-sun", "해", "Sun", "#f5a300"],
+  ["weather/night", "dd-moon", "달", "Moon", INK],
+  ["weather/cloudy-day", "dd-cloud-sun", "구름과 해", "Sun and cloud", INK],
+  ["misc/rocket", "dd-rocket", "로켓", "Rocket", INK],
+  ["misc/fire", "dd-fire", "불꽃", "Fire", "#ff5a1f"],
+  ["arrows/arrow-ne", "dd-arrow-ne", "화살표 ↗", "Arrow NE", PEN],
+  ["arrows/arrow-nw", "dd-arrow-nw", "화살표 ↖", "Arrow NW", PEN],
+  ["arrows/arrow-se", "dd-arrow-se", "화살표 ↘", "Arrow SE", PEN],
+  ["arrows/arrow-sw", "dd-arrow-sw", "화살표 ↙", "Arrow SW", PEN],
 ];
 
 function toSticker(raw, color) {
@@ -68,11 +68,11 @@ function toSticker(raw, color) {
 
 const out = {};
 const defs = [];
-for (const [path, id, label, color] of PICKS) {
+for (const [path, id, label, labelEn, color] of PICKS) {
   const res = await fetch(`${BASE}/${path}.svg`);
   if (!res.ok) throw new Error(`${path}: ${res.status}`);
   out[id] = toSticker(await res.text(), color);
-  defs.push({ id, label, category: "doodle" });
+  defs.push({ id, label, labelEn, category: "doodle" });
   process.stdout.write(".");
 }
 

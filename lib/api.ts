@@ -88,9 +88,10 @@ export function uploadFinal(
 
 // ---------- 출력 (Phase 7) ----------
 
+// 실패는 코드로 (화면 문구는 lib/i18n/errors.ts 가 언어에 맞게 고른다)
 export type PrintOutcome =
   | { ok: true; status: PrintStatus }
-  | { ok: false; message: string };
+  | { ok: false; error: string };
 
 export async function requestPrint(session: BoothSession): Promise<PrintOutcome> {
   try {
@@ -101,9 +102,9 @@ export async function requestPrint(session: BoothSession): Promise<PrintOutcome>
     });
     const data = await res.json();
     if (res.ok) return { ok: true, status: data.status };
-    return { ok: false, message: data?.message ?? "출력 요청에 실패했어요." };
+    return { ok: false, error: typeof data?.error === "string" ? data.error : "enqueue_failed" };
   } catch {
-    return { ok: false, message: "서버에 연결하지 못했어요." };
+    return { ok: false, error: "network" };
   }
 }
 
@@ -130,7 +131,7 @@ export async function fetchModels(): Promise<{ models: ModelInfo[]; defaultModel
 
 export type AIDesignOutcome =
   | { ok: true; design: AIDesignResult; model: string | null; fallback: boolean }
-  | { ok: false; error: string; message: string };
+  | { ok: false; error: string };
 
 export async function requestAIDesign(prompt: string, model: string | null): Promise<AIDesignOutcome> {
   try {
@@ -143,12 +144,8 @@ export async function requestAIDesign(prompt: string, model: string | null): Pro
     if (res.ok && data?.design && !data.error) {
       return { ok: true, design: data.design, model: data.model ?? null, fallback: Boolean(data.fallback) };
     }
-    return {
-      ok: false,
-      error: data?.error ?? "unknown",
-      message: data?.message ?? "AI 꾸미기에 실패했어요.",
-    };
+    return { ok: false, error: typeof data?.error === "string" ? data.error : "ai_failed" };
   } catch {
-    return { ok: false, error: "network", message: "서버에 연결하지 못했어요." };
+    return { ok: false, error: "network" };
   }
 }

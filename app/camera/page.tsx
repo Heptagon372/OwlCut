@@ -17,8 +17,10 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Segmented } from "@/components/ui/Segmented";
 import { Logo } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
+import { SettingsSheet } from "@/components/settings/SettingsSheet";
 import { ArrowRight, Camera as CameraIcon, CameraOff, RotateCcw, ScanFace, X } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
+import { useSettings } from "@/lib/i18n/context";
 import { SHOT_COUNTS, defaultLayoutFor, getFilter, getLayout } from "@/lib/data/registry";
 import { identityOrder } from "@/lib/image/layoutGeometry";
 import { getEffect, NO_EFFECT } from "@/lib/ar/effects";
@@ -34,6 +36,7 @@ export default function CameraPage() {
   const router = useRouter();
   const { videoRef, videoElRef, ready, error, start, capture, mirror } = useCamera({ mirror: true });
   const { sessionId, setSession, setPhotos, design, setDesign } = useBoothStore();
+  const { t, label } = useSettings();
 
   const [phase, setPhase] = useState<"idle" | "running" | "review">("idle");
   const [count, setCount] = useState<number | null>(null);
@@ -139,27 +142,27 @@ export default function CameraPage() {
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-ink text-white">
             <CameraOff className="h-6 w-6" aria-hidden />
           </span>
-          <p className="mt-4 text-xl font-semibold">카메라를 시작할 수 없어요</p>
+          <p className="mt-4 text-xl font-semibold">{t("camera.failTitle")}</p>
           <p className="mt-2 text-sm text-muted">{error}</p>
           <div className="mt-6 flex justify-center gap-2">
-            <Button variant="secondary" onClick={() => router.push("/")}>처음으로</Button>
-            <Button onClick={() => void start()}>다시 시도</Button>
+            <Button variant="secondary" onClick={() => router.push("/")}>{t("common.home")}</Button>
+            <Button onClick={() => void start()}>{t("common.retry")}</Button>
           </div>
         </div>
       </main>
     );
   }
 
-  const effectLabel = getEffect(design.effect)?.label;
-  const filterLabel = getFilter(design.filter).label + (effectLabel ? ` · ${effectLabel}` : "");
+  const effect = getEffect(design.effect);
+  const filterLabel = label(getFilter(design.filter)) + (effect ? ` · ${label(effect)}` : "");
   const statusText =
     phase === "review"
-      ? "마음에 드나요?"
+      ? t("camera.likeIt")
       : phase === "running"
-        ? "카메라를 봐 주세요"
+        ? t("camera.lookHere")
         : ready
-          ? "준비되면 촬영 시작을 눌러요"
-          : "카메라 준비 중…";
+          ? t("camera.readyHint")
+          : t("camera.preparing");
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5 sm:px-6 lg:py-8">
@@ -167,9 +170,12 @@ export default function CameraPage() {
       <IdleGuard seconds={90} enabled={phase !== "running"} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
-        <IconButton aria-label="처음으로" onClick={() => router.push("/")}>
-          <X className="h-5 w-5" />
-        </IconButton>
+        <div className="flex items-center gap-2">
+          <SettingsSheet />
+          <IconButton aria-label={t("common.home")} onClick={() => router.push("/")}>
+            <X className="h-5 w-5" />
+          </IconButton>
+        </div>
       </header>
 
       <section className="grid flex-1 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -223,7 +229,7 @@ export default function CameraPage() {
                     intensity={design.filterIntensity}
                     effectId={design.effect}
                     faces={s.faces}
-                    alt={`컷 ${i + 1}`}
+                    alt={t("camera.cut", { n: i + 1 })}
                     className="aspect-[4/3] w-full rounded-[18px] object-cover"
                   />
                   <span className="num ink-glass absolute left-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
@@ -239,22 +245,22 @@ export default function CameraPage() {
         <div className="flex flex-col gap-4">
           <div className="ink rounded-card p-5">
             <div className="flex items-center gap-5">
-              <ProgressRing value={shots.length / total} size={76} stroke={6} tone="light" label={`${shots.length}/${total}컷`}>
+              <ProgressRing value={shots.length / total} size={76} stroke={6} tone="light" label={t("camera.shotsTaken", { done: shots.length, total })}>
                 <span className="num text-lg font-semibold">
                   {shots.length}
                   <span className="text-ink-muted">/{total}</span>
                 </span>
               </ProgressRing>
               <div className="min-w-0">
-                <p className="text-lg font-semibold">{total}컷 촬영</p>
+                <p className="text-lg font-semibold">{t("camera.totalShots", { n: total })}</p>
                 <p className="text-sm text-ink-muted" aria-live="polite">{statusText}</p>
               </div>
             </div>
             {/* 레이아웃에 매수가 여러 가지 있을 때만: 찍기 전에 몇 컷 찍을지 */}
             {SHOT_COUNTS.length > 1 && phase === "idle" && (
               <Segmented
-                label="촬영 매수"
-                items={SHOT_COUNTS.map((n) => ({ id: String(n), label: `${n}컷` }))}
+                label={t("camera.shotCount")}
+                items={SHOT_COUNTS.map((n) => ({ id: String(n), label: t("common.shots", { n }) }))}
                 value={String(total)}
                 onChange={(id) => chooseCount(Number(id))}
                 className="mt-4"
@@ -266,10 +272,10 @@ export default function CameraPage() {
             <>
               <div className="glass rounded-card p-5">
                 <Segmented
-                  label="필터 또는 AR 스티커"
+                  label={t("camera.filterOrEffect")}
                   items={[
-                    { id: "filter", label: "필터" },
-                    { id: "effect", label: "AR 스티커" },
+                    { id: "filter", label: t("camera.filter") },
+                    { id: "effect", label: t("camera.effect") },
                   ]}
                   value={pickerTab}
                   onChange={setPickerTab}
@@ -295,12 +301,12 @@ export default function CameraPage() {
                     disabled={phase === "running"}
                   />
                 )}
-                <p className="mt-2 text-xs text-muted">찍은 뒤에도 바꿀 수 있어요</p>
+                <p className="mt-2 text-xs text-muted">{t("camera.changeLater")}</p>
               </div>
 
               <Button size="lg" onClick={runSequence} disabled={!ready || phase === "running"} className="w-full">
                 <CameraIcon className="h-5 w-5" aria-hidden />
-                {phase === "running" ? `촬영 중 · ${shots.length}/${total}` : ready ? "촬영 시작" : "카메라 준비 중…"}
+                {phase === "running" ? t("camera.running", { done: shots.length, total }) : ready ? t("camera.start") : t("camera.preparing")}
               </Button>
 
               <button
@@ -312,9 +318,9 @@ export default function CameraPage() {
               >
                 <span className="flex items-center gap-2">
                   <ScanFace className="h-4 w-4 text-muted" aria-hidden />
-                  자동 프레이밍
-                  {trackingOn && trackingStatus === "loading" && <span className="text-muted">· 준비 중</span>}
-                  {trackingOn && trackingStatus === "unavailable" && <span className="text-muted">· 사용 불가</span>}
+                  {t("camera.autoFraming")}
+                  {trackingOn && trackingStatus === "loading" && <span className="text-muted">{t("camera.loading")}</span>}
+                  {trackingOn && trackingStatus === "unavailable" && <span className="text-muted">{t("camera.unavailable")}</span>}
                 </span>
                 <span className={`flex h-7 w-12 items-center rounded-full p-1 transition ${trackingOn ? "bg-ink" : "bg-black/15"}`}>
                   <span className={`h-5 w-5 rounded-full bg-white shadow transition ${trackingOn ? "translate-x-5" : ""}`} />
@@ -323,14 +329,14 @@ export default function CameraPage() {
             </>
           ) : (
             <div className="glass flex flex-col gap-2 rounded-card p-5">
-              <p className="mb-1 text-sm text-muted">필터 · {filterLabel}</p>
+              <p className="mb-1 text-sm text-muted">{t("camera.filter")} · {filterLabel}</p>
               <Button size="lg" onClick={goEdit} className="w-full">
-                꾸미러 가기
+                {t("camera.toEdit")}
                 <ArrowRight className="h-5 w-5" aria-hidden />
               </Button>
               <Button variant="secondary" onClick={retake} className="w-full">
                 <RotateCcw className="h-4 w-4" aria-hidden />
-                다시 찍기
+                {t("camera.retake")}
               </Button>
             </div>
           )}

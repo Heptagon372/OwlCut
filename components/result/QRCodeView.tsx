@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { generateQrDataUrl } from "@/lib/qr/generateQr";
+import { useT } from "@/lib/i18n/context";
 
 export function QRCodeView({ url, size = 192 }: { url: string; size?: number }) {
+  const t = useT();
   const [qr, setQr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -18,6 +20,6 @@ export function QRCodeView({ url, size = 192 }: { url: string; size?: number }) 
   if (!qr) return <div className="animate-pulse rounded-xl bg-black/10" style={{ width: size, height: size }} />;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={qr} alt="다운로드 QR 코드" width={size} height={size} className="rounded-xl bg-white" />
+    <img src={qr} alt={t("result.qrAlt")} width={size} height={size} className="rounded-xl bg-white" />
   );
 }

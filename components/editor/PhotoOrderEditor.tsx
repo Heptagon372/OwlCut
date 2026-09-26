@@ -1,6 +1,7 @@
 "use client";
 // 사진 자리 바꾸기: 두 자리를 차례로 누르면 서로 바뀐다.
 import { useState } from "react";
+import { useT } from "@/lib/i18n/context";
 import { identityOrder, swapOrder } from "@/lib/image/layoutGeometry";
 import type { LayoutConfig } from "@/types/design";
 import type { CapturedPhoto } from "@/types/session";
@@ -24,6 +25,7 @@ export function PhotoOrderEditor({
   layout: LayoutConfig;
   onChange: (order: number[]) => void;
 }) {
+  const t = useT();
   const [selected, setSelected] = useState<number | null>(null);
   const big = bigSlotIndex(layout);
   const isDefault = order.every((v, i) => v === i);
@@ -45,7 +47,7 @@ export function PhotoOrderEditor({
               key={i}
               onClick={() => tap(i)}
               aria-pressed={active}
-              aria-label={`자리 ${i + 1}${big === i ? " (큰 사진)" : ""}, ${photoIndex + 1}번째 컷`}
+              aria-label={`${t("layout.slotOf", { n: i + 1 })}${big === i ? t("layout.slotBig") : ""}, ${t("layout.slotPhoto", { n: photoIndex + 1 })}`}
               className={`relative overflow-hidden rounded-lg border-2 transition ${active ? "border-accent ring-2 ring-accent/40" : "border-transparent"}`}
             >
               {photo && (
@@ -62,9 +64,7 @@ export function PhotoOrderEditor({
       </div>
       <div className="flex items-center justify-between gap-2 text-xs text-muted">
         <span aria-live="polite">
-          {selected === null
-            ? "바꿀 두 자리를 차례로 눌러 주세요"
-            : `자리 ${selected + 1} 선택됨 — 바꿀 자리를 눌러 주세요`}
+          {selected === null ? t("layout.swapHint") : t("layout.swapSelected", { n: selected + 1 })}
         </span>
         {!isDefault && (
           <button
@@ -74,7 +74,7 @@ export function PhotoOrderEditor({
             }}
             className="shrink-0 underline hover:text-foreground"
           >
-            찍은 순서로
+            {t("layout.byShotOrder")}
           </button>
         )}
       </div>

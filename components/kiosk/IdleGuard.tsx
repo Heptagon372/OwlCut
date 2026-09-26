@@ -7,6 +7,7 @@ import { Hand } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { useBoothStore } from "@/lib/store/boothStore";
+import { useT } from "@/lib/i18n/context";
 import { idleState, idleTimeoutSeconds, type IdleState } from "@/lib/kiosk/idle";
 
 const WARN_MS = 15_000;
@@ -20,6 +21,7 @@ export function IdleGuard({
   seconds: number; // 이 화면의 기본 제한 시간 (NEXT_PUBLIC_IDLE_SECONDS 가 있으면 그 값)
   enabled?: boolean; // false: 멈춤 (예: 4컷 촬영 중에는 화면을 만지지 않으므로)
 }) {
+  const t = useT();
   const router = useRouter();
   const reset = useBoothStore((s) => s.reset);
   const timeoutMs = idleTimeoutSeconds(seconds, process.env.NEXT_PUBLIC_IDLE_SECONDS) * 1000;
@@ -63,6 +65,7 @@ export function IdleGuard({
 
   if (!enabled || state.phase !== "warning") return null;
 
+
   return (
     <div
       role="alertdialog"
@@ -72,21 +75,21 @@ export function IdleGuard({
     >
       <div className="glass-solid w-full max-w-sm rounded-card p-7 text-center">
         <div className="mx-auto w-fit">
-          <ProgressRing value={state.secondsLeft / (WARN_MS / 1000)} size={96} stroke={7} label={`${state.secondsLeft}초 남음`}>
+          <ProgressRing value={state.secondsLeft / (WARN_MS / 1000)} size={96} stroke={7} label={t("idle.secondsLeft", { n: state.secondsLeft })}>
             <span className="num text-3xl font-light">{state.secondsLeft}</span>
           </ProgressRing>
         </div>
         <h2 id="idle-title" className="mt-4 text-2xl font-semibold">
-          아직 계신가요?
+          {t("idle.title")}
         </h2>
         <p className="mt-1 text-sm text-muted">
-          {state.secondsLeft}초 뒤 처음 화면으로 돌아가요.
+          {t("idle.desc", { n: state.secondsLeft })}
           <br />
-          찍은 사진은 이 기기에서 지워져요.
+          {t("idle.note")}
         </p>
         <Button size="lg" onClick={touch} className="mt-6 w-full" autoFocus>
           <Hand className="h-5 w-5" aria-hidden />
-          계속하기
+          {t("idle.continue")}
         </Button>
       </div>
     </div>

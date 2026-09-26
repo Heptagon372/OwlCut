@@ -1,7 +1,7 @@
 [
   {
     "id": "basic",
-    "label": "기본 화이트",
+    "label": "기본 화이트", "labelEn": "Basic white",
     "description": "깔끔한 흰 배경. 무난하고 밝은, 미니멀한 분위기",
     "background": { "type": "solid", "color": "#ffffff" },
     "accent": "#111111",
@@ -11,7 +11,7 @@
   },
   {
     "id": "owl_classic",
-    "label": "아울 클래식",
+    "label": "아울 클래식", "labelEn": "Owl classic",
     "description": "크림색 배경에 갈색 테두리. 따뜻한, 빈티지, 아날로그, 가을 감성",
     "background": { "type": "solid", "color": "#f5ecd9" },
     "accent": "#6b4a2b",
@@ -21,7 +21,7 @@
   },
   {
     "id": "cyber_purple",
-    "label": "사이버 퍼플",
+    "label": "사이버 퍼플", "labelEn": "Cyber purple",
     "description": "짙은 보라에서 핑크로 가는 그라데이션, 네온 테두리. 사이버펑크, 몽환적, 파티, 밤",
     "background": { "type": "gradient", "from": "#2a0a4a", "to": "#d76d77", "angle": 45 },
     "accent": "#e0aaff",
@@ -31,7 +31,7 @@
   },
   {
     "id": "mono",
-    "label": "모노 블랙",
+    "label": "모노 블랙", "labelEn": "Mono black",
     "description": "검은 배경에 흰 테두리. 시크, 모던, 흑백 영화, 차분하고 진지한 분위기",
     "background": { "type": "solid", "color": "#0a0a0a" },
     "accent": "#ffffff",
@@ -41,7 +41,7 @@
   },
   {
     "id": "film_black",
-    "label": "필름 블랙",
+    "label": "필름 블랙", "labelEn": "Film black",
     "description": "검은 필름 스트립, 양옆 필름 구멍과 주황 프레임 번호. 필름 카메라, 레트로, 감성, 흑백 필터와 잘 어울림",
     "background": { "type": "solid", "color": "#111111" },
     "accent": "#111111",
@@ -55,7 +55,7 @@
   },
   {
     "id": "mint_dots",
-    "label": "민트 도트",
+    "label": "민트 도트", "labelEn": "Mint dots",
     "description": "민트 바탕에 흰 물방울무늬. 상큼, 여름, 청량, 귀여운",
     "background": { "type": "pattern", "pattern": "dots", "bg": "#bfebdd", "fg": "#ffffff", "scale": 0.9 },
     "accent": "#ffffff",
@@ -65,7 +65,7 @@
   },
   {
     "id": "stars_cream",
-    "label": "별별별",
+    "label": "별별별", "labelEn": "Starry cream",
     "description": "크림 바탕에 크고 작은 빨간 별. 빈티지, 귀여운, 생일, 축하",
     "background": { "type": "pattern", "pattern": "stars", "bg": "#f3ede2", "fg": "#c8352e", "fg2": "#e8665d", "scale": 1.1 },
     "accent": "#c8352e",
@@ -75,7 +75,7 @@
   },
   {
     "id": "night_sky",
-    "label": "밤하늘",
+    "label": "밤하늘", "labelEn": "Night sky",
     "description": "남색 밤하늘에 반짝이는 별. 몽환적, 밤, 겨울, 크리스마스, 차분",
     "background": { "type": "pattern", "pattern": "sparkles", "bg": "#1e2a4a", "fg": "#ffffff", "fg2": "#ffd84a" },
     "accent": "#ffe9a8",
@@ -85,7 +85,7 @@
   },
   {
     "id": "pink_gingham",
-    "label": "핑크 깅엄",
+    "label": "핑크 깅엄", "labelEn": "Pink gingham",
     "description": "분홍 깅엄 체크와 사진마다 마스킹 테이프. 러블리, 봄, 스크랩북, 다꾸",
     "background": { "type": "pattern", "pattern": "gingham", "bg": "#ffffff", "fg": "#f6a5b8", "scale": 0.8 },
     "accent": "#ffffff",
@@ -99,7 +99,7 @@
   },
   {
     "id": "cherry_picnic",
-    "label": "체리 피크닉",
+    "label": "체리 피크닉", "labelEn": "Cherry picnic",
     "description": "빨간 체크 식탁보와 체리. 피크닉, 여름, 레트로, 발랄",
     "background": { "type": "pattern", "pattern": "gingham", "bg": "#fff8f0", "fg": "#d8343f", "scale": 1.1 },
     "accent": "#ffffff",
@@ -113,7 +113,7 @@
   },
   {
     "id": "notebook",
-    "label": "스프링 노트",
+    "label": "스프링 노트", "labelEn": "Notebook",
     "description": "모눈 노트에 파란 볼펜 낙서와 손그림 테두리. 학교, 친구, 다이어리, 캐주얼",
     "background": { "type": "pattern", "pattern": "grid", "bg": "#ffffff", "fg": "#d6e6ff", "scale": 0.7 },
     "accent": "#2f5bea",
@@ -128,7 +128,7 @@
   },
   {
     "id": "magazine",
-    "label": "매거진",
+    "label": "매거진", "labelEn": "Magazine",
     "description": "잡지 표지처럼 큰 빨간 제호와 바코드. 패션, 시크, 모던, 화보",
     "background": { "type": "solid", "color": "#f5f1e8" },
     "accent": "#1b1b1f",
@@ -142,7 +142,7 @@
   },
   {
     "id": "y2k_chrome",
-    "label": "Y2K 크롬",
+    "label": "Y2K 크롬", "labelEn": "Y2K chrome",
     "description": "라벤더·하늘·핑크 홀로그램 그라데이션과 크롬 하트. Y2K, 힙, 파티, 반짝",
     "background": { "type": "gradient", "from": "#c9b8ff", "to": "#a8e6ff", "angle": 135, "stops": ["#c9b8ff", "#a8e6ff", "#ffd1f0", "#c9b8ff"] },
     "accent": "#ffffff",
@@ -157,7 +157,7 @@
   },
   {
     "id": "cloud_sky",
-    "label": "구름 하늘",
+    "label": "구름 하늘", "labelEn": "Cloud sky",
     "description": "하늘색 그라데이션과 뭉게구름. 맑은, 청량, 순수, 봄·여름",
     "background": { "type": "gradient", "from": "#9fd3ff", "to": "#eef8ff", "angle": 90 },
     "accent": "#ffffff",
@@ -171,7 +171,7 @@
   },
   {
     "id": "heart_pop",
-    "label": "하트 팝",
+    "label": "하트 팝", "labelEn": "Heart pop",
     "description": "연분홍 바탕에 하트 무늬, 흰 테두리. 발렌타인, 커플, 러블리, 달달",
     "background": { "type": "pattern", "pattern": "hearts", "bg": "#ffd6e0", "fg": "#ff6f94", "fg2": "#ffffff" },
     "accent": "#ffffff",
@@ -181,7 +181,7 @@
   },
   {
     "id": "owl_peek",
-    "label": "아울 까꿍",
+    "label": "아울 까꿍", "labelEn": "Owl peek",
     "description": "크림 도트 바탕, 아울네컷 부엉이가 사진 구석에서 빼꼼. 귀여운, 캐릭터, 브랜드, 따뜻한",
     "background": { "type": "pattern", "pattern": "dots", "bg": "#f5ecd9", "fg": "#e8d6b5", "scale": 0.8 },
     "accent": "#8b5a3c",

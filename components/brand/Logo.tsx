@@ -1,4 +1,6 @@
+"use client";
 // 아울네컷 로고: 기하학적 부엉이 마크 (눈·부리는 뚫린 구멍 → 흰/검은 카드 어디서든 사용)
+import { useT } from "@/lib/i18n/context";
 export function OwlMark({ className = "h-8 w-8" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
@@ -17,12 +19,13 @@ export function OwlMark({ className = "h-8 w-8" }: { className?: string }) {
 }
 
 export function Logo({ className = "", sub = true }: { className?: string; sub?: boolean }) {
+  const t = useT();
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <OwlMark className="h-9 w-9" />
       <span className="leading-none">
         <span className="block font-display text-xl font-extrabold tracking-tight">S.OWL</span>
-        {sub && <span className="block text-[11px] font-medium tracking-[0.18em] text-muted">아울네컷</span>}
+        {sub && <span className="block text-[11px] font-medium tracking-[0.18em] text-muted">{t("home.title")}</span>}
       </span>
     </span>
   );

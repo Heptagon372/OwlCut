@@ -4,11 +4,11 @@ import type { ArEffect, EffectCategory, WarpSpec } from "@/types/ar";
 
 export const NO_EFFECT = "none";
 
-export const EFFECT_CATEGORIES: { id: EffectCategory; label: string }[] = [
-  { id: "animal", label: "동물" },
-  { id: "lovely", label: "러블리" },
-  { id: "funny", label: "펀" },
-  { id: "fx", label: "얼굴 효과" },
+export const EFFECT_CATEGORIES: { id: EffectCategory; label: string; labelEn: string }[] = [
+  { id: "animal", label: "동물", labelEn: "Animal" },
+  { id: "lovely", label: "러블리", labelEn: "Lovely" },
+  { id: "funny", label: "펀", labelEn: "Fun" },
+  { id: "fx", label: "얼굴 효과", labelEn: "Face FX" },
 ];
 
 const CHEEKS = ["cheekLeft", "cheekRight"] as const;
@@ -25,6 +25,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "bunny",
     label: "토끼",
+    labelEn: "Bunny",
     category: "animal",
     parts: [
       { asset: "bunny-ears", at: "headTop", offset: [0, -0.4], size: 1.05 },
@@ -35,6 +36,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "cat",
     label: "고양이",
+    labelEn: "Cat",
     category: "animal",
     parts: [
       { asset: "cat-ears", at: "headTop", offset: [0, -0.2], size: 1.15 },
@@ -44,6 +46,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "dog",
     label: "강아지",
+    labelEn: "Puppy",
     category: "animal",
     parts: [
       { asset: "dog-ears", at: "forehead", offset: [0, 0.3], size: 1.5 },
@@ -53,6 +56,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "bear",
     label: "곰돌이",
+    labelEn: "Bear",
     category: "animal",
     parts: [
       { asset: "bear-ears", at: "headTop", offset: [0, -0.12], size: 1.25 },
@@ -63,6 +67,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "mouse",
     label: "생쥐",
+    labelEn: "Mouse",
     category: "animal",
     parts: [
       { asset: "mouse-ears", at: "headTop", offset: [0, -0.16], size: 1.45 },
@@ -72,6 +77,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "fox",
     label: "여우",
+    labelEn: "Fox",
     category: "animal",
     parts: [
       { asset: "fox-ears", at: "headTop", offset: [0, -0.24], size: 1.15 },
@@ -82,6 +88,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "pixel-cat",
     label: "도트 고양이",
+    labelEn: "Pixel cat",
     category: "animal",
     parts: [
       { asset: "pixel-cat-ears", at: "headTop", offset: [0, -0.16], size: 1.2 },
@@ -91,12 +98,14 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "panda",
     label: "판다 후드",
+    labelEn: "Panda hood",
     category: "animal",
     parts: [{ asset: "panda-hood", at: "faceCenter", offset: [0, -0.18], size: 1.95 }],
   },
   {
     id: "white-dog",
     label: "흰 강아지",
+    labelEn: "White puppy",
     category: "animal",
     parts: [
       { asset: "white-dog-ears", at: "forehead", offset: [0, 0.3], size: 1.5 },
@@ -106,6 +115,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "yellow-cat",
     label: "노란 고양이",
+    labelEn: "Yellow cat",
     category: "animal",
     parts: [
       { asset: "yellow-cat-ears", at: "headTop", offset: [0, -0.2], size: 1.15 },
@@ -115,6 +125,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "pink-bunny",
     label: "핑크 토끼",
+    labelEn: "Pink bunny",
     category: "animal",
     parts: [
       { asset: "pink-bunny-ears", at: "headTop", offset: [0, -0.4], size: 1.05 },
@@ -125,6 +136,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "pixel-bunny",
     label: "도트 토끼",
+    labelEn: "Pixel bunny",
     category: "animal",
     parts: [
       { asset: "pixel-bunny-ears", at: "headTop", offset: [0, -0.36], size: 0.95 },
@@ -134,6 +146,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "hamster",
     label: "햄스터",
+    labelEn: "Hamster",
     category: "animal",
     parts: [
       { asset: "hamster-ears", at: "headTop", offset: [0, -0.04], size: 1.1 },
@@ -148,6 +161,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "frog",
     label: "개구리 모자",
+    labelEn: "Frog hat",
     category: "animal",
     parts: [
       { asset: "frog-hat", at: "headTop", offset: [0, -0.14], size: 1.35 },
@@ -157,12 +171,14 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "chick",
     label: "머리 위 병아리",
+    labelEn: "Chick on head",
     category: "animal",
     parts: [{ asset: "chick", at: "headTop", offset: [0.06, -0.24], size: 0.55 }],
   },
   {
     id: "boar",
     label: "멧돼지",
+    labelEn: "Boar",
     category: "animal",
     parts: [
       { asset: "boar-ears", at: "headTop", offset: [0, -0.1], size: 1.2 },
@@ -172,6 +188,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "koala",
     label: "코알라",
+    labelEn: "Koala",
     category: "animal",
     parts: [
       { asset: "koala-ears", at: "headTop", offset: [0, 0.02], size: 1.6 },
@@ -181,12 +198,14 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "dino",
     label: "공룡 후드",
+    labelEn: "Dino hood",
     category: "animal",
     parts: [{ asset: "dino-hood", at: "faceCenter", offset: [0, -0.18], size: 1.95 }],
   },
   {
     id: "sheep-towel",
     label: "양머리",
+    labelEn: "Sheep towel",
     category: "animal",
     parts: [{ asset: "sheep-towel", at: "forehead", offset: [0, -0.1], size: 1.5 }],
   },
@@ -195,12 +214,14 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "red-bow",
     label: "빨간 리본",
+    labelEn: "Red bow",
     category: "lovely",
     parts: [{ asset: "red-bow", at: "headTop", offset: [0.28, -0.06], size: 0.62, rotate: 14 }],
   },
   {
     id: "pink-bows",
     label: "핑크 리본",
+    labelEn: "Pink bows",
     category: "lovely",
     parts: [
       { asset: "pink-bow", at: ["headTop", "headTop"], offset: [-0.4, 0.1], size: 0.38, rotate: -18, mirrorSecond: true },
@@ -210,18 +231,21 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "blue-ribbons",
     label: "파란 리본",
+    labelEn: "Blue ribbons",
     category: "lovely",
     parts: [{ asset: "blue-ribbon", at: ["forehead", "forehead"], offset: [-0.54, 0.42], size: 0.34, mirrorSecond: true }],
   },
   {
     id: "heart-blush",
     label: "하트 볼터치",
+    labelEn: "Heart blush",
     category: "lovely",
     parts: [{ asset: "heart-blush", at: [...CHEEKS], size: 0.36, mirrorSecond: true }],
   },
   {
     id: "strawberry",
     label: "딸기",
+    labelEn: "Strawberry",
     category: "lovely",
     parts: [
       { asset: "strawberry", at: ["headTop", "headTop"], offset: [-0.3, -0.02], size: 0.26, rotate: -20, mirrorSecond: true },
@@ -231,54 +255,63 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "crown",
     label: "왕관",
+    labelEn: "Crown",
     category: "lovely",
     parts: [{ asset: "crown", at: "headTop", offset: [0, -0.2], size: 0.7 }],
   },
   {
     id: "halo",
     label: "천사 링",
+    labelEn: "Angel halo",
     category: "lovely",
     parts: [{ asset: "halo", at: "headTop", offset: [0, -0.34], size: 0.85 }],
   },
   {
     id: "hibiscus",
     label: "히비스커스",
+    labelEn: "Hibiscus",
     category: "lovely",
     parts: [{ asset: "hibiscus", at: "earRight", offset: [-0.02, -0.12], size: 0.46 }],
   },
   {
     id: "stars",
     label: "반짝 별",
+    labelEn: "Sparkle stars",
     category: "lovely",
     parts: [{ asset: "stars", at: "faceCenter", offset: [0, -0.05], size: 2.0 }],
   },
   {
     id: "flower-crown",
     label: "꽃 왕관",
+    labelEn: "Flower crown",
     category: "lovely",
     parts: [{ asset: "flower-crown", at: "forehead", offset: [0, -0.1], size: 1.25 }],
   },
   {
     id: "black-bow",
     label: "블랙 리본",
+    labelEn: "Black bow",
     category: "lovely",
     parts: [{ asset: "black-bow", at: "headTop", offset: [0.3, -0.04], size: 0.64, rotate: 16 }],
   },
   {
     id: "glitter-bow",
     label: "글리터 리본",
+    labelEn: "Glitter bow",
     category: "lovely",
     parts: [{ asset: "glitter-bow", at: "headTop", offset: [0, -0.12], size: 0.8 }],
   },
   {
     id: "butterflies",
     label: "나비",
+    labelEn: "Butterflies",
     category: "lovely",
     parts: [{ asset: "butterflies", at: "headTop", offset: [0.3, -0.04], size: 0.8 }],
   },
   {
     id: "freckles",
     label: "주근깨",
+    labelEn: "Freckles",
     category: "lovely",
     parts: [
       { asset: "freckles", at: "nose", offset: [0, -0.05], size: 0.8 },
@@ -288,6 +321,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "face-gems",
     label: "큐빅",
+    labelEn: "Face gems",
     category: "lovely",
     parts: [{ asset: "face-gems", at: "eyes", offset: [0, 0.15], size: 1.0 }],
   },
@@ -296,66 +330,77 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "groucho",
     label: "코주부 안경",
+    labelEn: "Groucho glasses",
     category: "funny",
     parts: [{ asset: "groucho", at: "eyes", offset: [0, 0.13], size: 1.1 }],
   },
   {
     id: "round-glasses",
     label: "동그란 안경",
+    labelEn: "Round glasses",
     category: "funny",
     parts: [{ asset: "round-glasses", at: "eyes", size: 1.02 }],
   },
   {
     id: "sunglasses",
     label: "선글라스",
+    labelEn: "Sunglasses",
     category: "funny",
     parts: [{ asset: "sunglasses", at: "eyes", offset: [0, -0.03], size: 0.96 }],
   },
   {
     id: "devil",
     label: "악마 뿔",
+    labelEn: "Devil horns",
     category: "funny",
     parts: [{ asset: "devil-horns", at: "headTop", offset: [0, -0.12], size: 0.9 }],
   },
   {
     id: "afro",
     label: "뽀글 머리",
+    labelEn: "Afro hair",
     category: "funny",
     parts: [{ asset: "afro", at: "faceCenter", offset: [0, -0.24], size: 1.9 }],
   },
   {
     id: "party-hat",
     label: "파티 모자",
+    labelEn: "Party hat",
     category: "funny",
     parts: [{ asset: "party-hat", at: "headTop", offset: [0.16, -0.3], size: 0.52, rotate: 16 }],
   },
   {
     id: "headphones",
     label: "헤드폰",
+    labelEn: "Headphones",
     category: "funny",
     parts: [{ asset: "headphones", at: "eyes", offset: [0, -0.17], size: 1.32 }],
   },
   {
     id: "heart-glasses",
     label: "하트 선글라스",
+    labelEn: "Heart shades",
     category: "funny",
     parts: [{ asset: "heart-glasses", at: "eyes", offset: [0, 0.01], size: 1.0 }],
   },
   {
     id: "mushroom",
     label: "버섯 모자",
+    labelEn: "Mushroom hat",
     category: "funny",
     parts: [{ asset: "mushroom-cap", at: "headTop", offset: [0, -0.14], size: 1.3 }],
   },
   {
     id: "mustache",
     label: "콧수염",
+    labelEn: "Mustache",
     category: "funny",
     parts: [{ asset: "mustache", at: "nose", offset: [0, 0.11], size: 0.55 }],
   },
   {
     id: "reindeer",
     label: "루돌프",
+    labelEn: "Reindeer",
     category: "funny",
     parts: [
       { asset: "antlers", at: "headTop", offset: [0, -0.22], size: 1.2 },
@@ -365,6 +410,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "cat-mouth",
     label: "고양이 입",
+    labelEn: "Cat mouth",
     category: "funny",
     parts: [
       { asset: "cat-mouth", at: "mouth", offset: [0, -0.04], size: 0.42 },
@@ -374,6 +420,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "sticker-bomb",
     label: "스티커 폭탄",
+    labelEn: "Sticker bomb",
     category: "funny",
     parts: [{ asset: "sticker-bomb", at: "faceCenter", size: 1.25 }],
   },
@@ -382,6 +429,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "big-eyes",
     label: "왕눈이",
+    labelEn: "Big eyes",
     category: "fx",
     parts: [],
     warps: [
@@ -392,6 +440,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "funny-face",
     label: "퍼니 페이스",
+    labelEn: "Funny face",
     category: "fx",
     parts: [],
     warps: [
@@ -403,6 +452,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "chubby",
     label: "볼빵빵",
+    labelEn: "Chubby cheeks",
     category: "fx",
     parts: [],
     warps: [
@@ -413,6 +463,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "small-face",
     label: "작은 얼굴",
+    labelEn: "Slim face",
     category: "fx",
     parts: [],
     warps: [{ at: "mouth", radius: 0.8, strength: -0.25 }],
@@ -420,6 +471,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "purikura",
     label: "프리쿠라",
+    labelEn: "Purikura",
     category: "fx",
     parts: [{ asset: "blush", at: [...CHEEKS], size: 0.3 }],
     warps: [...PURIKURA],
@@ -427,6 +479,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "purikura-cat",
     label: "프리쿠라 고양이",
+    labelEn: "Purikura cat",
     category: "fx",
     parts: [
       { asset: "white-cat-ears", at: "headTop", offset: [0, -0.2], size: 1.15 },
@@ -437,6 +490,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "fisheye",
     label: "0.5 셀카",
+    labelEn: "0.5x selfie",
     category: "fx",
     parts: [],
     warps: [{ at: "nose", radius: 0.9, strength: 0.45 }],
@@ -444,6 +498,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "alien",
     label: "외계인",
+    labelEn: "Alien",
     category: "fx",
     parts: [],
     warps: [
@@ -455,6 +510,7 @@ export const EFFECTS: ArEffect[] = [
   {
     id: "mosaic",
     label: "얼굴 모자이크",
+    labelEn: "Face mosaic",
     category: "fx",
     parts: [],
     mosaic: true,

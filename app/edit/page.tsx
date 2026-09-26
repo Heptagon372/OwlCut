@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Images, RotateCcw } from "lucide-react";
 import { useBoothStore } from "@/lib/store/boothStore";
+import { useSettings } from "@/lib/i18n/context";
 import { AIDesignPanel } from "@/components/ai/AIDesignPanel";
 import { PhotoCanvas } from "@/components/editor/PhotoCanvas";
 import { LayoutTool, BackgroundPicker } from "@/components/editor/LayoutTool";
@@ -16,6 +17,7 @@ import { EffectPicker } from "@/components/filters/EffectPicker";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
+import { SettingsSheet } from "@/components/settings/SettingsSheet";
 import { defaultLayoutFor, getFilter, getFrame, getLayout } from "@/lib/data/registry";
 import { identityOrder } from "@/lib/image/layoutGeometry";
 import { getEffect } from "@/lib/ar/effects";
@@ -27,6 +29,7 @@ import type { ModelInfo } from "@/types/ai";
 export default function EditPage() {
   const router = useRouter();
   const { photos, design, setDesign, setPhotos } = useBoothStore();
+  const { t, label } = useSettings();
   const [tool, setTool] = useState<ToolId>("layout");
   const [selectedSticker, setSelectedSticker] = useState<string | null>(null); // 미리보기에서 조작 중인 스티커
   const [ai, setAi] = useState<{ models: ModelInfo[]; defaultModel: string | null } | null>(null);
@@ -60,16 +63,16 @@ export default function EditPage() {
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-ink text-white">
             <Images className="h-6 w-6" aria-hidden />
           </span>
-          <p className="mt-4 text-xl font-semibold">촬영된 사진이 없어요</p>
+          <p className="mt-4 text-xl font-semibold">{t("edit.emptyTitle")}</p>
           <Button className="mt-6" onClick={() => router.push("/")}>
-            처음으로
+            {t("common.home")}
           </Button>
           {process.env.NODE_ENV !== "production" && (
             <button
               onClick={() => setPhotos(makeSamplePhotos(getLayout(design.layoutId).photoCount))}
               className="mt-4 block w-full text-xs text-muted underline"
             >
-              샘플 사진으로 편집기 체험 (개발용)
+              {t("edit.sample")}
             </button>
           )}
         </div>
@@ -82,30 +85,31 @@ export default function EditPage() {
   // AR 썸네일: 첫 자리 사진 우선, 얼굴이 잡힌 사진으로
   const first = photos[design.photoOrder?.[0] ?? 0];
   const facePhoto = first?.faces?.length ? first : photos.find((p) => p.faces?.length);
+  const effect = getEffect(design.effect);
 
   const panel: Record<ToolId, { title: string; aside?: string; body: React.ReactNode }> = {
     layout: {
-      title: "레이아웃",
-      aside: layout.label,
+      title: t("tool.layout"),
+      aside: label(layout),
       body: <LayoutTool photos={photos} design={design} onChange={setDesign} />,
     },
     frame: {
-      title: "프레임",
-      aside: design.backgroundColor ? `${frame.label} · 배경 바꿈` : frame.label,
+      title: t("tool.frame"),
+      aside: design.backgroundColor ? t("edit.frameBgChanged", { frame: label(frame) }) : label(frame),
       body: (
         <>
           <Section>
             <FrameSelector value={design.frameId} onChange={(id) => setDesign({ frameId: id })} layout={layout} />
           </Section>
-          <Section title="배경색">
+          <Section title={t("edit.bgColor")}>
             <BackgroundPicker value={design.backgroundColor} onChange={(c) => setDesign({ backgroundColor: c })} />
           </Section>
         </>
       ),
     },
     filter: {
-      title: "필터",
-      aside: getFilter(design.filter).label,
+      title: t("tool.filter"),
+      aside: label(getFilter(design.filter)),
       body: (
         <>
           <Section>
@@ -115,12 +119,12 @@ export default function EditPage() {
               source={first?.dataUrl ?? photos[0].dataUrl}
             />
           </Section>
-          <Section title="강도" aside={`${Math.round(design.filterIntensity * 100)}%`}>
+          <Section title={t("edit.intensity")} aside={`${Math.round(design.filterIntensity * 100)}%`}>
             <input
               type="range"
               min={0}
               max={100}
-              aria-label="필터 강도"
+              aria-label={t("edit.filterIntensity")}
               value={Math.round(design.filterIntensity * 100)}
               onChange={(e) => setDesign({ filterIntensity: Number(e.target.value) / 100 })}
               className="w-full accent-[var(--ink)]"
@@ -131,13 +135,13 @@ export default function EditPage() {
       ),
     },
     effect: {
-      title: "AR 스티커",
-      aside: facePhoto ? (getEffect(design.effect)?.label ?? "없음") : "얼굴 정보 없음",
+      title: t("tool.effect"),
+      aside: facePhoto ? (effect ? label(effect) : t("common.none")) : t("edit.noFaceInfo"),
       body: (
         <>
           {!facePhoto && (
             <p className="mb-4 rounded-2xl bg-white/55 px-4 py-3 text-xs text-muted">
-              촬영할 때 얼굴을 찾지 못해 사진에는 적용되지 않아요. 다시 찍으면 적용돼요.
+              {t("edit.noFaceHint")}
             </p>
           )}
           <EffectPicker
@@ -150,8 +154,8 @@ export default function EditPage() {
       ),
     },
     sticker: {
-      title: "스티커",
-      aside: design.stickers.length ? `${design.stickers.length}개 붙임` : "사진 위에서 끌어서 옮겨요",
+      title: t("tool.sticker"),
+      aside: design.stickers.length ? t("edit.stickerPlaced", { n: design.stickers.length }) : t("edit.stickerHint"),
       body: (
         <StickerPanel
           value={design.stickers}
@@ -162,7 +166,7 @@ export default function EditPage() {
       ),
     },
     text: {
-      title: "문구",
+      title: t("tool.text"),
       body: (
         <TextEditor
           value={design.textLayers}
@@ -172,8 +176,8 @@ export default function EditPage() {
       ),
     },
     ai: {
-      title: "AI 꾸미기",
-      aside: "분위기만 말하면 골라 줘요",
+      title: t("tool.ai"),
+      aside: t("edit.aiAside"),
       body: ai ? (
         <AIDesignPanel
           models={ai.models}
@@ -191,12 +195,13 @@ export default function EditPage() {
       <header className="flex items-center justify-between gap-3">
         <Logo />
         <div className="flex items-center gap-2">
+          <SettingsSheet />
           <Button variant="secondary" size="sm" onClick={() => router.push("/camera")}>
             <RotateCcw className="h-4 w-4" aria-hidden />
-            재촬영
+            {t("edit.retake")}
           </Button>
           <Button size="sm" onClick={() => router.push("/result")} className="pr-2">
-            완성하기
+            {t("edit.finish")}
             <span className="grid h-6 w-6 place-items-center rounded-full bg-white text-ink">
               <ArrowRight className="h-3.5 w-3.5" aria-hidden />
             </span>

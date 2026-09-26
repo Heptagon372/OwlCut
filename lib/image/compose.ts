@@ -80,7 +80,7 @@ function drawTextLayers(ctx: CanvasRenderingContext2D, layers: TextLayer[], w: n
   ctx.textAlign = "center";
   for (const t of layers) {
     if (!t.content.trim()) continue;
-    ctx.font = canvasFont("sans", t.size);
+    ctx.font = canvasFont(t.font ?? "sans", t.size);
     ctx.fillStyle = t.color;
     ctx.textBaseline = t.anchor === "top" ? "top" : t.anchor === "bottom" ? "bottom" : "middle";
     const pad = Math.round(t.size * 0.8);
@@ -101,7 +101,9 @@ async function renderTile(input: ComposeInput, canvas: HTMLCanvasElement, scale 
   await Promise.all([
     ensureStickers([...fa.stickers, ...stickers.map((s) => s.id)]),
     ensureFonts(fa.fonts, fa.texts || "S.OWL"),
-    textLayers.length ? ensureFonts(["sans"], textLayers.map((t) => t.content).join("")) : null,
+    textLayers.length
+      ? ensureFonts(textLayers.map((t) => t.font ?? "sans"), textLayers.map((t) => t.content).join(""))
+      : null,
     effect ? ensureAssets(effectAssets(effect)) : null,
   ]);
 

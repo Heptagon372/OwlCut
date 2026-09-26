@@ -32,6 +32,7 @@ export interface PhotoSlot {
 export interface LayoutConfig {
   id: string;
   label: string;
+  labelEn?: string;   // 영어 설정에서 보여 줄 이름
   description?: string;
   // 한 장(타일)의 크기. tile이 있으면 최종 이미지는 이 타일을 반복한 크기가 된다.
   canvas: { width: number; height: number };
@@ -76,6 +77,7 @@ export type SlotCorner = "top-left" | "top-right" | "bottom-left" | "bottom-righ
 export interface FrameConfig {
   id: string;
   label: string;
+  labelEn?: string;   // 영어 설정에서 보여 줄 이름
   description?: string;           // AI가 프레임을 고를 때 참고하는 분위기 설명
   background: FrameBackground;
   accent: string;                 // 슬롯 테두리 / 강조색
@@ -104,6 +106,7 @@ export interface WordStyle {
 export interface StickerDef {
   id: string;
   label: string;
+  labelEn?: string;   // 영어 설정에서 보여 줄 이름
   category: StickerCategory;
   glyph?: string;        // 이모지 스티커
   word?: WordStyle;      // 글자 스티커 (없고 glyph 도 없으면 그림 스티커)
@@ -124,7 +127,8 @@ export interface TextLayer {
   content: string;
   anchor: TextAnchor;
   color: string;
-  size: number;    // 폰트 크기(px)
+  size: number;      // 폰트 크기(px, 레이아웃 캔버스 기준)
+  font?: FrameFont;  // 글꼴 (없으면 sans)
 }
 
 // ---------- 디자인 상태 (에디터 state = 저장/합성 입력) ----------

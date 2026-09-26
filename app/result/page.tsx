@@ -10,7 +10,9 @@ import { PrintButton } from "@/components/result/PrintButton";
 import { Button } from "@/components/ui/Button";
 import { Logo, OwlMark } from "@/components/brand/Logo";
 import { IdleGuard } from "@/components/kiosk/IdleGuard";
-import { Download, House, Images, RotateCw, Smartphone, WifiOff } from "lucide-react";
+import { Download, House, Images, RotateCw, Smartphone, WandSparkles, WifiOff } from "lucide-react";
+import { SettingsSheet } from "@/components/settings/SettingsSheet";
+import { useT } from "@/lib/i18n/context";
 
 // done = QR 준비됨 · local = 원격 저장을 쓸 수 없음(미설정/거절) → 로컬 저장만
 // offline = 연결 문제로 3번 실패 → 연결되면(또는 20초마다) 자동으로 다시 올림 (설계도 10)
@@ -20,6 +22,7 @@ const AUTO_RETRY_MS = 20_000;
 
 export default function ResultPage() {
   const router = useRouter();
+  const t = useT();
   const { photos, design, sessionId, sessionToken, setSession, finalDataUrl, setFinal, reset } = useBoothStore();
   const [status, setStatus] = useState<Status>("composing");
   const [attempt, setAttempt] = useState(1);
@@ -104,9 +107,9 @@ export default function ResultPage() {
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-ink text-white">
             <Images className="h-6 w-6" aria-hidden />
           </span>
-          <p className="mt-4 text-xl font-semibold">완성할 사진이 없어요</p>
+          <p className="mt-4 text-xl font-semibold">{t("result.emptyTitle")}</p>
           <Button className="mt-6" onClick={() => router.push("/")}>
-            처음으로
+            {t("common.home")}
           </Button>
         </div>
       </main>
@@ -123,13 +126,13 @@ export default function ResultPage() {
 
   const statusText =
     status === "composing"
-      ? "합성 중…"
+      ? t("result.composing")
       : status === "uploading"
         ? attempt > 1
-          ? `저장 중… 다시 시도 ${attempt}/${UPLOAD_ATTEMPTS}`
-          : "저장 중…"
+          ? t("result.savingRetry", { n: attempt, total: UPLOAD_ATTEMPTS })
+          : t("result.saving")
         : status === "error"
-          ? "합성에 실패했어요"
+          ? t("result.composeFailed")
           : null;
 
   return (
@@ -138,10 +141,13 @@ export default function ResultPage() {
       <IdleGuard seconds={60} />
       <header className="flex items-center justify-between gap-3">
         <Logo />
-        <Button variant="secondary" size="sm" onClick={goHome}>
-          <House className="h-4 w-4" aria-hidden />
-          처음으로
-        </Button>
+        <div className="flex items-center gap-2">
+          <SettingsSheet />
+          <Button variant="secondary" size="sm" onClick={goHome}>
+            <House className="h-4 w-4" aria-hidden />
+            {t("common.home")}
+          </Button>
+        </div>
       </header>
 
       <section className="grid flex-1 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_400px]">
@@ -152,7 +158,7 @@ export default function ResultPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={finalDataUrl}
-                alt="완성된 네컷"
+                alt={t("result.alt")}
                 className="max-h-[70vh] rounded-md shadow-[0_28px_56px_-24px_rgba(0,0,0,0.5)]"
               />
             ) : (
@@ -167,7 +173,7 @@ export default function ResultPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-ink-muted">S.OWL PHOTO BOOTH</p>
-                <h1 className="mt-1 text-5xl font-[200] tracking-[-0.04em]">완성!</h1>
+                <h1 className="mt-1 text-5xl font-[200] tracking-[-0.04em]">{t("result.done")}</h1>
               </div>
               <OwlMark className="h-10 w-10 text-white" />
             </div>
@@ -184,9 +190,9 @@ export default function ResultPage() {
                   <div className="min-w-0">
                     <p className="flex items-center gap-1.5 font-semibold">
                       <Smartphone className="h-4 w-4" aria-hidden />
-                      폰으로 받기
+                      {t("result.toPhone")}
                     </p>
-                    <p className="mt-1 text-sm text-ink-muted">휴대폰 카메라로 QR을 스캔하세요</p>
+                    <p className="mt-1 text-sm text-ink-muted">{t("result.scanHint")}</p>
                     <a
                       href={remote}
                       target="_blank"
@@ -200,20 +206,18 @@ export default function ResultPage() {
               )}
               {status === "local" && (
                 <p className="text-sm text-ink-muted">
-                  {localReason === "not_configured"
-                    ? "지금은 QR로 받을 수 없어요. 아래 '이미지 저장'으로 바로 받아 가세요."
-                    : "사진을 올리지 못했어요. 아래 '이미지 저장'으로 받아 가세요."}
+                  {localReason === "not_configured" ? t("result.noRemote") : t("result.uploadFailed")}
                 </p>
               )}
               {status === "offline" && (
                 <div className="space-y-3">
                   <p className="flex items-start gap-2 text-sm text-ink-muted">
                     <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                    인터넷 연결이 불안정해 QR을 아직 만들지 못했어요. 연결되면 자동으로 다시 시도해요.
+                    {t("result.offline")}
                   </p>
                   <Button variant="light" size="sm" onClick={() => finalDataUrl && void upload(finalDataUrl)}>
                     <RotateCw className="h-4 w-4" aria-hidden />
-                    다시 시도
+                    {t("common.retry")}
                   </Button>
                 </div>
               )}
@@ -224,7 +228,12 @@ export default function ResultPage() {
           <div className="glass flex flex-col gap-3 rounded-card p-5">
             <Button size="lg" onClick={download} disabled={!finalDataUrl} className="w-full">
               <Download className="h-5 w-5" aria-hidden />
-              이미지 저장
+              {t("result.save")}
+            </Button>
+            {/* 완성 뒤에도 더 꾸밀 수 있게 — 디자인·사진은 그대로 있고 다시 완성하면 같은 세션에 덮어쓴다(멱등) */}
+            <Button variant="secondary" onClick={() => router.push("/edit")} className="w-full">
+              <WandSparkles className="h-4 w-4" aria-hidden />
+              {t("result.decorateMore")}
             </Button>
             {/* 출력은 사진이 서버에 올라가야 가능 — 안 되는 상황이면 버튼을 아예 숨긴다 */}
             {uploadedSession && <PrintButton session={uploadedSession} />}

@@ -1,7 +1,7 @@
 [
   {
     "id": "classic-strip",
-    "label": "클래식 세로 4컷",
+    "label": "클래식 세로 4컷", "labelEn": "Classic 4-strip",
     "description": "세로로 긴 스트립 한 줄",
     "canvas": { "width": 600, "height": 1800 },
     "photoCount": 4,
@@ -14,7 +14,7 @@
   },
   {
     "id": "classic-strip-x2",
-    "label": "인생네컷 오리지널",
+    "label": "인생네컷 오리지널", "labelEn": "Original double strip",
     "description": "같은 스트립 2줄 (4x6 용지, 잘라서 나눠 갖기)",
     "canvas": { "width": 600, "height": 1800 },
     "photoCount": 4,
@@ -28,7 +28,7 @@
   },
   {
     "id": "grid-2x2",
-    "label": "2x2 그리드",
+    "label": "2x2 그리드", "labelEn": "2x2 grid",
     "description": "정사각형 네 칸",
     "canvas": { "width": 1080, "height": 1320 },
     "photoCount": 4,
@@ -41,7 +41,7 @@
   },
   {
     "id": "strip-horizontal",
-    "label": "가로 4컷",
+    "label": "가로 4컷", "labelEn": "Horizontal 4",
     "description": "가로로 나란히 네 컷",
     "canvas": { "width": 1800, "height": 600 },
     "photoCount": 4,
@@ -55,7 +55,7 @@
   },
   {
     "id": "hero-3",
-    "label": "큰 사진 + 3컷",
+    "label": "큰 사진 + 3컷", "labelEn": "Big photo + 3",
     "description": "베스트 컷 하나를 크게, 나머지는 아래 작게",
     "canvas": { "width": 1080, "height": 1350 },
     "photoCount": 4,
@@ -68,7 +68,7 @@
   },
   {
     "id": "polaroid-2x2",
-    "label": "폴라로이드",
+    "label": "폴라로이드", "labelEn": "Polaroid",
     "description": "사진마다 하얀 폴라로이드 카드",
     "canvas": { "width": 1080, "height": 1400 },
     "photoCount": 4,
@@ -82,7 +82,7 @@
   },
   {
     "id": "story-2x2",
-    "label": "스토리용 9:16",
+    "label": "스토리용 9:16", "labelEn": "Story 9:16",
     "description": "인스타그램 스토리 크기, 세로 사진 네 칸",
     "canvas": { "width": 1080, "height": 1920 },
     "photoCount": 4,
@@ -95,7 +95,7 @@
   },
   {
     "id": "grid-2x3",
-    "label": "6컷 세로",
+    "label": "6컷 세로", "labelEn": "6 vertical",
     "description": "2열 3줄 여섯 칸 (4x6 세로 인화)",
     "canvas": { "width": 1200, "height": 1800 },
     "photoCount": 6,
@@ -110,7 +110,7 @@
   },
   {
     "id": "grid-3x2",
-    "label": "6컷 가로",
+    "label": "6컷 가로", "labelEn": "6 horizontal",
     "description": "3열 2줄 여섯 칸 (4x6 가로 인화)",
     "canvas": { "width": 1800, "height": 1200 },
     "photoCount": 6,

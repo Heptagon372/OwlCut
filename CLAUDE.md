@@ -19,9 +19,18 @@ npm run typecheck  # 타입체크 (next typegen → tsc). 맨 tsc는 깨끗한 �
 npm run build      # 프로덕션 빌드
 ```
 
+## 설정 (언어 · 화면 크기 · 인화 크기)
+- 설정은 **쿠키**(`owlcut_settings`)에 저장한다. 서버(`app/layout.tsx`)가 읽어 첫 그림부터 같은 언어·크기로 그리므로 새로고침 때 문구가 바뀌며 깜빡이지 않는다. 쿠키가 없으면(QR 로 들어온 방문자 폰) `Accept-Language` 를 따른다.
+- 화면 문구: `lib/i18n/messages.ts` (ko/en 두 벌, 키가 다르면 타입 오류). 컴포넌트는 `useT()` / `useSettings()` 의 `t("키", { n })`. 서버 컴포넌트는 `translate(lang, key)`.
+- 데이터 이름(필터·프레임·레이아웃·스티커·AR 효과)은 `labelEn` 필드 → `useSettings().label(item)`. 새 항목은 **두 이름을 같이** 넣을 것 (`tests/i18n.test.ts` 가 빠진 걸 잡는다).
+- 서버 오류는 한국어 message 대신 **코드**로 받아 `lib/i18n/errors.ts` 가 문구를 고른다 (`/api/*` 의 `error` 필드).
+- 화면 크기 = `--ui-scale` (rem 배율, `html { font-size: calc(16px * var(--ui-scale)) }`). Tailwind 크기가 전부 rem 이라 글자·버튼·여백이 함께 커진다 — 새 UI 에 px 를 직접 쓰지 말 것.
+- 관리자 화면(`/admin`)은 운영자용이라 한국어 그대로.
+
 ## 화면 흐름
 `/` (시작) → `/camera` (4컷 촬영) → `/edit` (프레임·필터·스티커·텍스트) → `/result` (합성·QR·다운로드)
 `/download/[id]` 는 QR로 접속하는 모바일 다운로드 페이지 (SSR). `/admin` 은 운영자용 대시보드.
+결과 화면에서 **‘더 꾸미기’** 로 편집으로 돌아갈 수 있다 (사진·디자인은 스토어에 그대로, 다시 완성하면 같은 세션에 덮어쓴다).
 
 ## 디자인 시스템 (모노크롬 글래스모피즘)
 - 흑·백·회색만. 강조 = 잉크(검정). 상태색(good/warning/critical)은 관리자 상태 표시 전용(아이콘+문구 동반).
@@ -106,6 +115,7 @@ npm run build      # 프로덕션 빌드
 ## 프레임
 - 16종(`data/frames/index.json`). 배경 = 단색 · 그라데이션(`stops` 여러 색) · **패턴**(dots·checker·gingham·stripes·grid·hearts·stars·sparkles·confetti, 시드 고정 난수 → 미리보기=인화). 그리기는 `lib/image/frameArt.ts`.
 - 장식(`decorations`): 타일 기준 `sticker`/`text`(over 로 사진 위), `filmHoles`, `border`, 그리고 **사진 칸마다** `slotSticker`(모서리 테이프 등, 오른쪽 모서리는 회전 반대, `every`) · `slotLabel`(필름 번호 ▶ 1A / 날짜 도장) · `slotOutline`(손그림 sketch·점선·이중선). 사진 칸 장식은 간격 조정까지 반영한 실제 칸을 따라가므로 어떤 레이아웃에도 맞는다.
+- 방문자 문구(`TextLayer`)는 글꼴(`font`, 기본 sans)과 크기(20~140px)를 고를 수 있다 — 합성도 같은 글꼴로 그린다.
 - 문구·하단 브랜딩 폰트: `lib/fonts.ts`. **캔버스에 폰트 이름을 직접 쓰지 말 것** — next/font 는 family 이름을 해시로 만들어서(`__Caveat_1a2b`) `"Pretendard"`라고 쓰면 시스템 대체 폰트가 나온다. `canvasFont(font, px)`가 CSS 변수에서 실제 이름을 읽고, `ensureFonts`로 미리 받아 둔다. 추가 폰트(모두 OFL): Caveat·Gaegu(손글씨)·DM Serif Display(잡지)·Space Mono(필름)·Black Han Sans(굵은 한글).
 - 프레임 썸네일은 지금 레이아웃에 각 프레임을 합성 엔진으로 작게(`renderToCanvas(…, { scale })`) 그린 것.
 

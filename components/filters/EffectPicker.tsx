@@ -3,6 +3,7 @@
 // 얼굴이 없으면 기본 얼굴 일러스트로 보여준다.
 import { useEffect, useMemo, useState } from "react";
 import { EFFECTS, EFFECT_CATEGORIES, NO_EFFECT, effectAssets } from "@/lib/ar/effects";
+import { useSettings } from "@/lib/i18n/context";
 import { ensureAssets } from "@/lib/ar/assets";
 import { effectSnapshot, mirroredCopy } from "@/lib/ar/draw";
 import { CANONICAL_FACE, canonicalFaceCanvas } from "@/lib/ar/canonical";
@@ -32,6 +33,7 @@ export function EffectPicker({
   variant?: "row" | "grid";
 }) {
   const [category, setCategory] = useState<EffectCategory | "all">("all");
+  const { t, label } = useSettings();
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -63,18 +65,19 @@ export function EffectPicker({
     };
   }, [source, faces, mirror]);
 
+  const none = t("common.none");
   const list = useMemo(
     () => [
-      { id: NO_EFFECT, label: "없음" },
+      { id: NO_EFFECT, label: none, labelEn: none },
       ...(category === "all" ? EFFECTS : EFFECTS.filter((e) => e.category === category)),
     ],
-    [category],
+    [category, none],
   );
 
   return (
     <div className="space-y-2">
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="AR 효과 종류">
-        {[{ id: "all" as const, label: "전체" }, ...EFFECT_CATEGORIES].map((c) => (
+      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("effect.kinds")}>
+        {[{ id: "all" as const, label: t("common.all"), labelEn: t("common.all") }, ...EFFECT_CATEGORIES].map((c) => (
           <button
             key={c.id}
             role="tab"
@@ -82,7 +85,7 @@ export function EffectPicker({
             onClick={() => setCategory(c.id)}
             className={`h-8 shrink-0 rounded-full px-3.5 text-xs font-semibold transition ${category === c.id ? "bg-ink text-white" : "bg-white/60 text-muted hover:bg-white hover:text-foreground"}`}
           >
-            {c.label}
+            {label(c)}
           </button>
         ))}
       </div>
@@ -113,7 +116,7 @@ export function EffectPicker({
                 )}
               </span>
               <span className={`w-full truncate text-center text-[11px] ${active ? "font-semibold text-foreground" : "text-muted"}`}>
-                {e.label}
+                {label(e)}
               </span>
             </button>
           );

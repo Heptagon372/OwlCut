@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { Copy, Trash2 } from "lucide-react";
 import { STICKERS, STICKER_CATEGORIES } from "@/lib/data/registry";
+import { useSettings } from "@/lib/i18n/context";
 import { ensureStickers, getStickerImage } from "@/lib/stickers/images";
 import { STICKER_MAX, STICKER_MIN, clampSticker, newSticker, newUid } from "@/lib/stickers/geometry";
 import type { StickerCategory, StickerInstance } from "@/types/design";
@@ -19,6 +20,7 @@ export function StickerPanel({
   selected: string | null;
   onSelect: (uid: string | null) => void;
 }) {
+  const { t, label } = useSettings();
   const [category, setCategory] = useState<StickerCategory>(STICKER_CATEGORIES[0].id);
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   const list = useMemo(() => STICKERS.filter((s) => s.category === category), [category]);
@@ -44,7 +46,7 @@ export function StickerPanel({
 
   return (
     <div className="space-y-3">
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="스티커 종류">
+      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("sticker.kinds")}>
         {STICKER_CATEGORIES.map((c) => (
           <button
             key={c.id}
@@ -53,7 +55,7 @@ export function StickerPanel({
             onClick={() => setCategory(c.id)}
             className={`h-8 shrink-0 rounded-full px-3.5 text-xs font-semibold transition ${category === c.id ? "bg-ink text-white" : "bg-white/60 text-muted hover:bg-white hover:text-foreground"}`}
           >
-            {c.label}
+            {label(c)}
           </button>
         ))}
       </div>
@@ -65,8 +67,8 @@ export function StickerPanel({
             <button
               key={s.id}
               onClick={() => add(s.id)}
-              title={`${s.label} 붙이기`}
-              aria-label={`${s.label} 붙이기`}
+              title={t("sticker.place", { name: label(s) })}
+              aria-label={t("sticker.place", { name: label(s) })}
               className="relative aspect-square overflow-hidden rounded-2xl bg-white/55 transition hover:bg-white active:scale-95"
             >
               {img ? (
@@ -83,7 +85,7 @@ export function StickerPanel({
       {current ? (
         <div className="space-y-3 rounded-2xl bg-white/55 p-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold">선택한 스티커</p>
+            <p className="text-sm font-semibold">{t("sticker.selected")}</p>
             <div className="flex gap-1.5">
               <button
                 onClick={() => {
@@ -94,7 +96,7 @@ export function StickerPanel({
                 className="inline-flex h-8 items-center gap-1 rounded-full bg-white px-3 text-xs font-semibold hover:bg-white/70"
               >
                 <Copy className="h-3.5 w-3.5" aria-hidden />
-                복제
+                {t("common.duplicate")}
               </button>
               <button
                 onClick={() => {
@@ -104,13 +106,13 @@ export function StickerPanel({
                 className="inline-flex h-8 items-center gap-1 rounded-full bg-ink px-3 text-xs font-semibold text-white"
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                삭제
+                {t("common.delete")}
               </button>
             </div>
           </div>
           <label className="block">
             <span className="mb-1 flex justify-between text-xs text-muted">
-              크기 <span className="num">{Math.round(current.size * 100)}</span>
+              {t("common.size")} <span className="num">{Math.round(current.size * 100)}</span>
             </span>
             <input
               type="range"
@@ -123,7 +125,7 @@ export function StickerPanel({
           </label>
           <label className="block">
             <span className="mb-1 flex justify-between text-xs text-muted">
-              회전 <span className="num">{Math.round(current.rotation)}°</span>
+              {t("common.rotation")} <span className="num">{Math.round(current.rotation)}°</span>
             </span>
             <input
               type="range"
@@ -137,9 +139,7 @@ export function StickerPanel({
         </div>
       ) : (
         <p className="text-xs text-muted">
-          {value.length === 0
-            ? "스티커를 누르면 사진에 붙어요. 미리보기에서 끌어서 옮기고, 오른쪽 아래 손잡이로 크기·회전을 바꿔요."
-            : `스티커 ${value.length}개 · 미리보기에서 스티커를 누르면 선택돼요.`}
+          {value.length === 0 ? t("sticker.emptyHint") : t("sticker.someHint", { n: value.length })}
         </p>
       )}
 
@@ -151,7 +151,7 @@ export function StickerPanel({
           }}
           className="text-xs text-muted underline hover:text-foreground"
         >
-          스티커 모두 지우기
+          {t("sticker.clearAll")}
         </button>
       )}
     </div>

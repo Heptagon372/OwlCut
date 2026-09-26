@@ -2,6 +2,7 @@
 // 프레임 고르기 — 썸네일은 지금 레이아웃에 각 프레임을 실제 합성 엔진으로 작게 그린 것
 // (패턴·테이프·필름 구멍 같은 장식까지 그대로 보이게).
 import { useEffect, useState } from "react";
+import { useSettings } from "@/lib/i18n/context";
 import { FRAMES } from "@/lib/data/registry";
 import { renderToCanvas } from "@/lib/image/compose";
 import { outputSize } from "@/lib/image/layoutGeometry";
@@ -19,6 +20,7 @@ export function FrameSelector({
   layout: LayoutConfig;
 }) {
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const { label } = useSettings();
 
   useEffect(() => {
     let alive = true;
@@ -62,7 +64,7 @@ export function FrameSelector({
                 <span className="absolute inset-0 animate-pulse rounded-md bg-black/5" />
               )}
             </span>
-            <span className={`mt-1 block truncate text-xs ${active ? "font-semibold text-foreground" : "text-muted"}`}>{f.label}</span>
+            <span className={`mt-1 block truncate text-xs ${active ? "font-semibold text-foreground" : "text-muted"}`}>{label(f)}</span>
           </button>
         );
       })}

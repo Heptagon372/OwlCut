@@ -34,6 +34,7 @@ export type FilterCategory = "basic" | "beauty" | "bw" | "film" | "tone" | "mood
 export interface FilterPreset {
   id: string;
   label: string;
+  labelEn?: string;   // 영어 설정에서 보여 줄 이름
   category: FilterCategory;
   description?: string; // AI가 분위기에 맞는 필터를 고를 때 참고
   params: FilterParams;

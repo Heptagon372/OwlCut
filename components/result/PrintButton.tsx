@@ -5,16 +5,19 @@ import { useEffect, useRef, useState } from "react";
 import { CircleAlert, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { fetchPrintStatus, requestPrint, type BoothSession } from "@/lib/api";
+import { useT } from "@/lib/i18n/context";
+import { errorKey } from "@/lib/i18n/errors";
+import type { MessageKey } from "@/lib/i18n/messages";
 import type { PrintStatus } from "@/types/print";
 
 const POLL_MS = 2000;
 const GIVE_UP_MS = 3 * 60_000;
 
-const LABEL: Record<PrintStatus, string> = {
-  waiting: "출력 대기 중…",
-  printing: "출력 중…",
-  completed: "출력 완료! 🎉",
-  failed: "출력에 실패했어요. 직원에게 문의해 주세요.",
+const LABEL: Record<PrintStatus, MessageKey> = {
+  waiting: "print.waiting",
+  printing: "print.printing",
+  completed: "print.completed",
+  failed: "print.failed",
 };
 
 type State =
@@ -25,6 +28,7 @@ type State =
 
 // session = 서버에 올라간 세션 + 업로드 토큰 (결과 화면은 업로드가 끝난 뒤에만 이 버튼을 보여 준다)
 export function PrintButton({ session }: { session: BoothSession }) {
+  const t = useT();
   const sessionId = session.id;
   const [state, setState] = useState<State>({ kind: "idle" });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,7 +44,7 @@ export function PrintButton({ session }: { session: BoothSession }) {
       setState({ kind: "tracking", status });
       if (status === "completed" || status === "failed") return;
       if (Date.now() - startedAt > GIVE_UP_MS) {
-        setState({ kind: "error", message: "출력이 지연되고 있어요. 직원에게 문의해 주세요." });
+        setState({ kind: "error", message: t("print.delayed") });
         return;
       }
       poll(startedAt);
@@ -51,7 +55,7 @@ export function PrintButton({ session }: { session: BoothSession }) {
     setState({ kind: "requesting" });
     const res = await requestPrint(session);
     if (!res.ok) {
-      setState({ kind: "error", message: res.message });
+      setState({ kind: "error", message: t(errorKey(res.error)) });
       return;
     }
     setState({ kind: "tracking", status: res.status });
@@ -67,10 +71,10 @@ export function PrintButton({ session }: { session: BoothSession }) {
     <div className="flex w-full flex-col items-center gap-1.5">
       <Button variant="secondary" onClick={start} disabled={busy || done} className="w-full">
         <Printer className="h-4 w-4" aria-hidden />
-        {busy ? "출력 요청됨" : done ? "출력 완료" : state.kind === "tracking" ? "다시 출력" : "출력하기"}
+        {busy ? t("print.requested") : done ? t("print.doneBtn") : state.kind === "tracking" ? t("print.again") : t("print.go")}
       </Button>
       <p aria-live="polite" className="min-h-4 text-center text-xs text-muted">
-        {state.kind === "tracking" && LABEL[state.status]}
+        {state.kind === "tracking" && t(LABEL[state.status])}
         {state.kind === "error" && (
           <span className="inline-flex items-start gap-1 text-foreground">
             <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />

@@ -1,6 +1,7 @@
 "use client";
 // 레이아웃 선택 — 썸네일은 data/layouts 의 슬롯 좌표로 직접 그린다 (레이아웃 추가 시 자동 반영).
 import { LAYOUTS } from "@/lib/data/registry";
+import { useSettings } from "@/lib/i18n/context";
 import { outputSize } from "@/lib/image/layoutGeometry";
 import type { LayoutConfig } from "@/types/design";
 
@@ -59,6 +60,7 @@ export function LayoutPicker({
   count?: number; // 찍은 사진 수 — 매수가 맞는 레이아웃만
 }) {
   const list = count ? LAYOUTS.filter((l) => l.photoCount === count) : LAYOUTS;
+  const { label } = useSettings();
   return (
     <div className="grid grid-cols-3 gap-2">
       {(list.length ? list : LAYOUTS).map((l) => {
@@ -72,7 +74,7 @@ export function LayoutPicker({
             className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 p-2 transition ${active ? "border-ink bg-white text-foreground" : "border-transparent bg-white/45 text-muted hover:bg-white/80 hover:text-foreground"}`}
           >
             <LayoutThumb layout={l} />
-            <span className="text-center text-xs leading-tight">{l.label}</span>
+            <span className="text-center text-xs leading-tight">{label(l)}</span>
           </button>
         );
       })}

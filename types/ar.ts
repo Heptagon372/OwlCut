@@ -61,6 +61,7 @@ export type EffectCategory = "animal" | "lovely" | "funny" | "fx";
 export interface ArEffect {
   id: string;
   label: string;
+  labelEn?: string;   // 영어 설정에서 보여 줄 이름
   category: EffectCategory;
   parts: EffectPart[];
   warps?: WarpSpec[];

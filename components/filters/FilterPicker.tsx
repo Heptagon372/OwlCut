@@ -2,6 +2,7 @@
 // 필터 선택: 카테고리 탭 + 썸네일 칩. 썸네일은 실제 사진(또는 카메라 화면)에 각 필터를 적용해 만든다.
 import { useEffect, useMemo, useState } from "react";
 import { FILTERS, FILTER_CATEGORIES } from "@/lib/data/registry";
+import { useSettings } from "@/lib/i18n/context";
 import { filteredSnapshot, loadImage } from "@/lib/filters/offline";
 import { forEachChunked } from "@/lib/yieldToMain";
 import type { FilterCategory } from "@/types/filter";
@@ -25,6 +26,7 @@ export function FilterPicker({
   variant?: "row" | "grid";
 }) {
   const [category, setCategory] = useState<FilterCategory | "all">("all");
+  const { t, label } = useSettings();
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -52,8 +54,8 @@ export function FilterPicker({
 
   return (
     <div className="space-y-2">
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="필터 종류">
-        {[{ id: "all" as const, label: "전체" }, ...FILTER_CATEGORIES].map((c) => (
+      <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label={t("filter.kinds")}>
+        {[{ id: "all" as const, label: t("common.all"), labelEn: t("common.all") }, ...FILTER_CATEGORIES].map((c) => (
           <button
             key={c.id}
             role="tab"
@@ -61,7 +63,7 @@ export function FilterPicker({
             onClick={() => setCategory(c.id)}
             className={`h-8 shrink-0 rounded-full px-3.5 text-xs font-semibold transition ${category === c.id ? "bg-ink text-white" : "bg-white/60 text-muted hover:bg-white hover:text-foreground"}`}
           >
-            {c.label}
+            {label(c)}
           </button>
         ))}
       </div>
@@ -93,7 +95,7 @@ export function FilterPicker({
                 )}
               </span>
               <span className={`w-full truncate text-center text-[11px] ${active ? "font-semibold text-foreground" : "text-muted"}`}>
-                {f.label}
+                {label(f)}
               </span>
             </button>
           );

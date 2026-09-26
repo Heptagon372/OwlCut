@@ -1,162 +1,162 @@
 [
   {
     "id": "dd-heart-eyes",
-    "label": "하트 눈 얼굴",
+    "label": "하트 눈 얼굴", "labelEn": "Heart eyes",
     "category": "doodle"
   },
   {
     "id": "dd-cool",
-    "label": "선글라스 얼굴",
+    "label": "선글라스 얼굴", "labelEn": "Sunglasses face",
     "category": "doodle"
   },
   {
     "id": "dd-laugh",
-    "label": "웃는 얼굴",
+    "label": "웃는 얼굴", "labelEn": "Laughing face",
     "category": "doodle"
   },
   {
     "id": "dd-wink",
-    "label": "윙크 얼굴",
+    "label": "윙크 얼굴", "labelEn": "Winking face",
     "category": "doodle"
   },
   {
     "id": "dd-grin",
-    "label": "신난 얼굴",
+    "label": "신난 얼굴", "labelEn": "Excited face",
     "category": "doodle"
   },
   {
     "id": "dd-shocked",
-    "label": "놀란 얼굴",
+    "label": "놀란 얼굴", "labelEn": "Shocked face",
     "category": "doodle"
   },
   {
     "id": "dd-crying",
-    "label": "우는 얼굴",
+    "label": "우는 얼굴", "labelEn": "Crying face",
     "category": "doodle"
   },
   {
     "id": "dd-v",
-    "label": "브이",
+    "label": "브이", "labelEn": "Peace hand",
     "category": "doodle"
   },
   {
     "id": "dd-ok",
-    "label": "오케이",
+    "label": "오케이", "labelEn": "OK hand",
     "category": "doodle"
   },
   {
     "id": "dd-thumbs-up",
-    "label": "최고 손",
+    "label": "최고 손", "labelEn": "Thumbs up",
     "category": "doodle"
   },
   {
     "id": "dd-clap",
-    "label": "박수",
+    "label": "박수", "labelEn": "Clapping",
     "category": "doodle"
   },
   {
     "id": "dd-crown",
-    "label": "낙서 왕관",
+    "label": "낙서 왕관", "labelEn": "Doodle crown",
     "category": "doodle"
   },
   {
     "id": "dd-balloon",
-    "label": "풍선",
+    "label": "풍선", "labelEn": "Balloon",
     "category": "doodle"
   },
   {
     "id": "dd-camera",
-    "label": "카메라",
+    "label": "카메라", "labelEn": "Camera",
     "category": "doodle"
   },
   {
     "id": "dd-cake",
-    "label": "케이크",
+    "label": "케이크", "labelEn": "Cake",
     "category": "doodle"
   },
   {
     "id": "dd-ice-cream",
-    "label": "아이스크림",
+    "label": "아이스크림", "labelEn": "Ice cream",
     "category": "doodle"
   },
   {
     "id": "dd-candy",
-    "label": "사탕",
+    "label": "사탕", "labelEn": "Candy",
     "category": "doodle"
   },
   {
     "id": "dd-heart",
-    "label": "낙서 하트",
+    "label": "낙서 하트", "labelEn": "Doodle heart",
     "category": "doodle"
   },
   {
     "id": "dd-star",
-    "label": "낙서 별",
+    "label": "낙서 별", "labelEn": "Doodle star",
     "category": "doodle"
   },
   {
     "id": "dd-zap",
-    "label": "번개",
+    "label": "번개", "labelEn": "Lightning",
     "category": "doodle"
   },
   {
     "id": "dd-music",
-    "label": "음표",
+    "label": "음표", "labelEn": "Music note",
     "category": "doodle"
   },
   {
     "id": "dd-magic",
-    "label": "요술봉",
+    "label": "요술봉", "labelEn": "Magic wand",
     "category": "doodle"
   },
   {
     "id": "dd-gift",
-    "label": "선물",
+    "label": "선물", "labelEn": "Gift",
     "category": "doodle"
   },
   {
     "id": "dd-sun",
-    "label": "해",
+    "label": "해", "labelEn": "Sun",
     "category": "doodle"
   },
   {
     "id": "dd-moon",
-    "label": "달",
+    "label": "달", "labelEn": "Moon",
     "category": "doodle"
   },
   {
     "id": "dd-cloud-sun",
-    "label": "구름과 해",
+    "label": "구름과 해", "labelEn": "Sun and cloud",
     "category": "doodle"
   },
   {
     "id": "dd-rocket",
-    "label": "로켓",
+    "label": "로켓", "labelEn": "Rocket",
     "category": "doodle"
   },
   {
     "id": "dd-fire",
-    "label": "불꽃",
+    "label": "불꽃", "labelEn": "Fire",
     "category": "doodle"
   },
   {
     "id": "dd-arrow-ne",
-    "label": "화살표 ↗",
+    "label": "화살표 ↗", "labelEn": "Arrow NE",
     "category": "doodle"
   },
   {
     "id": "dd-arrow-nw",
-    "label": "화살표 ↖",
+    "label": "화살표 ↖", "labelEn": "Arrow NW",
     "category": "doodle"
   },
   {
     "id": "dd-arrow-se",
-    "label": "화살표 ↘",
+    "label": "화살표 ↘", "labelEn": "Arrow SE",
     "category": "doodle"
   },
   {
     "id": "dd-arrow-sw",
-    "label": "화살표 ↙",
+    "label": "화살표 ↙", "labelEn": "Arrow SW",
     "category": "doodle"
   }
 ]

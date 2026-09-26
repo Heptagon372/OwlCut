@@ -82,6 +82,9 @@
 
 html {
   background: var(--background);
+  /* 화면 크기 설정: rem 배율 (설정 → 작게 0.9 · 보통 1 · 크게 1.18).
+     Tailwind 크기가 전부 rem 이라 글자·버튼·여백이 같은 비율로 커진다. */
+  font-size: calc(16px * var(--ui-scale, 1));
 }
 
 html,

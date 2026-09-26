@@ -13,25 +13,25 @@ export const FRAMES = framesJson as unknown as FrameConfig[];
 export const STICKERS = [...stickersJson, ...doodleStickersJson] as unknown as StickerDef[];
 
 // 스티커 종류 탭 (편집 화면 · AI 카탈로그)
-export const STICKER_CATEGORIES: { id: StickerCategory; label: string }[] = [
-  { id: "lovely", label: "러블리" },
-  { id: "y2k", label: "Y2K" },
-  { id: "doodle", label: "낙서" },
-  { id: "word", label: "글자" },
-  { id: "deco", label: "데코" },
-  { id: "emoji", label: "이모지" },
+export const STICKER_CATEGORIES: { id: StickerCategory; label: string; labelEn: string }[] = [
+  { id: "lovely", label: "러블리", labelEn: "Lovely" },
+  { id: "y2k", label: "Y2K", labelEn: "Y2K" },
+  { id: "doodle", label: "낙서", labelEn: "Doodle" },
+  { id: "word", label: "글자", labelEn: "Words" },
+  { id: "deco", label: "데코", labelEn: "Deco" },
+  { id: "emoji", label: "이모지", labelEn: "Emoji" },
 ];
 
 // 필터 프리셋 (촬영 전 선택 · 편집 · AI 공용). 새 필터 = JSON 한 항목 추가.
 export const FILTERS = filtersJson as unknown as FilterPreset[];
 
-export const FILTER_CATEGORIES: { id: FilterCategory; label: string }[] = [
-  { id: "basic", label: "기본" },
-  { id: "beauty", label: "뷰티" },
-  { id: "bw", label: "흑백" },
-  { id: "film", label: "필름" },
-  { id: "tone", label: "톤" },
-  { id: "mood", label: "무드" },
+export const FILTER_CATEGORIES: { id: FilterCategory; label: string; labelEn: string }[] = [
+  { id: "basic", label: "기본", labelEn: "Basic" },
+  { id: "beauty", label: "뷰티", labelEn: "Beauty" },
+  { id: "bw", label: "흑백", labelEn: "B&W" },
+  { id: "film", label: "필름", labelEn: "Film" },
+  { id: "tone", label: "톤", labelEn: "Tone" },
+  { id: "mood", label: "무드", labelEn: "Mood" },
 ];
 
 export const DEFAULT_LAYOUT_ID = "classic-strip";

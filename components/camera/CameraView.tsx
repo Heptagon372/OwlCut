@@ -1,6 +1,7 @@
 "use client";
 import type { ReactNode, Ref } from "react";
 import { Countdown } from "./Countdown";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   videoRef: Ref<HTMLVideoElement>;
@@ -26,6 +27,7 @@ export function CameraView({
   videoFilterCss,
   overlay,
 }: Props) {
+  const t = useT();
   return (
     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[22px] bg-ink">
       <video
@@ -45,7 +47,7 @@ export function CameraView({
           <span className="h-2 w-2 animate-pulse rounded-full bg-[#ff4d4d]" aria-hidden />
           LIVE
         </span>
-        <span className="flex gap-1.5" aria-label={`${shotIndex}/${total}컷 촬영됨`}>
+        <span className="flex gap-1.5" aria-label={t("camera.shotsTaken", { done: shotIndex, total })}>
           {Array.from({ length: total }).map((_, i) => (
             <span
               key={i}

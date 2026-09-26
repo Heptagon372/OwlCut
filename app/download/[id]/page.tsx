@@ -1,5 +1,8 @@
 import { Clock, Download, SearchX, TimerOff } from "lucide-react";
+import { headers } from "next/headers";
 import { Logo } from "@/components/brand/Logo";
+import { translate } from "@/lib/i18n/messages";
+import { langFromAcceptLanguage, type Lang } from "@/lib/settings/settings";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/client";
 import { createSignedUrl, signedTtlSeconds } from "@/lib/storage/photos";
 import { isUuid } from "@/lib/ids";
@@ -47,8 +50,9 @@ async function getFinal(id: string): Promise<Result> {
   }
 }
 
-function formatKst(iso: string): string {
-  return new Date(iso).toLocaleString("ko-KR", {
+// 방문자 폰에서 열리는 페이지 — 부스 설정 쿠키가 없으므로 폰 언어를 따른다
+function formatKst(iso: string, lang: Lang): string {
+  return new Date(iso).toLocaleString(lang === "en" ? "en-US" : "ko-KR", {
     timeZone: "Asia/Seoul",
     month: "long",
     day: "numeric",
@@ -59,13 +63,15 @@ function formatKst(iso: string): string {
 
 export default async function DownloadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const result = await getFinal(id);
+  const [result, head] = await Promise.all([getFinal(id), headers()]);
+  const lang = langFromAcceptLanguage(head.get("accept-language"));
+  const t = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate(lang, key, vars);
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6">
       <header className="flex items-center justify-between">
         <Logo />
-        <span className="glass-solid rounded-full px-4 py-2 text-sm font-medium text-muted">사진 받기</span>
+        <span className="glass-solid rounded-full px-4 py-2 text-sm font-medium text-muted">{t("download.badge")}</span>
       </header>
 
       {result.state === "ok" ? (
@@ -75,29 +81,29 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={result.viewUrl}
-                alt="완성된 네컷"
+                alt={t("result.alt")}
                 className="max-h-[62vh] rounded-md shadow-[0_24px_48px_-22px_rgba(0,0,0,0.5)]"
               />
             </div>
           </div>
           <div className="ink rounded-card p-6">
             <p className="text-sm text-ink-muted">S.OWL PHOTO BOOTH</p>
-            <h1 className="mt-1 text-4xl font-[200] tracking-[-0.04em]">오늘의 네컷</h1>
+            <h1 className="mt-1 text-4xl font-[200] tracking-[-0.04em]">{t("download.title")}</h1>
             <a
               href={result.downloadUrl}
               download="owlcut.png"
               className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-white text-lg font-semibold text-ink"
             >
               <Download className="h-5 w-5" aria-hidden />
-              이미지 저장
+              {t("download.save")}
             </a>
             <p className="mt-3 text-center text-xs text-ink-muted">
-              버튼이 동작하지 않으면 이미지를 길게 눌러 저장하세요.
+              {t("download.longPress")}
             </p>
             {result.expiresAt && (
               <p className="mt-4 flex items-center justify-center gap-1.5 border-t border-white/10 pt-4 text-xs text-ink-muted">
                 <Clock className="h-3.5 w-3.5" aria-hidden />
-                {formatKst(result.expiresAt)}까지 받을 수 있어요. 이후 사진은 자동으로 삭제돼요.
+                {t("download.expiresAt", { time: formatKst(result.expiresAt, lang) })}
               </p>
             )}
           </div>
@@ -112,14 +118,14 @@ export default async function DownloadPage({ params }: { params: Promise<{ id: s
             )}
           </span>
           <p className="mt-4 font-semibold">
-            {result.state === "expired" ? "보관 기간이 지났어요" : "사진을 찾을 수 없어요"}
+            {result.state === "expired" ? t("download.expiredTitle") : t("download.missingTitle")}
           </p>
           <p className="mt-1 text-sm text-muted">
             {result.state === "expired"
-              ? "방문자 사진은 개인정보 보호를 위해 일정 시간 뒤 자동으로 삭제돼요."
+              ? t("download.expiredDesc")
               : result.state === "unconfigured"
-                ? "이 배포에는 원격 저장이 설정되지 않았어요."
-                : "링크가 만료되었거나 잘못된 주소예요."}
+                ? t("download.notConfigured")
+                : t("download.badLink")}
           </p>
         </div>
       )}

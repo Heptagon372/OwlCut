@@ -3,17 +3,20 @@
 // 예전엔 모든 도구를 카드로 쌓아 한 화면이 4~5배 길어졌고 미리보기가 화면 밖으로 밀려났다.
 import type { ComponentType, ReactNode } from "react";
 import { Frame, LayoutGrid, ScanFace, Smile, Sparkles, SunMedium, Type } from "lucide-react";
+import { useT } from "@/lib/i18n/context";
+import type { MessageKey } from "@/lib/i18n/messages";
 
 export type ToolId = "layout" | "frame" | "filter" | "effect" | "sticker" | "text" | "ai";
 
-export const TOOLS: { id: ToolId; label: string; icon: ComponentType<{ className?: string }> }[] = [
-  { id: "layout", label: "레이아웃", icon: LayoutGrid },
-  { id: "frame", label: "프레임", icon: Frame },
-  { id: "filter", label: "필터", icon: SunMedium },
-  { id: "effect", label: "AR", icon: ScanFace },
-  { id: "sticker", label: "스티커", icon: Smile },
-  { id: "text", label: "문구", icon: Type },
-  { id: "ai", label: "AI", icon: Sparkles },
+// 막대는 좁으므로 AR·AI 는 짧은 이름 그대로 (패널 제목은 tool.* 문구를 쓴다)
+export const TOOLS: { id: ToolId; labelKey: MessageKey; short?: string; icon: ComponentType<{ className?: string }> }[] = [
+  { id: "layout", labelKey: "tool.layout", icon: LayoutGrid },
+  { id: "frame", labelKey: "tool.frame", icon: Frame },
+  { id: "filter", labelKey: "tool.filter", icon: SunMedium },
+  { id: "effect", labelKey: "tool.effect", short: "AR", icon: ScanFace },
+  { id: "sticker", labelKey: "tool.sticker", icon: Smile },
+  { id: "text", labelKey: "tool.text", icon: Type },
+  { id: "ai", labelKey: "tool.ai", short: "AI", icon: Sparkles },
 ];
 
 export function ToolBar({
@@ -25,20 +28,22 @@ export function ToolBar({
   onChange: (id: ToolId) => void;
   tools: typeof TOOLS;
 }) {
+  const t = useT();
   return (
-    <div role="tablist" aria-label="편집 도구" className="ink-glass grid auto-cols-fr grid-flow-col gap-1 rounded-[22px] p-1.5">
-      {tools.map(({ id, label, icon: Icon }) => {
+    <div role="tablist" aria-label={t("edit.tools")} className="ink-glass grid auto-cols-fr grid-flow-col gap-1 rounded-[22px] p-1.5">
+      {tools.map(({ id, labelKey, short, icon: Icon }) => {
         const active = value === id;
         return (
           <button
             key={id}
             role="tab"
             aria-selected={active}
+            aria-label={t(labelKey)}
             onClick={() => onChange(id)}
             className={`flex min-w-0 flex-col items-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-semibold transition ${active ? "bg-white text-ink shadow-sm" : "text-white/60 hover:text-white"}`}
           >
             <Icon className="h-5 w-5" aria-hidden />
-            <span className="truncate">{label}</span>
+            <span className="truncate">{short ?? t(labelKey)}</span>
           </button>
         );
       })}
