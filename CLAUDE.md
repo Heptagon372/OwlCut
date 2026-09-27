@@ -187,6 +187,13 @@ npm run build      # 프로덕션 빌드
 - 조건부 갱신(출력 claim·완료 보고)은 Supabase 는 `eq(status, …)` 조건부 update, Firebase 는 트랜잭션으로 같은 보장을 준다.
 - `firebase-admin` 은 쓸 때만 동적 import (Supabase 만 쓰는 배포는 로드하지 않음).
 
+## 배포 (AWS)
+- [`docs/deploy-aws.md`](docs/deploy-aws.md): Amplify Hosting(가장 간단) · App Runner(컨테이너) · Lightsail/EC2+Docker 세 가지.
+- `next.config.ts` 의 `output: "standalone"` → `Dockerfile` 은 `.next/standalone` + `.next/static` + `public` 만 담는다.
+- **`NEXT_PUBLIC_APP_URL` 은 빌드 시점에 번들에 박힌다** (QR 주소) — 컨테이너는 `--build-arg`, Amplify 는 환경변수 넣고 재빌드.
+- WASM(23MB)은 git 에 없고 `npm ci` 의 postinstall 이 복사 → 빌드 전에 반드시 `npm ci`.
+- 카메라는 https 에서만 동작하므로 IP 직접 접속은 안 됨 (세 방법 모두 HTTPS 도메인 제공).
+
 ## Supabase 셋업
 `supabase/schema.sql` 을 Supabase SQL Editor에서 실행 (테이블 + `photos` 버킷 + RLS). 멱등(`if not exists`)이라 스키마가 바뀌면 다시 실행하면 됨.
 

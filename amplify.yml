@@ -1,0 +1,21 @@
+# AWS Amplify Hosting (Next.js SSR) 빌드 설정.
+# 콘솔에서 환경변수(NEXT_PUBLIC_APP_URL·저장소 키·ADMIN_PASSWORD 등)를 먼저 넣어 둘 것.
+# npm ci 의 postinstall 이 MediaPipe WASM 을 public/mediapipe/wasm 으로 복사한다 (git 에는 없음).
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm use 22 || true
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

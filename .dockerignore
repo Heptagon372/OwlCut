@@ -1,0 +1,18 @@
+# 이미지에 넣지 않을 것 (빌드 컨텍스트 축소 + 비밀값 유출 방지)
+node_modules
+.next
+.git
+.github
+.claude
+coverage
+tests
+print-server/printed
+public/mediapipe
+.env*
+!.env.local.example
+*.md
+!README.md
+firebase
+supabase
+Dockerfile
+.dockerignore
