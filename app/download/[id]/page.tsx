@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { Logo } from "@/components/brand/Logo";
 import { translate } from "@/lib/i18n/messages";
 import { langFromAcceptLanguage, type Lang } from "@/lib/settings/settings";
-import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getStore, isStoreConfigured } from "@/lib/db";
 import { createSignedUrl, signedTtlSeconds } from "@/lib/storage/photos";
 import { isUuid } from "@/lib/ids";
 
@@ -19,21 +19,11 @@ type Result =
 
 // 비공개 버킷의 사진을 만료되는 서명 URL로 보여준다 (보관기간이 지나면 열리지 않음)
 async function getFinal(id: string): Promise<Result> {
-  if (!isSupabaseConfigured()) return { state: "unconfigured" };
+  if (!isStoreConfigured()) return { state: "unconfigured" };
   if (!isUuid(id)) return { state: "missing" };
   try {
-    const db = getSupabaseAdmin();
-    const [{ data: session }, { data: design }] = await Promise.all([
-      db.from("sessions").select("expires_at").eq("id", id).maybeSingle(),
-      db
-        .from("designs")
-        .select("final_image_path")
-        .eq("session_id", id)
-        .not("final_image_path", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
+    const store = getStore();
+    const [session, design] = await Promise.all([store.getSession(id), store.latestFinalDesign(id)]);
     if (!design?.final_image_path) return { state: "missing" };
 
     const ttl = signedTtlSeconds(session?.expires_at, SIGNED_URL_MAX_SECONDS);

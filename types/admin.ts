@@ -3,7 +3,7 @@ import type { ProviderId } from "./ai";
 
 export interface AdminConfigStatus {
   supabase: boolean;          // 저장소 연결 여부 (Supabase 또는 Firebase)
-  storeKind?: "supabase" | "firebase" | null;
+  storeKind?: "supabase" | "firebase" | "local" | null;
   aiProviders: ProviderId[];  // 키가 설정된 프로바이더
   printToken: boolean;
   appUrl: string | null;

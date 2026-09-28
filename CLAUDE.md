@@ -175,12 +175,14 @@ npm run build      # 프로덕션 빌드
 
 ## 환경변수
 `.env.local.example` 복사 → `.env.local`. 모든 외부 설정은 선택이며, 없으면 해당 기능만 비활성:
-저장소(Supabase/Firebase) 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT_SERVER_TOKEN` 없음 → 프린트 서버 / `ADMIN_PASSWORD` 없음 → `/admin`.
+저장소(Supabase/Firebase/`OWLCUT_LOCAL_STORE=1` 이 PC) 없음 → QR·출력·통계 / AI 키 없음 → AI 꾸미기 / `PRINT_SERVER_TOKEN` 없음 → 프린트 서버 / `ADMIN_PASSWORD` 없음 → `/admin`.
 촬영·편집·로컬 다운로드는 항상 동작.
 
-## 저장소 계층 (Supabase / Firebase)
-- 라우트·도메인 코드는 **`lib/db` 의 `BoothStore` 인터페이스**만 쓴다. 구현은 `supabaseStore.ts`(Postgres+Storage)와 `firebaseStore.ts`(Firestore+Cloud Storage) 둘.
-- 고르기: Supabase 설정이 있으면 Supabase, 없고 Firebase 설정이 있으면 Firebase, 둘 다 없으면 저장 기능만 꺼진다(`storeKind()`/`isStoreConfigured()`). 미설정 응답 코드는 예전처럼 `SUPABASE_NOT_CONFIGURED` (클라이언트 호환).
+## 저장소 계층 (Supabase / Firebase / 이 PC)
+- 라우트·도메인 코드는 **`lib/db` 의 `BoothStore` 인터페이스**만 쓴다 (다운로드 페이지 포함 — 특정 서비스 SDK 를 직접 쓰지 말 것). 구현은 `supabaseStore.ts`(Postgres+Storage) · `firebaseStore.ts`(Firestore+Cloud Storage) · `localStore.ts`(이 PC 디스크) 셋.
+- 고르기: Supabase → Firebase → 이 PC(`OWLCUT_LOCAL_STORE=1`) 순, 아무것도 없으면 저장 기능만 꺼진다(`storeKind()`/`isStoreConfigured()`). 미설정 응답 코드는 예전처럼 `SUPABASE_NOT_CONFIGURED` (클라이언트 호환).
+- **이 PC 저장**(클라우드 계정 없이 QR 다운로드): 표는 `<LOCAL_STORE_DIR|.owlcut-data>/db.json` 한 개, 파일은 그 아래 `files/`. 서명 URL 자리는 `/api/file?p=…&e=만료&s=HMAC` — 서명·만료가 맞을 때만 내주므로 세션 id 만 아는 사람은 못 본다. 서명 키는 저장 폴더의 `secret`(첫 실행 때 생성). 같은 와이파이의 폰이 받아 가는 구조라 인터넷이 끊겨도 된다.
+- QR·다운로드 주소는 `publicBaseUrl()`(`lib/net/publicUrl.ts`)이 고른다 — `NEXT_PUBLIC_APP_URL` 이 있으면 그것, 없고 요청이 localhost 로 들어왔으면 **이 PC 의 LAN IP**(폰이 열 수 있는 주소).
 - 새 저장 동작이 필요하면 **인터페이스에 뜻이 담긴 함수**를 추가한다 (쿼리 문법을 흘리지 말 것). 두 구현 + `tests/helpers/memoryStore.ts` 세 곳을 같이 고친다.
 - 시각은 어디서나 **ISO 문자열(UTC)** — 문자열 비교로 기간 조회가 되어 두 저장소가 같게 동작한다.
 - Firestore 는 한 쿼리에 범위 조건을 여러 개 못 쓰므로 완성본 여부를 `has_final`(참/거짓)로 따로 둔다. 복합 색인은 `firebase/firestore.indexes.json`.

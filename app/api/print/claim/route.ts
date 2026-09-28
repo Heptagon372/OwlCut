@@ -29,6 +29,8 @@ export async function POST(req: Request) {
   try {
     await recordHeartbeat(printer, info);
     const job = await claimNextJob(printer);
+    // 이 PC 저장소의 서명 URL 은 상대 주소로 오므로 프린트 서버가 받을 수 있게 절대 주소로 바꾼다
+    if (job?.image_url?.startsWith("/")) job.image_url = new URL(job.image_url, new URL(req.url).origin).toString();
     return NextResponse.json({ job }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "claim_failed" }, { status: 500 });

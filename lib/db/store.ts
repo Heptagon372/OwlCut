@@ -1,9 +1,9 @@
-// 부스가 쓰는 저장소(표 + 파일)의 공통 약속. Supabase 와 Firebase 두 가지로 구현한다.
+// 부스가 쓰는 저장소(표 + 파일)의 공통 약속. Supabase · Firebase · 이 PC(local) 세 가지로 구현한다.
 // 라우트·도메인 코드는 이 인터페이스만 보고, 어떤 서비스인지는 lib/db/index.ts 가 고른다.
 // 시각은 어디서나 ISO 문자열(UTC) — 문자열 비교만으로 기간 조회가 되어 두 저장소가 같게 동작한다.
 import type { PrintStatus } from "@/types/print";
 
-export type StoreKind = "supabase" | "firebase";
+export type StoreKind = "supabase" | "firebase" | "local"; // local = 이 PC 디스크
 
 export interface SessionRow {
   id: string;

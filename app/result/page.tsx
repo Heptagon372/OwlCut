@@ -182,27 +182,12 @@ export default function ResultPage() {
               {statusText && (
                 <p className={`text-sm ${status === "error" ? "text-[#ff8a8a]" : "text-ink-muted"}`}>{statusText}</p>
               )}
+              {/* QR 은 아래 ‘이미지 저장’ 카드 안, 저장 버튼 바로 밑에 있다 */}
               {status === "done" && remote && (
-                <div className="flex items-center gap-4">
-                  <div className="shrink-0 rounded-2xl bg-white p-1.5">
-                    <QRCodeView url={remote} size={140} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 font-semibold">
-                      <Smartphone className="h-4 w-4" aria-hidden />
-                      {t("result.toPhone")}
-                    </p>
-                    <p className="mt-1 text-sm text-ink-muted">{t("result.scanHint")}</p>
-                    <a
-                      href={remote}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 block truncate text-xs text-ink-muted underline"
-                    >
-                      {remote}
-                    </a>
-                  </div>
-                </div>
+                <p className="flex items-center gap-1.5 text-sm text-ink-muted">
+                  <Smartphone className="h-4 w-4 shrink-0" aria-hidden />
+                  {t("result.qrBelow")}
+                </p>
               )}
               {status === "local" && (
                 <p className="text-sm text-ink-muted">
@@ -230,6 +215,27 @@ export default function ResultPage() {
               <Download className="h-5 w-5" aria-hidden />
               {t("result.save")}
             </Button>
+            {/* 저장 버튼 바로 밑 — 폰으로 가져갈 수 있는 다운로드 QR */}
+            {status === "done" && remote && (
+              <div className="tile flex flex-col items-center gap-3 rounded-tile p-4 text-center">
+                <p className="label-xs flex items-center gap-1.5">
+                  <Smartphone className="h-3.5 w-3.5" aria-hidden />
+                  {t("result.toPhone")}
+                </p>
+                <div className="rounded-2xl bg-white p-2">
+                  <QRCodeView url={remote} size={168} />
+                </div>
+                <p className="text-sm text-black/55">{t("result.scanHint")}</p>
+                <a
+                  href={remote}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block max-w-full truncate text-xs text-black/45 underline"
+                >
+                  {remote}
+                </a>
+              </div>
+            )}
             {/* 완성 뒤에도 더 꾸밀 수 있게 — 디자인·사진은 그대로 있고 다시 완성하면 같은 세션에 덮어쓴다(멱등) */}
             <Button variant="secondary" onClick={() => router.push("/edit")} className="w-full">
               <WandSparkles className="h-4 w-4" aria-hidden />

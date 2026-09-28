@@ -23,6 +23,7 @@ import type { AdminRankItem, AdminStats } from "@/types/admin";
 
 const REFRESH_MS = 10_000;
 const PROVIDER_LABEL = { claude: "Claude", openai: "OpenAI", gemini: "Gemini" } as const;
+const STORE_LABEL = { supabase: "Supabase 연결됨", firebase: "Firebase 연결됨", local: "이 PC 에 저장 중" } as const;
 
 const NAV = [
   { href: "#overview", label: "대시보드", icon: LayoutDashboard },
@@ -157,9 +158,9 @@ export function AdminDashboard() {
 
   const setup: { label: string; tone: StatusTone; text: string }[] = [
     {
-      label: "Supabase",
+      label: "저장소",
       tone: config.supabase ? "good" : "critical",
-      text: config.supabase ? "연결됨" : "미설정 — 세션·QR·출력·통계 비활성",
+      text: config.supabase ? STORE_LABEL[config.storeKind ?? "supabase"] : "미설정 — 세션·QR·출력·통계 비활성",
     },
     {
       label: "AI 모델",

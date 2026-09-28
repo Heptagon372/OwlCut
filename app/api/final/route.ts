@@ -6,6 +6,7 @@ import { expiresAt, finalPath } from "@/lib/storage/photos";
 import { authorizeSessionWrite, hashToken, insertSession } from "@/lib/storage/sessionAuth";
 import { checkRateLimit, clientKey } from "@/lib/rateLimit";
 import { isUuid } from "@/lib/ids";
+import { publicBaseUrl } from "@/lib/net/publicUrl";
 
 export const runtime = "nodejs";
 
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
       final_image_path: path,
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+    const appUrl = publicBaseUrl(req.url); // localhost 로 들어왔으면 폰이 열 수 있는 LAN 주소로
     return NextResponse.json({
       download_url: `${appUrl}/download/${session_id}`,
       expires_at: expires,
